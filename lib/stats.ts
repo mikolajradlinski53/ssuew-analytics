@@ -1,0 +1,318 @@
+import type { Rekrutacja, Kohorta, KpiPeriod, StatResult, RegressionResult } from '@/types'
+
+// ─── Podstawowe funkcje ──────────────────────────────────────────────────────
+
+export function mean(arr: number[]): number {
+  return arr.reduce((s, v) => s + v, 0) / arr.length
+}
+
+export function variance(arr: number[]): number {
+  const m = mean(arr)
+  return arr.reduce((s, v) => s + (v - m) ** 2, 0) / (arr.length - 1)
+}
+
+export function sd(arr: number[]): number {
+  return Math.sqrt(variance(arr))
+}
+
+// ─── Korelacja Pearsona ──────────────────────────────────────────────────────
+// r ∈ [-1, 1]. Mierzy siłę i kierunek liniowego związku między dwiema zmiennymi.
+
+export function pearson(x: number[], y: number[]): number {
+  const mx = mean(x), my = mean(y)
+  const num = x.reduce((s, v, i) => s + (v - mx) * (y[i] - my), 0)
+  const den = Math.sqrt(
+    x.reduce((s, v) => s + (v - mx) ** 2, 0) *
+    y.reduce((s, v) => s + (v - my) ** 2, 0)
+  )
+  return den === 0 ? 0 : num / den
+}
+
+function approxPval(tStat: number, df: number): { label: string; significant: boolean } {
+  const t = Math.abs(tStat)
+  // Przybliżenie p-value dla dwustronnego testu t
+  if (t > 4.5)  return { label: '<0.001', significant: true }
+  if (t > 3.5)  return { label: '<0.005', significant: true }
+  if (t > 2.9)  return { label: '<0.01',  significant: true }
+  if (t > 2.4)  return { label: '<0.05',  significant: true }
+  if (t > 2.0)  return { label: '~0.07',  significant: false }
+  if (t > 1.5)  return { label: '~0.15',  significant: false }
+  return { label: '>0.20', significant: false }
+}
+
+export function pearsonTest(x: number[], y: number[]): StatResult {
+  const r = pearson(x, y)
+  const r2 = r * r
+  const n = x.length
+  const tStat = (r * Math.sqrt(n - 2)) / Math.sqrt(1 - r * r)
+  const { label: p_approx, significant } = approxPval(tStat, n - 2)
+
+  const strength = Math.abs(r) < 0.3 ? 'słaba' : Math.abs(r) < 0.6 ? 'umiarkowana' : 'silna'
+  const direction = r > 0 ? 'dodatnia' : 'ujemna'
+
+  const interpretation =
+    `r = ${r.toFixed(3)} — korelacja ${direction}, ${strength}. ` +
+    `R² = ${(r2 * 100).toFixed(1)}% zmienności wyjaśnionej. ` +
+    `p ${p_approx}${significant ? ' — wynik statystycznie istotny.' : ' — brak istotności przy obecnej liczbie obserwacji.'}`
+
+  return { r, r2, p_approx, significant, interpretation }
+}
+
+// ─── Test t Welcha ───────────────────────────────────────────────────────────
+// Porównuje średnie dwóch grup o (potencjalnie) różnych wariancjach.
+// Lepszy niż klasyczny test t gdy n₁ ≠ n₂ lub σ₁ ≠ σ₂.
+
+export function welchT(a: number[], b: number[]) {
+  const ma = mean(a), mb = mean(b)
+  const va = variance(a), vb = variance(b)
+  const na = a.length, nb = b.length
+  const se = Math.sqrt(va / na + vb / nb)
+  const tStat = (ma - mb) / se
+
+  // Stopnie swobody Welcha-Satterthwaite'a
+  const df = (va / na + vb / nb) ** 2 /
+    ((va / na) ** 2 / (na - 1) + (vb / nb) ** 2 / (nb - 1))
+
+  const { label: p_approx, significant } = approxPval(tStat, df)
+
+  return {
+    meanA: ma,
+    meanB: mb,
+    sdA: sd(a),
+    sdB: sd(b),
+    tStat,
+    df: parseFloat(df.toFixed(1)),
+    p_approx,
+    significant,
+    interpretation:
+      `t = ${tStat.toFixed(2)}, df ≈ ${df.toFixed(1)}, p ${p_approx}. ` +
+      (significant
+        ? `Różnica (${(ma - mb).toFixed(1)} jednostki) jest statystycznie istotna — sezon ma realny wpływ.`
+        : `Różnica widoczna (${(ma - mb).toFixed(1)}), ale nieistotna statystycznie przy tej liczbie obserwacji.`)
+  }
+}
+
+// ─── Z-score ─────────────────────────────────────────────────────────────────
+// Ile odchyleń standardowych dany wynik jest powyżej/poniżej średniej grupy.
+
+export function zScores(values: number[]): number[] {
+  const m = mean(values)
+  const s = sd(values)
+  return values.map(v => parseFloat(((v - m) / s).toFixed(3)))
+}
+
+export function zInterpretation(z: number): string {
+  if (z > 2)    return 'Wyjątkowo powyżej normy — wzorzec do replikacji'
+  if (z > 1)    return 'Powyżej normy organizacyjnej'
+  if (z > -0.5) return 'W normie'
+  if (z > -1)   return 'Nieznacznie poniżej — warto monitorować'
+  if (z > -2)   return 'Poniżej normy — wymaga interwencji'
+  return 'Krytycznie poniżej — priorytet Zarządu'
+}
+
+// ─── Regresja OLS wielokrotna ─────────────────────────────────────────────────
+// Minimalizuje sumę kwadratów residuów metodą macierzową X'X β = X'y
+// Uproszczona implementacja bez bibliotek – działa dla 2–4 zmiennych.
+
+function matMul(A: number[][], B: number[][]): number[][] {
+  const rows = A.length, cols = B[0].length, inner = B.length
+  return Array.from({ length: rows }, (_, r) =>
+    Array.from({ length: cols }, (_, c) =>
+      A[r].reduce((s, _, k) => s + A[r][k] * B[k][c], 0)
+    )
+  )
+}
+
+function matTranspose(A: number[][]): number[][] {
+  return A[0].map((_, c) => A.map(row => row[c]))
+}
+
+// Odwracanie macierzy 2×2 lub 3×3 metodą kofaktorów (wystarczy dla naszego modelu)
+function matInv3(M: number[][]): number[][] {
+  const [a, b, c] = M[0], [d, e, f] = M[1], [g, h, i] = M[2]
+  const det = a*(e*i-f*h) - b*(d*i-f*g) + c*(d*h-e*g)
+  return [
+    [(e*i-f*h)/det, (c*h-b*i)/det, (b*f-c*e)/det],
+    [(f*g-d*i)/det, (a*i-c*g)/det, (c*d-a*f)/det],
+    [(d*h-e*g)/det, (b*g-a*h)/det, (a*e-b*d)/det],
+  ]
+}
+
+function matInv4(M: number[][]): number[][] {
+  // Uproszczone przez eliminację Gaussa dla macierzy 4×4
+  const n = 4
+  const A = M.map(row => [...row])
+  const I = Array.from({ length: n }, (_, i) =>
+    Array.from({ length: n }, (_, j) => (i === j ? 1 : 0))
+  )
+  for (let col = 0; col < n; col++) {
+    let maxRow = col
+    for (let row = col + 1; row < n; row++)
+      if (Math.abs(A[row][col]) > Math.abs(A[maxRow][col])) maxRow = row;
+    [A[col], A[maxRow]] = [A[maxRow], A[col]];
+    [I[col], I[maxRow]] = [I[maxRow], I[col]]
+    const pivot = A[col][col]
+    for (let j = 0; j < n; j++) { A[col][j] /= pivot; I[col][j] /= pivot }
+    for (let row = 0; row < n; row++) {
+      if (row === col) continue
+      const factor = A[row][col]
+      for (let j = 0; j < n; j++) {
+        A[row][j] -= factor * A[col][j]
+        I[row][j] -= factor * I[col][j]
+      }
+    }
+  }
+  return I
+}
+
+export function olsMultiple(
+  X_raw: number[][], // każda kolumna = jedna zmienna niezależna
+  y: number[],
+  varNames: string[]
+): { betas: number[]; r2: number; yhat: number[] } {
+  const n = y.length
+  // Dodaj kolumnę stałej (intercept)
+  const X = X_raw[0].map((_, i) => [1, ...X_raw.map(col => col[i])])
+  const Xt = matTranspose(X)
+  const XtX = matMul(Xt, X)
+  const Xty = matMul(Xt, y.map(v => [v]))
+  const k = XtX.length
+  const XtXinv = k === 3 ? matInv3(XtX) : matInv4(XtX)
+  const betas_mat = matMul(XtXinv, Xty)
+  const betas = betas_mat.map(r => r[0])
+
+  const yhat = X.map(row => betas.reduce((s, b, j) => s + b * row[j], 0))
+  const my = mean(y)
+  const sst = y.reduce((s, v) => s + (v - my) ** 2, 0)
+  const sse = y.reduce((s, v, i) => s + (v - yhat[i]) ** 2, 0)
+  const r2 = 1 - sse / sst
+
+  return { betas: betas.slice(1), r2, yhat }
+}
+
+// ─── Analiza rekrutacji ───────────────────────────────────────────────────────
+
+export function analyzeRekrutacje(data: Rekrutacja[]) {
+  const sorted = [...data].sort(
+    (a, b) => a.rok - b.rok || (a.sezon === 'wiosna' ? -1 : 1)
+  )
+  const zglos  = sorted.map(r => r.zgloszenia)
+  const przyj  = sorted.map(r => r.przyjeci)
+  const cr     = sorted.map(r => parseFloat(((r.przyjeci / r.zgloszenia) * 100).toFixed(1)))
+
+  const jesienData = data.filter(r => r.sezon === 'jesien')
+  const wiosnaData = data.filter(r => r.sezon === 'wiosna')
+
+  const corZglosAccepted = pearsonTest(zglos, przyj)
+  const sezonowosc = welchT(
+    jesienData.map(r => r.przyjeci),
+    wiosnaData.map(r => r.przyjeci)
+  )
+
+  // Prosta prognoza liniowa na następne 2 edycje
+  const xIdx = sorted.map((_, i) => i)
+  const reg = { ...(() => {
+    const mx = mean(xIdx), my = mean(przyj)
+    const b1 = xIdx.reduce((s, v, i) => s + (v - mx) * (przyj[i] - my), 0) /
+                xIdx.reduce((s, v) => s + (v - mx) ** 2, 0)
+    const b0 = my - b1 * mx
+    return { b0, b1 }
+  })() }
+  const forecast = [sorted.length, sorted.length + 1].map(i =>
+    Math.max(1, Math.round(reg.b0 + reg.b1 * i))
+  )
+
+  return { sorted, zglos, przyj, cr, corZglosAccepted, sezonowosc, forecast }
+}
+
+// ─── Analiza retention ────────────────────────────────────────────────────────
+
+export function analyzeRetention(kohort: Kohorta[]): RegressionResult {
+  const complete = kohort.filter(k => !k.in_progress)
+  if (complete.length < 4) {
+    return {
+      r2: 0,
+      coefficients: [],
+      prediction: 0,
+      warning: `Za mało danych (n=${complete.length}). Potrzeba co najmniej 4 ukończonych kohort.`
+    }
+  }
+
+  const sorted = [...complete].sort(
+    (a, b) => a.rok - b.rok || (a.sezon === 'wiosna' ? -1 : 1)
+  )
+
+  const edNr  = sorted.map((_, i) => i)
+  const sezon = sorted.map(k => k.sezon === 'jesien' ? 1 : 0)
+  const nCzl  = sorted.map(k => k.n_czlonkow)
+  const y     = sorted.map(k => k.avg_retention_sem)
+
+  const { betas, r2, yhat } = olsMultiple([edNr, sezon, nCzl], y, [])
+
+  const varDefs = [
+    {
+      name: 'Nr edycji (trend czasowy)',
+      beta: betas[0],
+      interpretation: betas[0] < 0
+        ? `Każda kolejna edycja to ${Math.abs(betas[0]).toFixed(2)} sem. mniej retention — trend spadkowy wymaga interwencji.`
+        : `Trend rosnący: +${betas[0].toFixed(2)} sem. na edycję — poprawa jakości rekrutacji lub środowiska organizacyjnego.`
+    },
+    {
+      name: 'Sezon (1=jesień, 0=wiosna)',
+      beta: betas[1],
+      interpretation: `Edycje ${betas[1] > 0 ? 'jesienne mają wyższy' : 'wiosenne mają wyższy'} retention o ${Math.abs(betas[1]).toFixed(2)} sem. po uwzględnieniu pozostałych zmiennych.`
+    },
+    {
+      name: 'Liczba przyjętych',
+      beta: betas[2],
+      interpretation: Math.abs(betas[2]) < 0.05
+        ? `Efekt minimalny (β=${betas[2].toFixed(3)}) — liczba przyjętych nie wyjaśnia retencji. Liczy się jakość, nie wolumen.`
+        : `Każda dodatkowa przyjęta osoba zmienia retention o ${betas[2].toFixed(3)} sem.`
+    },
+  ]
+
+  // Prognoza dla następnej edycji jesiennej
+  const nextIdx = sorted.length
+  const predNext = betas[0] * nextIdx + betas[1] * 1 + betas[2] * mean(nCzl)
+  const intercept = mean(y) - betas[0] * mean(edNr) - betas[1] * mean(sezon) - betas[2] * mean(nCzl)
+  const prediction = parseFloat((intercept + predNext).toFixed(2))
+
+  return {
+    r2,
+    coefficients: varDefs,
+    prediction: Math.max(0, prediction),
+    warning: r2 < 0.4
+      ? `R²=${(r2 * 100).toFixed(0)}% — model słabo dopasowany. Kluczowe zmienne (jakość onboardingu, obciążenie sesją) nie są jeszcze mierzone.`
+      : null
+  }
+}
+
+// ─── Z-score komisji ──────────────────────────────────────────────────────────
+
+export function analyzeKomisje(periods: KpiPeriod[]) {
+  const realizacje = periods.map(p =>
+    parseFloat(((p.projekty_zrealizowane / p.projekty_planowane) * 100).toFixed(1))
+  )
+  const zs = zScores(realizacje)
+  const m  = mean(realizacje)
+  const s  = sd(realizacje)
+
+  const corProjKpi = pearsonTest(
+    periods.map(p => p.projekty_planowane),
+    realizacje
+  )
+
+  return {
+    realizacje,
+    zs,
+    mean: parseFloat(m.toFixed(1)),
+    sd: parseFloat(s.toFixed(1)),
+    corProjKpi,
+    withZ: periods.map((p, i) => ({
+      ...p,
+      realizacjaPct: realizacje[i],
+      z: zs[i],
+      interpretation: zInterpretation(zs[i])
+    }))
+  }
+}
