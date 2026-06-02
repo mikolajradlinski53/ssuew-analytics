@@ -121,9 +121,22 @@ export const DEMO_KPI_METRICS: KpiMetric[] = [
   { id:'wyd-wwk', kategoria:'Wydarzenia', nazwa:'WWK',        okres_poprzedni:'2024/2025', wartosc_poprzednia:45, okres_biezacy:'2025/2026', wartosc_biezaca:40, created_at:'' },
   // Zwrotność ankiety zarządu
   { id:'ank-zim', kategoria:'Ankieta', nazwa:'Zimowa Zarządu', okres_poprzedni:'2024/2025', wartosc_poprzednia:47, okres_biezacy:'2025/2026', wartosc_biezaca:28, created_at:'' },
-  // Aplikacje na koordynatorów (wybrane projekty)
-  { id:'koo-wig', kategoria:'Koordynatorzy', nazwa:'Wigilia',  okres_poprzedni:'2024/2025', wartosc_poprzednia:9, okres_biezacy:'2025/2026', wartosc_biezaca:12, created_at:'' },
-  { id:'koo-gal', kategoria:'Koordynatorzy', nazwa:'Gala',     okres_poprzedni:'2024/2025', wartosc_poprzednia:1, okres_biezacy:'2025/2026', wartosc_biezaca:5,  created_at:'' },
-  { id:'koo-ada', kategoria:'Koordynatorzy', nazwa:'Adapciak', okres_poprzedni:'2024/2025', wartosc_poprzednia:2, okres_biezacy:'2025/2026', wartosc_biezaca:1,  created_at:'' },
-  { id:'koo-ani', kategoria:'Koordynatorzy', nazwa:'Animalia', okres_poprzedni:'2024/2025', wartosc_poprzednia:1, okres_biezacy:'2025/2026', wartosc_biezaca:2,  created_at:'' },
+  // Aplikacje na koordynatorów (pipeline liderów) — wszystkie projekty
+  { id:'koo-da',   kategoria:'Koordynatorzy', nazwa:'DA',         okres_poprzedni:'2024/2025', wartosc_poprzednia:1, okres_biezacy:'2025/2026', wartosc_biezaca:1,  created_at:'' },
+  { id:'koo-rj',   kategoria:'Koordynatorzy', nazwa:'RJ',         okres_poprzedni:'2024/2025', wartosc_poprzednia:2, okres_biezacy:'2025/2026', wartosc_biezaca:1,  created_at:'' },
+  { id:'koo-jwk',  kategoria:'Koordynatorzy', nazwa:'JWK',        okres_poprzedni:'2024/2025', wartosc_poprzednia:1, okres_biezacy:'2025/2026', wartosc_biezaca:2,  created_at:'' },
+  { id:'koo-twe',  kategoria:'Koordynatorzy', nazwa:'TWE',        okres_poprzedni:'2024/2025', wartosc_poprzednia:1, okres_biezacy:'2025/2026', wartosc_biezaca:2,  created_at:'' },
+  { id:'koo-zfue', kategoria:'Koordynatorzy', nazwa:'ZFUE',       okres_poprzedni:'2024/2025', wartosc_poprzednia:1, okres_biezacy:'2025/2026', wartosc_biezaca:1,  created_at:'' },
+  { id:'koo-bal',  kategoria:'Koordynatorzy', nazwa:'Bal',        okres_poprzedni:'2024/2025', wartosc_poprzednia:1, okres_biezacy:'2025/2026', wartosc_biezaca:1,  created_at:'' },
+  { id:'koo-me',   kategoria:'Koordynatorzy', nazwa:'ME',         okres_poprzedni:'2024/2025', wartosc_poprzednia:2, okres_biezacy:'2025/2026', wartosc_biezaca:1,  created_at:'' },
+  { id:'koo-wig',  kategoria:'Koordynatorzy', nazwa:'Wigilia',    okres_poprzedni:'2024/2025', wartosc_poprzednia:9, okres_biezacy:'2025/2026', wartosc_biezaca:12, created_at:'' },
+  { id:'koo-tedx', kategoria:'Koordynatorzy', nazwa:'TEDx',       okres_poprzedni:'2024/2025', wartosc_poprzednia:1, okres_biezacy:'2025/2026', wartosc_biezaca:1,  created_at:'' },
+  { id:'koo-prz',  kategoria:'Koordynatorzy', nazwa:'Przydziałki',okres_poprzedni:'2024/2025', wartosc_poprzednia:2, okres_biezacy:'2025/2026', wartosc_biezaca:2,  created_at:'' },
+  { id:'koo-wwk',  kategoria:'Koordynatorzy', nazwa:'WWK',        okres_poprzedni:'2024/2025', wartosc_poprzednia:1, okres_biezacy:'2025/2026', wartosc_biezaca:1,  created_at:'' },
+  { id:'koo-rw',   kategoria:'Koordynatorzy', nazwa:'RW',         okres_poprzedni:'2024/2025', wartosc_poprzednia:1, okres_biezacy:'2025/2026', wartosc_biezaca:1,  created_at:'' },
+  { id:'koo-ada',  kategoria:'Koordynatorzy', nazwa:'Adapciak',   okres_poprzedni:'2024/2025', wartosc_poprzednia:2, okres_biezacy:'2025/2026', wartosc_biezaca:1,  created_at:'' },
+  { id:'koo-ani',  kategoria:'Koordynatorzy', nazwa:'Animalia',   okres_poprzedni:'2024/2025', wartosc_poprzednia:1, okres_biezacy:'2025/2026', wartosc_biezaca:2,  created_at:'' },
+  { id:'koo-lwk',  kategoria:'Koordynatorzy', nazwa:'LWK',        okres_poprzedni:'2024/2025', wartosc_poprzednia:1, okres_biezacy:'2025/2026', wartosc_biezaca:1,  created_at:'' },
+  { id:'koo-gal',  kategoria:'Koordynatorzy', nazwa:'Gala',       okres_poprzedni:'2024/2025', wartosc_poprzednia:1, okres_biezacy:'2025/2026', wartosc_biezaca:5,  created_at:'' },
+  { id:'koo-grad', kategoria:'Koordynatorzy', nazwa:'Graduation', okres_poprzedni:'2024/2025', wartosc_poprzednia:1, okres_biezacy:'2025/2026', wartosc_biezaca:2,  created_at:'' },
 ]

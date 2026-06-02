@@ -140,9 +140,11 @@ export default function WpisClient() {
           <div className="space-y-3">
             <div className="grid grid-cols-2 gap-3">
               <div><label className={labelCls}>Kategoria</label>
-                <select className={inputCls} value={kpi.kategoria} onChange={(e) => setKpi((p) => ({ ...p, kategoria: e.target.value }))}>
-                  <option value="SKS">SKS</option><option value="Wydarzenia">Wydarzenia</option><option value="Ankieta">Ankieta</option><option value="Koordynatorzy">Koordynatorzy</option>
-                </select>
+                <input list="kpi-kategorie" className={inputCls} value={kpi.kategoria} onChange={(e) => setKpi((p) => ({ ...p, kategoria: e.target.value }))} placeholder="np. SKS / Retencja" />
+                <datalist id="kpi-kategorie">
+                  <option value="SKS" /><option value="Wydarzenia" /><option value="Ankieta" /><option value="Koordynatorzy" />
+                  <option value="Retencja" /><option value="Pipeline" /><option value="Zaangażowanie" /><option value="Parytet" />
+                </datalist>
               </div>
               <div><label className={labelCls}>Nazwa</label><input className={inputCls} placeholder="np. Listopad / Wigilia" value={kpi.nazwa} onChange={(e) => setKpi((p) => ({ ...p, nazwa: e.target.value }))} /></div>
             </div>
