@@ -39,6 +39,10 @@ yarn-error.log*
 # superpowers brainstorming companion
 .superpowers/
 
+# dane zrodlowe — prawdziwe imiona/nazwiska + wewnetrzne SWOT; NIGDY do publicznego repo
+dane_zrodlowe/
+dane_zrodlowe_dump.txt
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts
