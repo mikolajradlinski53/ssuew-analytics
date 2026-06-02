@@ -1,8 +1,10 @@
-import { BentoCard } from '@/components/ui/BentoCard'
+import { Suspense } from 'react'
+import OverviewClient from '@/components/modules/OverviewClient'
+
 export default function Page() {
   return (
-    <BentoCard title="Przegląd">
-      <p className="text-xs text-deck-muted">Wkrótce.</p>
-    </BentoCard>
+    <Suspense fallback={<p className="text-deck-muted text-sm">Ładowanie…</p>}>
+      <OverviewClient />
+    </Suspense>
   )
 }
