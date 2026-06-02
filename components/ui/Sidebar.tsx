@@ -9,6 +9,7 @@ export const NAV = [
   { href: '/komisje', label: 'Komisje', glyph: '▦' },
   { href: '/lejek', label: 'Lejek', glyph: '⥥' },
   { href: '/korelacje', label: 'Korelacje', glyph: '∿' },
+  { href: '/prognozy', label: 'Prognozy', glyph: '◔' },
   { href: '/alerty', label: 'Alerty', glyph: '⚠' },
 ] as const
 

@@ -19,6 +19,7 @@ describe('Sidebar', () => {
     expect(screen.getByText('Przegląd')).toBeInTheDocument()
     expect(screen.getByText('Rekrutacje')).toBeInTheDocument()
     expect(screen.getByText('Korelacje')).toBeInTheDocument()
+    expect(screen.getByText('Prognozy')).toBeInTheDocument()
     expect(screen.getByText(/Wpisz dane/)).toBeInTheDocument()
   })
 
