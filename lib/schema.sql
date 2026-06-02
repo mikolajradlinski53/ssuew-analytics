@@ -63,6 +63,17 @@ create table if not exists kpi_metrics (
   created_at          timestamptz default now()
 );
 
+-- Członkowie: aktywność per semestr (widok per-osoba). UWAGA: dane osobowe — tylko Twoja baza.
+create table if not exists czlonkowie (
+  id              uuid primary key default gen_random_uuid(),
+  kohorta_edycja  text not null,          -- "J'24"
+  imie_nazwisko   text not null,
+  status          text not null default 'aktywny'
+                    check (status in ('aktywny','wspierający','alumn','zawieszone','nieaktywny')),
+  aktywnosc       int[] default '{}',     -- 0=nieaktywny, 1=aktywny, 2=wspierający (per semestr)
+  created_at      timestamptz default now()
+);
+
 -- ─── Row Level Security ──────────────────────────────────────
 -- Na start: odczyt publiczny, zapis tylko authenticated
 -- Docelowo: restrict to @samorzad.ue.wroc.pl OAuth
@@ -79,6 +90,10 @@ create policy "public read komisje"      on komisje      for select using (true)
 create policy "public read kpi_periods"  on kpi_periods  for select using (true);
 create policy "public read kpi_metrics"  on kpi_metrics  for select using (true);
 create policy "auth insert kpi_metrics"  on kpi_metrics  for insert with check (auth.role() = 'authenticated');
+alter table czlonkowie enable row level security;
+create policy "public read czlonkowie"   on czlonkowie   for select using (true);
+create policy "auth insert czlonkowie"   on czlonkowie   for insert with check (auth.role() = 'authenticated');
+create policy "auth update czlonkowie"   on czlonkowie   for update using (auth.role() = 'authenticated');
 
 create policy "auth insert rekrutacje"   on rekrutacje   for insert with check (auth.role() = 'authenticated');
 create policy "auth update rekrutacje"   on rekrutacje   for update using (auth.role() = 'authenticated');

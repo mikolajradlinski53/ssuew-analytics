@@ -1,4 +1,4 @@
-import type { Rekrutacja, Kohorta, KpiPeriod, KpiMetric, StatResult, RegressionResult, Sezon } from '@/types'
+import type { Rekrutacja, Kohorta, KpiPeriod, KpiMetric, Czlonek, CzlonekStatus, StatResult, RegressionResult, Sezon } from '@/types'
 
 // ─── Podstawowe funkcje ──────────────────────────────────────────────────────
 
@@ -632,4 +632,40 @@ export function kpiSummary(metrics: KpiMetric[]): { up: number; down: number; av
     else if (r < 1) down++
   }
   return { up, down, avgRatio: Math.round((sum / valid.length) * 100) / 100 }
+}
+
+// ─── Członkowie (widok per-osoba) ────────────────────────────────────────────
+
+export function kolejneSemestry(sezon: Sezon, rok: number, count: number): { label: string; sezon: Sezon; rok: number }[] {
+  const out: { label: string; sezon: Sezon; rok: number }[] = []
+  let s: Sezon = sezon
+  let r = rok
+  for (let i = 0; i < count; i++) {
+    if (s === 'jesien') {
+      s = 'wiosna'
+      r += 1
+    } else {
+      s = 'jesien'
+    }
+    out.push({ label: `${s === 'jesien' ? 'J' : 'W'}'${String(r).slice(-2)}`, sezon: s, rok: r })
+  }
+  return out
+}
+
+export function memberStatusCounts(members: Czlonek[]): Record<CzlonekStatus, number> {
+  const out: Record<CzlonekStatus, number> = { aktywny: 0, 'wspierający': 0, alumn: 0, zawieszone: 0, nieaktywny: 0 }
+  for (const m of members) out[m.status]++
+  return out
+}
+
+// Realna krzywa przeżycia z siatki: [100, % aktywnych po 1 sem, ...] (aktywnosc[t] > 0)
+export function survivalFromMembers(members: Czlonek[]): number[] {
+  if (members.length === 0) return [100]
+  const maxLen = Math.max(...members.map((m) => m.aktywnosc.length))
+  const out = [100]
+  for (let t = 0; t < maxLen; t++) {
+    const active = members.filter((m) => (m.aktywnosc[t] ?? 0) > 0).length
+    out.push(Math.round((active / members.length) * 1000) / 10)
+  }
+  return out
 }

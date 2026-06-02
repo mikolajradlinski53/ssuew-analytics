@@ -7,6 +7,7 @@ export const NAV = [
   { href: '/', label: 'Przegląd', glyph: '◧' },
   { href: '/rekrutacje', label: 'Rekrutacje', glyph: '↗' },
   { href: '/retencja', label: 'Retencja', glyph: '⟲' },
+  { href: '/czlonkowie', label: 'Członkowie', glyph: '⊞' },
   { href: '/kpi', label: 'KPI', glyph: '▦' },
   { href: '/lejek', label: 'Lejek', glyph: '⥥' },
   { href: '/korelacje', label: 'Korelacje', glyph: '∿' },

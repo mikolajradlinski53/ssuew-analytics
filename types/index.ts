@@ -60,6 +60,18 @@ export interface RegressionResult {
   warning: string | null
 }
 
+// Członek kohorty — aktywność per semestr (widok per-osoba). Nazwiska tylko w Supabase.
+export type CzlonekStatus = 'aktywny' | 'wspierający' | 'alumn' | 'zawieszone' | 'nieaktywny'
+
+export interface Czlonek {
+  id: string
+  kohorta_edycja: string     // np. "J'24"
+  imie_nazwisko: string      // na żywo prawdziwe; demo: zaślepione
+  status: CzlonekStatus
+  aktywnosc: number[]        // stan per semestr: 0=nieaktywny, 1=aktywny, 2=wspierający
+  created_at: string
+}
+
 // Realny model KPI SSUEW: metryka rok-do-roku (wartość zeszłoroczna vs tegoroczna)
 export interface KpiMetric {
   id: string
