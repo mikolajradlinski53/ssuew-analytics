@@ -25,6 +25,7 @@ create table if not exists kohorty (
   avg_retention_sem   numeric(4,2) not null,
   max_retention_sem   int  not null,
   in_progress         boolean default false,
+  survival            numeric[],            -- realna krzywa przeżycia: % aktywnych po t sem.
   created_at          timestamptz default now()
 );
 
@@ -99,15 +100,15 @@ insert into rekrutacje (edycja, sezon, rok, zgloszenia, przyjeci) values
   ('W''26', 'wiosna', 2026, 18,  11)
 on conflict (edycja) do nothing;
 
--- Realne dane (Analiza - długość działania.xlsx — PODSUMOWANIE).
-insert into kohorty (edycja, sezon, rok, n_czlonkow, avg_retention_sem, max_retention_sem, in_progress) values
-  ('W''22', 'wiosna', 2022, 14, 4.36, 9,  false),
-  ('J''22', 'jesien', 2022, 39, 4.24, 8,  false),
-  ('W''23', 'wiosna', 2023, 11, 4.20, 7,  false),
-  ('J''23', 'jesien', 2023, 39, 3.86, 6,  false),
-  ('W''24', 'wiosna', 2024, 13, 2.69, 5,  false),
-  ('J''24', 'jesien', 2024, 38, 3.53, 4,  false),
-  ('W''25', 'wiosna', 2025, 10, 1.80, 3,  true)
+-- Realne dane (Analiza - długość działania.xlsx). survival = realna krzywa przeżycia per-osoba.
+insert into kohorty (edycja, sezon, rok, n_czlonkow, avg_retention_sem, max_retention_sem, in_progress, survival) values
+  ('W''22', 'wiosna', 2022, 14, 4.36, 9,  false, '{100,100,100,100,73,36,9,9,9}'),
+  ('J''22', 'jesien', 2022, 39, 4.24, 8,  false, '{100,100,100,85,73,33,18,9,6}'),
+  ('W''23', 'wiosna', 2023, 11, 4.20, 7,  false, '{100,100,90,90,60,30,30,20}'),
+  ('J''23', 'jesien', 2023, 39, 3.86, 6,  false, '{100,100,97,83,63,31,11}'),
+  ('W''24', 'wiosna', 2024, 13, 2.69, 5,  false, '{100,100,77,69,23}'),
+  ('J''24', 'jesien', 2024, 38, 3.53, 4,  false, '{100,100,100,80,73}'),
+  ('W''25', 'wiosna', 2025, 10, 1.80, 3,  true,  '{100,60,60,60}')
 on conflict (edycja) do nothing;
 
 insert into komisje (kod, nazwa) values

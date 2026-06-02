@@ -15,22 +15,31 @@ export default function RetencjaClient() {
   const koh = applyFilters(kohorty, filters)
   const reg = analyzeRetention(koh)
 
-  // Wspólna oś semestrów = najdłuższa krzywa
-  const maxSem = Math.max(0, ...koh.map((k) => Math.round(k.max_retention_sem)))
+  // Krzywa per kohorta: realny pomiar (survival) gdy jest, inaczej aproksymacja.
+  const pct = (k: typeof koh[number], s: number): number | null => {
+    if (k.survival) return s < k.survival.length ? k.survival[s] : null
+    const pt = survivalCurve(k.avg_retention_sem, k.max_retention_sem).find((p) => p.sem === s)
+    return pt ? pt.pct : null
+  }
+  const curveLen = (k: typeof koh[number]) => (k.survival ? k.survival.length - 1 : Math.round(k.max_retention_sem))
+  const maxSem = Math.max(0, ...koh.map(curveLen))
   const data: Record<string, number | string>[] = []
   for (let s = 0; s <= maxSem; s++) {
     const row: Record<string, number | string> = { sem: s }
     for (const k of koh) {
-      const pt = survivalCurve(k.avg_retention_sem, k.max_retention_sem).find((p) => p.sem === s)
-      if (pt) row[k.edycja] = pt.pct
+      const v = pct(k, s)
+      if (v != null) row[k.edycja] = v
     }
     data.push(row)
   }
+  const allMeasured = koh.length > 0 && koh.every((k) => k.survival)
 
   return (
     <div className="space-y-3">
-      <div className="text-[11px] text-deck-warn border border-deck-warn/40 rounded-md px-2 py-1 inline-block">
-        Krzywe to szacunek (model wykładniczy) — brak pomiaru per semestr
+      <div className={`text-[11px] border rounded-md px-2 py-1 inline-block ${allMeasured ? 'text-deck-accent border-deck-accent/40' : 'text-deck-warn border-deck-warn/40'}`}>
+        {allMeasured
+          ? 'Pomiar z danych per-osoba (% aktywnych po t semestrach)'
+          : 'Część krzywych to szacunek (model wykładniczy) — brak pomiaru per semestr'}
       </div>
 
       <BentoCard title="Krzywe przeżycia kohort" sub="% aktywnych w kolejnych semestrach" span={4}>

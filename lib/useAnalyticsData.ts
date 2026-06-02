@@ -77,15 +77,16 @@ export const DEMO_REKRUTACJE: Rekrutacja[] = [
   { id:'6', edycja:"W'26", sezon:'wiosna', rok:2026, zgloszenia:18,  przyjeci:11, created_at:'' },
 ]
 
-// Z dane_zrodlowe/Analiza - długość działania.xlsx — PODSUMOWANIE.
+// Z dane_zrodlowe/Analiza - długość działania.xlsx. avg/max z PODSUMOWANIA;
+// survival = REALNA krzywa przeżycia (% aktywnych po t sem.) liczona z danych per-osoba.
 export const DEMO_KOHORTY: Kohorta[] = [
-  { id:'1', edycja:"W'22", sezon:'wiosna', rok:2022, n_czlonkow:14, avg_retention_sem:4.36, max_retention_sem:9,  in_progress:false, created_at:'' },
-  { id:'2', edycja:"J'22", sezon:'jesien', rok:2022, n_czlonkow:39, avg_retention_sem:4.24, max_retention_sem:8,  in_progress:false, created_at:'' },
-  { id:'3', edycja:"W'23", sezon:'wiosna', rok:2023, n_czlonkow:11, avg_retention_sem:4.20, max_retention_sem:7,  in_progress:false, created_at:'' },
-  { id:'4', edycja:"J'23", sezon:'jesien', rok:2023, n_czlonkow:39, avg_retention_sem:3.86, max_retention_sem:6,  in_progress:false, created_at:'' },
-  { id:'5', edycja:"W'24", sezon:'wiosna', rok:2024, n_czlonkow:13, avg_retention_sem:2.69, max_retention_sem:5,  in_progress:false, created_at:'' },
-  { id:'6', edycja:"J'24", sezon:'jesien', rok:2024, n_czlonkow:38, avg_retention_sem:3.53, max_retention_sem:4,  in_progress:false, created_at:'' },
-  { id:'7', edycja:"W'25", sezon:'wiosna', rok:2025, n_czlonkow:10, avg_retention_sem:1.80, max_retention_sem:3,  in_progress:true,  created_at:'' },
+  { id:'1', edycja:"W'22", sezon:'wiosna', rok:2022, n_czlonkow:14, avg_retention_sem:4.36, max_retention_sem:9,  in_progress:false, survival:[100,100,100,100,73,36,9,9,9], created_at:'' },
+  { id:'2', edycja:"J'22", sezon:'jesien', rok:2022, n_czlonkow:39, avg_retention_sem:4.24, max_retention_sem:8,  in_progress:false, survival:[100,100,100,85,73,33,18,9,6], created_at:'' },
+  { id:'3', edycja:"W'23", sezon:'wiosna', rok:2023, n_czlonkow:11, avg_retention_sem:4.20, max_retention_sem:7,  in_progress:false, survival:[100,100,90,90,60,30,30,20], created_at:'' },
+  { id:'4', edycja:"J'23", sezon:'jesien', rok:2023, n_czlonkow:39, avg_retention_sem:3.86, max_retention_sem:6,  in_progress:false, survival:[100,100,97,83,63,31,11], created_at:'' },
+  { id:'5', edycja:"W'24", sezon:'wiosna', rok:2024, n_czlonkow:13, avg_retention_sem:2.69, max_retention_sem:5,  in_progress:false, survival:[100,100,77,69,23], created_at:'' },
+  { id:'6', edycja:"J'24", sezon:'jesien', rok:2024, n_czlonkow:38, avg_retention_sem:3.53, max_retention_sem:4,  in_progress:false, survival:[100,100,100,80,73], created_at:'' },
+  { id:'7', edycja:"W'25", sezon:'wiosna', rok:2025, n_czlonkow:10, avg_retention_sem:1.80, max_retention_sem:3,  in_progress:true,  survival:[100,60,60,60], created_at:'' },
 ]
 
 // Z dane_zrodlowe/KPI SSUEW.xlsx (arkusz 20252026): porównanie 2024/2025 → 2025/2026.

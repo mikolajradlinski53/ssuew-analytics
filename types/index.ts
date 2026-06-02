@@ -19,6 +19,9 @@ export interface Kohorta {
   avg_retention_sem: number   // avg semestrów aktywności
   max_retention_sem: number   // max obserwowany
   in_progress: boolean        // kohorta jeszcze aktywna
+  // Realna krzywa przeżycia: % aktywnych po t semestrach (index = semestr, 0..max).
+  // Liczona z danych per-osoba. Gdy brak — moduł retencji używa aproksymacji.
+  survival?: number[]
   created_at: string
 }
 
