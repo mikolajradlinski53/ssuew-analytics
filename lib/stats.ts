@@ -526,3 +526,79 @@ export function kpiByKomisja(periods: KpiPeriod[]): Map<string, KpiPeriod[]> {
   }
   return m
 }
+
+// ─── Alerty / anomalie ───────────────────────────────────────────────────────
+
+export interface Alert {
+  id: string
+  severity: 'critical' | 'warning' | 'info'
+  title: string
+  detail: string
+  recommendation: string
+  href: string
+}
+
+const SEVERITY_ORDER: Record<Alert['severity'], number> = { critical: 0, warning: 1, info: 2 }
+
+export function buildAlerts(
+  rekrutacje: Rekrutacja[],
+  kohorty: Kohorta[],
+  kpiPeriods: KpiPeriod[],
+): Alert[] {
+  const alerts: Alert[] = []
+
+  // 1. Komisje (z-score)
+  if (kpiPeriods.length >= 2) {
+    const kom = analyzeKomisje(kpiPeriods)
+    for (const c of kom.withZ) {
+      const kod = c.komisja?.kod ?? c.komisja_id
+      if (c.z < -2) {
+        alerts.push({ id: `kom-${c.komisja_id}`, severity: 'critical', title: `Komisja ${kod} krytycznie poniżej normy`, detail: `Realizacja ${c.realizacjaPct}%, z=${c.z.toFixed(1)}`, recommendation: 'Priorytet Zarządu — interwencja.', href: '/komisje' })
+      } else if (c.z < -1) {
+        alerts.push({ id: `kom-${c.komisja_id}`, severity: 'warning', title: `Komisja ${kod} poniżej normy`, detail: `Realizacja ${c.realizacjaPct}%, z=${c.z.toFixed(1)}`, recommendation: 'Monitorować, wsparcie planowania.', href: '/komisje' })
+      }
+    }
+  }
+
+  // 2. Spadek retencji
+  const completed = [...kohorty]
+    .filter((k) => !k.in_progress)
+    .sort((a, b) => a.rok - b.rok || (a.sezon === 'wiosna' ? -1 : 1))
+  if (completed.length >= 2) {
+    const first = completed[0]
+    const last = completed[completed.length - 1]
+    if (last.avg_retention_sem < first.avg_retention_sem) {
+      alerts.push({ id: 'ret-decline', severity: 'warning', title: 'Spadkowy trend retencji', detail: `Z ${first.avg_retention_sem.toFixed(1)} (${first.edycja}) do ${last.avg_retention_sem.toFixed(1)} sem. (${last.edycja}).`, recommendation: 'Sprawdź onboarding i obciążenie sesją.', href: '/retencja' })
+    }
+  }
+
+  // 3. Niski CR
+  if (rekrutacje.length >= 2) {
+    const s = analyzeRekrutacje(rekrutacje)
+    const meanCR = mean(s.cr)
+    const lastCR = s.cr[s.cr.length - 1]
+    if (meanCR > 0 && lastCR < 0.7 * meanCR) {
+      alerts.push({ id: 'cr-low', severity: 'warning', title: 'Niski conversion rate ostatniej edycji', detail: `CR ${lastCR}% vs średnia ${meanCR.toFixed(1)}%.`, recommendation: 'Sprawdź jakość kandydatów / proces rekrutacji.', href: '/rekrutacje' })
+    }
+  }
+
+  // 4. Wyciek w lejku
+  if (rekrutacje.length >= 1 && kohorty.length >= 1) {
+    const funnel = buildFunnel(rekrutacje, kohorty, { threshold: 2 })
+    let worstIdx = -1
+    let worstDrop = -1
+    for (let i = 1; i < funnel.length; i++) {
+      const prev = funnel[i - 1].count
+      const drop = prev > 0 ? (prev - funnel[i].count) / prev : 0
+      if (drop > worstDrop) {
+        worstDrop = drop
+        worstIdx = i
+      }
+    }
+    if (worstIdx > 0 && worstDrop > 0.5) {
+      alerts.push({ id: 'funnel-leak', severity: 'info', title: 'Duży wyciek w lejku', detail: `${funnel[worstIdx - 1].stage} → ${funnel[worstIdx].stage}: −${Math.round(worstDrop * 100)}%.`, recommendation: 'Najsłabszy etap ścieżki — punkt do poprawy.', href: '/lejek' })
+    }
+  }
+
+  return alerts.sort((a, b) => SEVERITY_ORDER[a.severity] - SEVERITY_ORDER[b.severity])
+}
