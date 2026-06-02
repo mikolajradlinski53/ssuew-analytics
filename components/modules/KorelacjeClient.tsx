@@ -7,6 +7,7 @@ import { applyFilters } from '@/lib/filters'
 import { correlationMatrix } from '@/lib/stats'
 import { chartTheme, axisTick, tooltipStyle } from '@/lib/chartTheme'
 import { BentoCard } from '@/components/ui/BentoCard'
+import { ModuleSkeleton } from '@/components/ui/ModuleSkeleton'
 import { Heatmap } from '@/components/ui/Heatmap'
 
 const MAIN_VARS = ['zgłoszenia', 'przyjęci', 'CR%', 'liczebność', 'avg retencja', 'max retencja']
@@ -16,7 +17,7 @@ export default function KorelacjeClient() {
   const { filters } = useFilters()
   const [pair, setPair] = useState<{ a: string; b: string } | null>(null)
 
-  if (loading) return <p className="text-deck-muted text-sm">Ładowanie…</p>
+  if (loading) return <ModuleSkeleton />
 
   const rekr = applyFilters(rekrutacje, filters)
   const kohByEd = new Map(applyFilters(kohorty, filters).map((k) => [k.edycja, k]))

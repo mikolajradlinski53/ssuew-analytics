@@ -6,11 +6,12 @@ import { applyFilters } from '@/lib/filters'
 import { survivalCurve, analyzeRetention } from '@/lib/stats'
 import { chartTheme, axisTick, tooltipStyle } from '@/lib/chartTheme'
 import { BentoCard } from '@/components/ui/BentoCard'
+import { ModuleSkeleton } from '@/components/ui/ModuleSkeleton'
 
 export default function RetencjaClient() {
   const { kohorty, loading } = useAnalyticsData()
   const { filters } = useFilters()
-  if (loading) return <p className="text-deck-muted text-sm">Ładowanie…</p>
+  if (loading) return <ModuleSkeleton />
 
   const koh = applyFilters(kohorty, filters)
   const reg = analyzeRetention(koh)

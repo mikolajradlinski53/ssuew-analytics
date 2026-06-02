@@ -5,6 +5,7 @@ import { useAnalyticsData } from '@/lib/useAnalyticsData'
 import { createClient } from '@/lib/supabase/client'
 import { isConfigured } from '@/lib/supabase/config'
 import { BentoCard } from '@/components/ui/BentoCard'
+import { ModuleSkeleton } from '@/components/ui/ModuleSkeleton'
 
 type Tab = 'rekrutacja' | 'kohorta' | 'kpi'
 const inputCls = 'w-full bg-deck-bg border border-deck-border rounded-md px-3 py-2 text-sm text-deck-text'
@@ -33,7 +34,7 @@ export default function WpisClient() {
   const [koh, setKoh] = useState({ edycja: '', sezon: 'jesien' as 'jesien' | 'wiosna', rok: new Date().getFullYear(), n: '', avg: '', max: '', inProgress: false })
   const [kpi, setKpi] = useState({ kategoria: 'SKS', nazwa: '', okres_poprzedni: '2024/2025', wartosc_poprzednia: '', okres_biezacy: '2025/2026', wartosc_biezaca: '' })
 
-  if (authed === null) return <p className="text-deck-muted text-sm">Ładowanie…</p>
+  if (authed === null) return <ModuleSkeleton />
   if (!authed) {
     return (
       <BentoCard title="Wpisz dane">

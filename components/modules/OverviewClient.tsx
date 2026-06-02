@@ -8,12 +8,14 @@ import { kpiSummary, kpiRatio } from '@/lib/stats'
 import { chartTheme, axisTick, tooltipStyle } from '@/lib/chartTheme'
 import { KpiTile } from '@/components/ui/KpiTile'
 import { BentoCard } from '@/components/ui/BentoCard'
+import { ModuleSkeleton } from '@/components/ui/ModuleSkeleton'
+import { AnimatedNumber } from '@/components/ui/AnimatedNumber'
 
 export default function OverviewClient() {
   const { rekrutacje, kohorty, kpiMetrics, loading, usingDemo } = useAnalyticsData()
   const { filters } = useFilters()
 
-  if (loading) return <p className="text-deck-muted text-sm">Ładowanie…</p>
+  if (loading) return <ModuleSkeleton />
 
   const rekr = applyFilters(rekrutacje, filters)
   const koh = applyFilters(kohorty, filters)
@@ -40,19 +42,19 @@ export default function OverviewClient() {
       <div className="grid grid-cols-4 gap-2">
         <KpiTile
           label="Conversion (avg)"
-          value={m.avgConversion != null ? `${m.avgConversion}%` : '—'}
+          value={m.avgConversion != null ? <AnimatedNumber value={m.avgConversion} decimals={1} suffix="%" /> : '—'}
           sub="filtrowane edycje"
           accent="accent"
         />
         <KpiTile
           label="Retencja (hist.)"
-          value={m.histRetention != null ? `${m.histRetention} sem` : '—'}
+          value={m.histRetention != null ? <AnimatedNumber value={m.histRetention} decimals={2} suffix=" sem" /> : '—'}
           sub="ukończone kohorty"
           accent="violet"
         />
         <KpiTile
           label={`Przyjęci ${m.lastEdycja ?? ''}`.trim()}
-          value={m.lastAccepted ?? '—'}
+          value={m.lastAccepted != null ? <AnimatedNumber value={m.lastAccepted} /> : '—'}
           sub={m.lastApplications != null ? `z ${m.lastApplications} zgłoszeń` : ''}
         />
         <KpiTile

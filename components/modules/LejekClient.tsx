@@ -5,6 +5,7 @@ import { useFilters } from '@/lib/useFilters'
 import { applyFilters } from '@/lib/filters'
 import { buildFunnel } from '@/lib/stats'
 import { BentoCard } from '@/components/ui/BentoCard'
+import { ModuleSkeleton } from '@/components/ui/ModuleSkeleton'
 import { Slider } from '@/components/ui/Slider'
 
 export default function LejekClient() {
@@ -14,7 +15,7 @@ export default function LejekClient() {
   const [edycja, setEdycja] = useState<string>('')
   const [threshold, setThreshold] = useState(2)
 
-  if (loading) return <p className="text-deck-muted text-sm">Ładowanie…</p>
+  if (loading) return <ModuleSkeleton />
 
   const rekr = applyFilters(rekrutacje, filters)
   const koh = applyFilters(kohorty, filters)

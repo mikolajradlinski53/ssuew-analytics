@@ -5,6 +5,7 @@ import { useFilters } from '@/lib/useFilters'
 import { applyFilters } from '@/lib/filters'
 import { buildAlerts, type Alert } from '@/lib/stats'
 import { BentoCard } from '@/components/ui/BentoCard'
+import { ModuleSkeleton } from '@/components/ui/ModuleSkeleton'
 
 const sevBox: Record<Alert['severity'], string> = {
   critical: 'bg-deck-danger-bg border-deck-danger-border',
@@ -25,7 +26,7 @@ const sevLabel: Record<Alert['severity'], string> = {
 export default function AlertyClient() {
   const { rekrutacje, kohorty, kpiMetrics, loading } = useAnalyticsData()
   const { filters } = useFilters()
-  if (loading) return <p className="text-deck-muted text-sm">Ładowanie…</p>
+  if (loading) return <ModuleSkeleton />
 
   const alerts = buildAlerts(applyFilters(rekrutacje, filters), applyFilters(kohorty, filters), kpiMetrics)
 

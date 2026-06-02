@@ -3,6 +3,8 @@ import { useAnalyticsData } from '@/lib/useAnalyticsData'
 import { kpiRatio, kpiByKategoria, kpiSummary } from '@/lib/stats'
 import { BentoCard } from '@/components/ui/BentoCard'
 import { KpiTile } from '@/components/ui/KpiTile'
+import { ModuleSkeleton } from '@/components/ui/ModuleSkeleton'
+import { AnimatedNumber } from '@/components/ui/AnimatedNumber'
 
 function ratioColor(r: number): string {
   if (r >= 1) return 'text-deck-accent'
@@ -12,7 +14,7 @@ function ratioColor(r: number): string {
 
 export default function KpiClient() {
   const { kpiMetrics, loading } = useAnalyticsData()
-  if (loading) return <p className="text-deck-muted text-sm">Ładowanie…</p>
+  if (loading) return <ModuleSkeleton />
   if (!kpiMetrics.length) {
     return (
       <BentoCard title="KPI">
@@ -28,9 +30,9 @@ export default function KpiClient() {
     <div className="space-y-3">
       <div className="text-[11px] text-deck-muted">Wskaźniki rok-do-roku (wartość zeszłoroczna → tegoroczna)</div>
       <div className="grid grid-cols-3 gap-2">
-        <KpiTile label="Metryki rosnące" value={summary.up} sub="rok do roku" accent="accent" />
-        <KpiTile label="Metryki spadające" value={summary.down} sub="rok do roku" accent="violet" />
-        <KpiTile label="Średni ratio" value={`${Math.round(summary.avgRatio * 100)}%`} sub="r/r" />
+        <KpiTile label="Metryki rosnące" value={<AnimatedNumber value={summary.up} />} sub="rok do roku" accent="accent" />
+        <KpiTile label="Metryki spadające" value={<AnimatedNumber value={summary.down} />} sub="rok do roku" accent="violet" />
+        <KpiTile label="Średni ratio" value={<AnimatedNumber value={Math.round(summary.avgRatio * 100)} suffix="%" />} sub="r/r" />
       </div>
 
       {[...grouped.entries()].map(([kat, metrics]) => (

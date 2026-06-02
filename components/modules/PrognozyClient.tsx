@@ -6,12 +6,13 @@ import { applyFilters } from '@/lib/filters'
 import { linearForecast, retentionModel } from '@/lib/stats'
 import { chartTheme, axisTick, tooltipStyle } from '@/lib/chartTheme'
 import { BentoCard } from '@/components/ui/BentoCard'
+import { ModuleSkeleton } from '@/components/ui/ModuleSkeleton'
 import Symulator from './Symulator'
 
 export default function PrognozyClient() {
   const { rekrutacje, kohorty, loading } = useAnalyticsData()
   const { filters } = useFilters()
-  if (loading) return <p className="text-deck-muted text-sm">Ładowanie…</p>
+  if (loading) return <ModuleSkeleton />
 
   const rekr = applyFilters(rekrutacje, filters)
   const koh = applyFilters(kohorty, filters)

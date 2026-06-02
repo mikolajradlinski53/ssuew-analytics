@@ -1,6 +1,7 @@
 'use client'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { LogoMark } from './LogoMark'
 
 export const NAV = [
   { href: '/', label: 'Przegląd', glyph: '◧' },
@@ -18,9 +19,7 @@ export function Sidebar() {
   return (
     <aside className="w-[150px] shrink-0 bg-deck-bg border-r border-deck-border p-2 flex flex-col gap-1 min-h-screen">
       <div className="flex items-center gap-2 px-2 py-3">
-        <span className="w-6 h-6 rounded-md bg-deck-accent text-deck-bg-deep font-extrabold text-xs flex items-center justify-center">
-          S
-        </span>
+        <LogoMark />
         <span className="text-sm font-semibold text-deck-text">SSUEW</span>
       </div>
       {NAV.map((item) => {

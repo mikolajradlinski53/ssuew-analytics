@@ -7,11 +7,12 @@ import { analyzeRekrutacje, linearForecast, mean } from '@/lib/stats'
 import { chartTheme, axisTick, tooltipStyle } from '@/lib/chartTheme'
 import { BentoCard } from '@/components/ui/BentoCard'
 import { KpiTile } from '@/components/ui/KpiTile'
+import { ModuleSkeleton } from '@/components/ui/ModuleSkeleton'
 
 export default function RekrutacjeClient() {
   const { rekrutacje, loading } = useAnalyticsData()
   const { filters } = useFilters()
-  if (loading) return <p className="text-deck-muted text-sm">Ładowanie…</p>
+  if (loading) return <ModuleSkeleton />
 
   const rekr = applyFilters(rekrutacje, filters)
   if (rekr.length < 2) {
