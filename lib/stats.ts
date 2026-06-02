@@ -1,4 +1,4 @@
-import type { Rekrutacja, Kohorta, KpiPeriod, StatResult, RegressionResult, Sezon } from '@/types'
+import type { Rekrutacja, Kohorta, KpiPeriod, KpiMetric, StatResult, RegressionResult, Sezon } from '@/types'
 
 // ─── Podstawowe funkcje ──────────────────────────────────────────────────────
 
@@ -543,19 +543,18 @@ const SEVERITY_ORDER: Record<Alert['severity'], number> = { critical: 0, warning
 export function buildAlerts(
   rekrutacje: Rekrutacja[],
   kohorty: Kohorta[],
-  kpiPeriods: KpiPeriod[],
+  kpiMetrics: KpiMetric[],
 ): Alert[] {
   const alerts: Alert[] = []
 
-  // 1. Komisje (z-score)
-  if (kpiPeriods.length >= 2) {
-    const kom = analyzeKomisje(kpiPeriods)
-    for (const c of kom.withZ) {
-      const kod = c.komisja?.kod ?? c.komisja_id
-      if (c.z < -2) {
-        alerts.push({ id: `kom-${c.komisja_id}`, severity: 'critical', title: `Komisja ${kod} krytycznie poniżej normy`, detail: `Realizacja ${c.realizacjaPct}%, z=${c.z.toFixed(1)}`, recommendation: 'Priorytet Zarządu — interwencja.', href: '/komisje' })
-      } else if (c.z < -1) {
-        alerts.push({ id: `kom-${c.komisja_id}`, severity: 'warning', title: `Komisja ${kod} poniżej normy`, detail: `Realizacja ${c.realizacjaPct}%, z=${c.z.toFixed(1)}`, recommendation: 'Monitorować, wsparcie planowania.', href: '/komisje' })
+  // 1. KPI ze spadkiem rok-do-roku
+  for (const m of kpiMetrics) {
+    const ratio = kpiRatio(m)
+    if (m.wartosc_poprzednia > 0 && ratio > 0) {
+      if (ratio < 0.6) {
+        alerts.push({ id: `kpi-${m.id}`, severity: 'critical', title: `${m.kategoria}: ${m.nazwa} — duży spadek`, detail: `${m.wartosc_poprzednia} → ${m.wartosc_biezaca} (${Math.round(ratio * 100)}% r/r)`, recommendation: 'Sprawdź przyczyny — priorytet Zarządu.', href: '/kpi' })
+      } else if (ratio < 0.8) {
+        alerts.push({ id: `kpi-${m.id}`, severity: 'warning', title: `${m.kategoria}: ${m.nazwa} — spadek r/r`, detail: `${m.wartosc_poprzednia} → ${m.wartosc_biezaca} (${Math.round(ratio * 100)}%)`, recommendation: 'Monitorować trend.', href: '/kpi' })
       }
     }
   }
@@ -601,4 +600,36 @@ export function buildAlerts(
   }
 
   return alerts.sort((a, b) => SEVERITY_ORDER[a.severity] - SEVERITY_ORDER[b.severity])
+}
+
+// ─── KPI rok-do-roku (realny model SSUEW) ────────────────────────────────────
+
+export function kpiRatio(m: KpiMetric): number {
+  if (m.wartosc_poprzednia === 0) return 0
+  return m.wartosc_biezaca / m.wartosc_poprzednia
+}
+
+export function kpiByKategoria(metrics: KpiMetric[]): Map<string, KpiMetric[]> {
+  const out = new Map<string, KpiMetric[]>()
+  for (const m of metrics) {
+    const arr = out.get(m.kategoria) ?? []
+    arr.push(m)
+    out.set(m.kategoria, arr)
+  }
+  return out
+}
+
+export function kpiSummary(metrics: KpiMetric[]): { up: number; down: number; avgRatio: number } {
+  const valid = metrics.filter((m) => m.wartosc_poprzednia > 0)
+  if (valid.length === 0) return { up: 0, down: 0, avgRatio: 0 }
+  let up = 0
+  let down = 0
+  let sum = 0
+  for (const m of valid) {
+    const r = kpiRatio(m)
+    sum += r
+    if (r > 1) up++
+    else if (r < 1) down++
+  }
+  return { up, down, avgRatio: Math.round((sum / valid.length) * 100) / 100 }
 }

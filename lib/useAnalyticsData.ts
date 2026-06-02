@@ -1,12 +1,11 @@
 'use client'
 import { useState, useEffect, useCallback } from 'react'
-import type { Rekrutacja, Kohorta, KpiPeriod, Komisja } from '@/types'
+import type { Rekrutacja, Kohorta, KpiMetric } from '@/types'
 
 export function useAnalyticsData() {
   const [rekrutacje, setRekrutacje] = useState<Rekrutacja[]>([])
   const [kohorty,    setKohorty]    = useState<Kohorta[]>([])
-  const [komisje,    setKomisje]    = useState<Komisja[]>([])
-  const [kpiPeriods, setKpiPeriods] = useState<KpiPeriod[]>([])
+  const [kpiMetrics, setKpiMetrics] = useState<KpiMetric[]>([])
   const [loading,    setLoading]    = useState(true)
   const [error,      setError]      = useState<string | null>(null)
   const [usingDemo,  setUsingDemo]  = useState(false)
@@ -17,27 +16,24 @@ export function useAnalyticsData() {
     try {
       const [rRes, kRes] = await Promise.all([
         fetch('/api/rekrutacje'),
-        fetch('/api/komisje'),
+        fetch('/api/kpi'),
       ])
       if (!rRes.ok || !kRes.ok) throw new Error('Błąd pobierania danych')
       const [rData, kData] = await Promise.all([rRes.json(), kRes.json()])
 
-      // Preferuj dane live; gdy backend pusty/niewdrożony — dane demo (historyczne SSUEW)
+      // Preferuj dane live; gdy backend pusty/niewdrożony — dane demo (realne SSUEW)
       const liveRekr = Array.isArray(rData) && rData.length > 0
       const liveKpi  = Array.isArray(kData) && kData.length > 0
       setRekrutacje(liveRekr ? rData : DEMO_REKRUTACJE)
-      setKpiPeriods(liveKpi  ? kData : DEMO_KPI)
+      setKpiMetrics(liveKpi  ? kData : DEMO_KPI_METRICS)
       setKohorty(DEMO_KOHORTY)   // brak endpointu kohort — dane historyczne
-      setKomisje(DEMO_KOMISJE)   // stały słownik komisji
       setUsingDemo(!liveRekr && !liveKpi)
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : 'Nieznany błąd'
       setError(msg)
-      // Fallback: dane demo (historyczne SSUEW)
       setRekrutacje(DEMO_REKRUTACJE)
       setKohorty(DEMO_KOHORTY)
-      setKomisje(DEMO_KOMISJE)
-      setKpiPeriods(DEMO_KPI)
+      setKpiMetrics(DEMO_KPI_METRICS)
       setUsingDemo(true)
     } finally {
       setLoading(false)
@@ -56,8 +52,8 @@ export function useAnalyticsData() {
     await fetchAll()
   }
 
-  const addKpi = async (payload: Omit<KpiPeriod, 'id' | 'created_at' | 'komisja'>) => {
-    const res = await fetch('/api/komisje', {
+  const addKpiMetric = async (payload: Omit<KpiMetric, 'id' | 'created_at'>) => {
+    const res = await fetch('/api/kpi', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
@@ -66,13 +62,12 @@ export function useAnalyticsData() {
     await fetchAll()
   }
 
-  return { rekrutacje, kohorty, komisje, kpiPeriods, loading, error, usingDemo, addRekrutacja, addKpi, refresh: fetchAll }
+  return { rekrutacje, kohorty, kpiMetrics, loading, error, usingDemo, addRekrutacja, addKpiMetric, refresh: fetchAll }
 }
 
-// ─── Dane demo (używane gdy Supabase nie jest skonfigurowane) ─────────────────
+// ─── Dane demo (realne dane SSUEW, używane gdy Supabase nie jest skonfigurowane) ─
 
-// Realne dane SSUEW (z dane_zrodlowe/KPI SSUEW.xlsx — "PRZYJĘCI DZIAŁACZE").
-// Zgłoszenia/przyjęci dostępne od rekrutacji Jesień 2023.
+// Z dane_zrodlowe/KPI SSUEW.xlsx — "PRZYJĘCI DZIAŁACZE". Zgłoszenia od rekrutacji J'23.
 export const DEMO_REKRUTACJE: Rekrutacja[] = [
   { id:'1', edycja:"J'23", sezon:'jesien', rok:2023, zgloszenia:100, przyjeci:38, created_at:'' },
   { id:'2', edycja:"W'24", sezon:'wiosna', rok:2024, zgloszenia:28,  przyjeci:13, created_at:'' },
@@ -82,8 +77,7 @@ export const DEMO_REKRUTACJE: Rekrutacja[] = [
   { id:'6', edycja:"W'26", sezon:'wiosna', rok:2026, zgloszenia:18,  przyjeci:11, created_at:'' },
 ]
 
-// Realne dane SSUEW (z dane_zrodlowe/Analiza - długość działania.xlsx — PODSUMOWANIE).
-// n_czlonkow = liczebność kohorty; avg/max = semestry aktywności.
+// Z dane_zrodlowe/Analiza - długość działania.xlsx — PODSUMOWANIE.
 export const DEMO_KOHORTY: Kohorta[] = [
   { id:'1', edycja:"W'22", sezon:'wiosna', rok:2022, n_czlonkow:14, avg_retention_sem:4.36, max_retention_sem:9,  in_progress:false, created_at:'' },
   { id:'2', edycja:"J'22", sezon:'jesien', rok:2022, n_czlonkow:39, avg_retention_sem:4.24, max_retention_sem:8,  in_progress:false, created_at:'' },
@@ -94,20 +88,25 @@ export const DEMO_KOHORTY: Kohorta[] = [
   { id:'7', edycja:"W'25", sezon:'wiosna', rok:2025, n_czlonkow:10, avg_retention_sem:1.80, max_retention_sem:3,  in_progress:true,  created_at:'' },
 ]
 
-export const DEMO_KOMISJE: Komisja[] = [
-  { id:'k1', kod:'P.KA.',    nazwa:'Komisja ds. Administracji',      przewodniczacy:null, created_at:'' },
-  { id:'k2', kod:'P.KF.',    nazwa:'Komisja ds. Finansów',           przewodniczacy:null, created_at:'' },
-  { id:'k3', kod:'P.KKZ.',   nazwa:'Komisja ds. Kultury i Zabawy',   przewodniczacy:null, created_at:'' },
-  { id:'k4', kod:'P.KHR.',   nazwa:'Komisja ds. HR',                 przewodniczacy:null, created_at:'' },
-  { id:'k5', kod:'P.KP.',    nazwa:'Komisja ds. Promocji',           przewodniczacy:null, created_at:'' },
-  { id:'k6', kod:'P.KDiJK.', nazwa:'Komisja ds. DiJK',              przewodniczacy:null, created_at:'' },
-]
-
-export const DEMO_KPI: KpiPeriod[] = [
-  { id:'p1', komisja_id:'k1', komisja:DEMO_KOMISJE[0], semestr:'letni 2025/2026', projekty_planowane:18, projekty_zrealizowane:14, kpi_custom:{}, notatka:null, created_at:'' },
-  { id:'p2', komisja_id:'k2', komisja:DEMO_KOMISJE[1], semestr:'letni 2025/2026', projekty_planowane:12, projekty_zrealizowane:9,  kpi_custom:{}, notatka:null, created_at:'' },
-  { id:'p3', komisja_id:'k3', komisja:DEMO_KOMISJE[2], semestr:'letni 2025/2026', projekty_planowane:22, projekty_zrealizowane:15, kpi_custom:{}, notatka:null, created_at:'' },
-  { id:'p4', komisja_id:'k4', komisja:DEMO_KOMISJE[3], semestr:'letni 2025/2026', projekty_planowane:8,  projekty_zrealizowane:5,  kpi_custom:{}, notatka:null, created_at:'' },
-  { id:'p5', komisja_id:'k5', komisja:DEMO_KOMISJE[4], semestr:'letni 2025/2026', projekty_planowane:15, projekty_zrealizowane:10, kpi_custom:{}, notatka:null, created_at:'' },
-  { id:'p6', komisja_id:'k6', komisja:DEMO_KOMISJE[5], semestr:'letni 2025/2026', projekty_planowane:10, projekty_zrealizowane:7,  kpi_custom:{}, notatka:null, created_at:'' },
+// Z dane_zrodlowe/KPI SSUEW.xlsx (arkusz 20252026): porównanie 2024/2025 → 2025/2026.
+export const DEMO_KPI_METRICS: KpiMetric[] = [
+  // Obecność na SKS (miesięcznie)
+  { id:'sks-10', kategoria:'SKS', nazwa:'Październik', okres_poprzedni:'2024/2025', wartosc_poprzednia:48, okres_biezacy:'2025/2026', wartosc_biezaca:45, created_at:'' },
+  { id:'sks-11', kategoria:'SKS', nazwa:'Listopad',   okres_poprzedni:'2024/2025', wartosc_poprzednia:57, okres_biezacy:'2025/2026', wartosc_biezaca:84, created_at:'' },
+  { id:'sks-12', kategoria:'SKS', nazwa:'Grudzień',   okres_poprzedni:'2024/2025', wartosc_poprzednia:43, okres_biezacy:'2025/2026', wartosc_biezaca:56, created_at:'' },
+  { id:'sks-01', kategoria:'SKS', nazwa:'Styczeń',    okres_poprzedni:'2024/2025', wartosc_poprzednia:41, okres_biezacy:'2025/2026', wartosc_biezaca:56, created_at:'' },
+  { id:'sks-02', kategoria:'SKS', nazwa:'Luty',       okres_poprzedni:'2024/2025', wartosc_poprzednia:34, okres_biezacy:'2025/2026', wartosc_biezaca:44, created_at:'' },
+  { id:'sks-03', kategoria:'SKS', nazwa:'Marzec',     okres_poprzedni:'2024/2025', wartosc_poprzednia:42, okres_biezacy:'2025/2026', wartosc_biezaca:47, created_at:'' },
+  // Zapisy na wydarzenia wewnętrzne
+  { id:'wyd-jwk', kategoria:'Wydarzenia', nazwa:'JWK',        okres_poprzedni:'2024/2025', wartosc_poprzednia:43, okres_biezacy:'2025/2026', wartosc_biezaca:52, created_at:'' },
+  { id:'wyd-wig', kategoria:'Wydarzenia', nazwa:'Wigilia',    okres_poprzedni:'2024/2025', wartosc_poprzednia:83, okres_biezacy:'2025/2026', wartosc_biezaca:77, created_at:'' },
+  { id:'wyd-prz', kategoria:'Wydarzenia', nazwa:'Przydziałki',okres_poprzedni:'2024/2025', wartosc_poprzednia:56, okres_biezacy:'2025/2026', wartosc_biezaca:64, created_at:'' },
+  { id:'wyd-wwk', kategoria:'Wydarzenia', nazwa:'WWK',        okres_poprzedni:'2024/2025', wartosc_poprzednia:45, okres_biezacy:'2025/2026', wartosc_biezaca:40, created_at:'' },
+  // Zwrotność ankiety zarządu
+  { id:'ank-zim', kategoria:'Ankieta', nazwa:'Zimowa Zarządu', okres_poprzedni:'2024/2025', wartosc_poprzednia:47, okres_biezacy:'2025/2026', wartosc_biezaca:28, created_at:'' },
+  // Aplikacje na koordynatorów (wybrane projekty)
+  { id:'koo-wig', kategoria:'Koordynatorzy', nazwa:'Wigilia',  okres_poprzedni:'2024/2025', wartosc_poprzednia:9, okres_biezacy:'2025/2026', wartosc_biezaca:12, created_at:'' },
+  { id:'koo-gal', kategoria:'Koordynatorzy', nazwa:'Gala',     okres_poprzedni:'2024/2025', wartosc_poprzednia:1, okres_biezacy:'2025/2026', wartosc_biezaca:5,  created_at:'' },
+  { id:'koo-ada', kategoria:'Koordynatorzy', nazwa:'Adapciak', okres_poprzedni:'2024/2025', wartosc_poprzednia:2, okres_biezacy:'2025/2026', wartosc_biezaca:1,  created_at:'' },
+  { id:'koo-ani', kategoria:'Koordynatorzy', nazwa:'Animalia', okres_poprzedni:'2024/2025', wartosc_poprzednia:1, okres_biezacy:'2025/2026', wartosc_biezaca:2,  created_at:'' },
 ]

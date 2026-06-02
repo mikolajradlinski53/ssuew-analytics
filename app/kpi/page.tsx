@@ -1,10 +1,10 @@
 import { Suspense } from 'react'
-import KomisjeClient from '@/components/modules/KomisjeClient'
+import KpiClient from '@/components/modules/KpiClient'
 
 export default function Page() {
   return (
     <Suspense fallback={<p className="text-deck-muted text-sm">Ładowanie…</p>}>
-      <KomisjeClient />
+      <KpiClient />
     </Suspense>
   )
 }

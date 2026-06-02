@@ -1,10 +1,9 @@
 import { describe, it, expect } from 'vitest'
 import { buildAlerts } from '@/lib/stats'
-import type { Kohorta, KpiPeriod, Komisja } from '@/types'
+import type { Kohorta, KpiMetric } from '@/types'
 
-function kp(id: string, kod: string, plan: number, real: number): KpiPeriod {
-  const komisja: Komisja = { id, kod, nazwa: kod, przewodniczacy: null, created_at: '' }
-  return { id, komisja_id: id, komisja, semestr: 'letni 2025/2026', projekty_planowane: plan, projekty_zrealizowane: real, notatka: null, created_at: '' }
+function km(id: string, kat: string, nazwa: string, poprz: number, biez: number): KpiMetric {
+  return { id, kategoria: kat, nazwa, okres_poprzedni: '2024/2025', wartosc_poprzednia: poprz, okres_biezacy: '2025/2026', wartosc_biezaca: biez, created_at: '' }
 }
 function koh(edycja: string, sezon: 'jesien' | 'wiosna', rok: number, avg: number): Kohorta {
   return { id: edycja, edycja, sezon, rok, n_czlonkow: 20, avg_retention_sem: avg, max_retention_sem: 8, in_progress: false, created_at: '' }
@@ -15,33 +14,33 @@ describe('buildAlerts', () => {
     expect(buildAlerts([], [], [])).toEqual([])
   })
 
-  it('komisja głęboko poniżej normy → alert krytyczny z linkiem do /komisje', () => {
-    const periods = [
-      kp('k1', 'P.KA.', 10, 8), kp('k2', 'P.KF.', 10, 8), kp('k3', 'P.KKZ.', 10, 8),
-      kp('k4', 'P.KHR.', 10, 8), kp('k5', 'P.KP.', 10, 8), kp('k6', 'P.KDiJK.', 10, 3),
-    ]
-    const alerts = buildAlerts([], [], periods)
+  it('metryka KPI z dużym spadkiem r/r → alert krytyczny z linkiem /kpi', () => {
+    const metrics = [km('m1', 'Wydarzenia', 'Gala', 100, 30)] // ratio 0.3 < 0.6
+    const alerts = buildAlerts([], [], metrics)
     const crit = alerts.find((a) => a.severity === 'critical')
     expect(crit).toBeTruthy()
-    expect(crit!.href).toBe('/komisje')
+    expect(crit!.href).toBe('/kpi')
   })
 
-  it('spadkowy trend retencji → ostrzeżenie z linkiem do /retencja', () => {
+  it('umiarkowany spadek (ratio 0.7) → warning', () => {
+    const alerts = buildAlerts([], [], [km('m2', 'SKS', 'Luty', 100, 70)])
+    expect(alerts.some((a) => a.severity === 'warning' && a.href === '/kpi')).toBe(true)
+  })
+
+  it('wzrost r/r → brak alertu KPI', () => {
+    const alerts = buildAlerts([], [], [km('m3', 'SKS', 'Listopad', 57, 84)])
+    expect(alerts).toEqual([])
+  })
+
+  it('spadkowy trend retencji → ostrzeżenie z linkiem /retencja', () => {
     const cohorts = [koh("W'22", 'wiosna', 2022, 4.4), koh("J'24", 'jesien', 2024, 2.1)]
-    const alerts = buildAlerts([], cohorts, [])
-    expect(alerts.some((a) => a.href === '/retencja')).toBe(true)
+    expect(buildAlerts([], cohorts, []).some((a) => a.href === '/retencja')).toBe(true)
   })
 
   it('sortuje critical przed warning', () => {
-    const periods = [
-      kp('k1', 'P.KA.', 10, 8), kp('k2', 'P.KF.', 10, 8), kp('k3', 'P.KKZ.', 10, 8),
-      kp('k4', 'P.KHR.', 10, 8), kp('k5', 'P.KP.', 10, 8), kp('k6', 'P.KDiJK.', 10, 3),
-    ]
+    const metrics = [km('m1', 'Wydarzenia', 'Gala', 100, 30)]
     const cohorts = [koh("W'22", 'wiosna', 2022, 4.4), koh("J'24", 'jesien', 2024, 2.1)]
-    const alerts = buildAlerts([], cohorts, periods)
-    const sev = alerts.map((a) => a.severity)
-    const firstWarning = sev.indexOf('warning')
-    const lastCritical = sev.lastIndexOf('critical')
-    expect(lastCritical).toBeLessThan(firstWarning)
+    const sev = buildAlerts([], cohorts, metrics).map((a) => a.severity)
+    expect(sev.lastIndexOf('critical')).toBeLessThan(sev.indexOf('warning'))
   })
 })

@@ -56,3 +56,15 @@ export interface RegressionResult {
   prediction: number
   warning: string | null
 }
+
+// Realny model KPI SSUEW: metryka rok-do-roku (wartość zeszłoroczna vs tegoroczna)
+export interface KpiMetric {
+  id: string
+  kategoria: string          // np. 'SKS', 'Wydarzenia', 'Ankieta', 'Koordynatorzy'
+  nazwa: string              // np. 'Październik', 'Wigilia'
+  okres_poprzedni: string    // np. '2024/2025'
+  wartosc_poprzednia: number
+  okres_biezacy: string      // np. '2025/2026'
+  wartosc_biezaca: number
+  created_at: string
+}

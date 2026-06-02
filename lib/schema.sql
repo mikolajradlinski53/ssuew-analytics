@@ -50,6 +50,18 @@ create table if not exists kpi_periods (
   unique (komisja_id, semestr)
 );
 
+-- KPI rok-do-roku (realny model SSUEW): metryka z wartością zeszłoroczną i tegoroczną
+create table if not exists kpi_metrics (
+  id                  uuid primary key default gen_random_uuid(),
+  kategoria           text not null,   -- 'SKS', 'Wydarzenia', 'Ankieta', 'Koordynatorzy'
+  nazwa               text not null,   -- 'Październik', 'Wigilia', ...
+  okres_poprzedni     text not null,   -- '2024/2025'
+  wartosc_poprzednia  numeric not null,
+  okres_biezacy       text not null,   -- '2025/2026'
+  wartosc_biezaca     numeric not null,
+  created_at          timestamptz default now()
+);
+
 -- ─── Row Level Security ──────────────────────────────────────
 -- Na start: odczyt publiczny, zapis tylko authenticated
 -- Docelowo: restrict to @samorzad.ue.wroc.pl OAuth
@@ -58,11 +70,14 @@ alter table rekrutacje   enable row level security;
 alter table kohorty      enable row level security;
 alter table komisje      enable row level security;
 alter table kpi_periods  enable row level security;
+alter table kpi_metrics  enable row level security;
 
 create policy "public read rekrutacje"   on rekrutacje   for select using (true);
 create policy "public read kohorty"      on kohorty      for select using (true);
 create policy "public read komisje"      on komisje      for select using (true);
 create policy "public read kpi_periods"  on kpi_periods  for select using (true);
+create policy "public read kpi_metrics"  on kpi_metrics  for select using (true);
+create policy "auth insert kpi_metrics"  on kpi_metrics  for insert with check (auth.role() = 'authenticated');
 
 create policy "auth insert rekrutacje"   on rekrutacje   for insert with check (auth.role() = 'authenticated');
 create policy "auth update rekrutacje"   on rekrutacje   for update using (auth.role() = 'authenticated');
@@ -103,3 +118,21 @@ insert into komisje (kod, nazwa) values
   ('P.KP.',    'Komisja ds. Promocji'),
   ('P.KDiJK.', 'Komisja ds. DiJK')
 on conflict (kod) do nothing;
+
+-- Realne KPI rok-do-roku (KPI SSUEW.xlsx, arkusz 20252026): 2024/2025 → 2025/2026
+insert into kpi_metrics (kategoria, nazwa, okres_poprzedni, wartosc_poprzednia, okres_biezacy, wartosc_biezaca) values
+  ('SKS', 'Październik', '2024/2025', 48, '2025/2026', 45),
+  ('SKS', 'Listopad',    '2024/2025', 57, '2025/2026', 84),
+  ('SKS', 'Grudzień',    '2024/2025', 43, '2025/2026', 56),
+  ('SKS', 'Styczeń',     '2024/2025', 41, '2025/2026', 56),
+  ('SKS', 'Luty',        '2024/2025', 34, '2025/2026', 44),
+  ('SKS', 'Marzec',      '2024/2025', 42, '2025/2026', 47),
+  ('Wydarzenia', 'JWK',         '2024/2025', 43, '2025/2026', 52),
+  ('Wydarzenia', 'Wigilia',     '2024/2025', 83, '2025/2026', 77),
+  ('Wydarzenia', 'Przydziałki', '2024/2025', 56, '2025/2026', 64),
+  ('Wydarzenia', 'WWK',         '2024/2025', 45, '2025/2026', 40),
+  ('Ankieta', 'Zimowa Zarządu', '2024/2025', 47, '2025/2026', 28),
+  ('Koordynatorzy', 'Wigilia',  '2024/2025', 9, '2025/2026', 12),
+  ('Koordynatorzy', 'Gala',     '2024/2025', 1, '2025/2026', 5),
+  ('Koordynatorzy', 'Adapciak', '2024/2025', 2, '2025/2026', 1),
+  ('Koordynatorzy', 'Animalia', '2024/2025', 1, '2025/2026', 2);
