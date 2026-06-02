@@ -1,8 +1,10 @@
-import { BentoCard } from '@/components/ui/BentoCard'
+import { Suspense } from 'react'
+import LejekClient from '@/components/modules/LejekClient'
+
 export default function Page() {
   return (
-    <BentoCard title="Lejek">
-      <p className="text-xs text-deck-muted">Moduł w przebudowie — wkrótce.</p>
-    </BentoCard>
+    <Suspense fallback={<p className="text-deck-muted text-sm">Ładowanie…</p>}>
+      <LejekClient />
+    </Suspense>
   )
 }
