@@ -445,3 +445,69 @@ export function correlationMatrix(
   }
   return cells
 }
+
+// ─── Prognoza liniowa z przedziałem predykcji ────────────────────────────────
+// Dopasowuje y ~ a + b·i, prognozuje `steps` kolejnych punktów.
+// SE_pred = s·√(1 + 1/n + (x₀−x̄)²/Sxx) — przedział rośnie z odległością.
+
+export interface ForecastPoint {
+  i: number
+  yhat: number
+  lo: number
+  hi: number
+}
+
+export function linearForecast(y: number[], steps: number): ForecastPoint[] {
+  const n = y.length
+  const xs = y.map((_, i) => i)
+  const mx = mean(xs)
+  const my = mean(y)
+  const Sxx = xs.reduce((s, x) => s + (x - mx) ** 2, 0)
+  const b = Sxx === 0 ? 0 : xs.reduce((s, x, i) => s + (x - mx) * (y[i] - my), 0) / Sxx
+  const a = my - b * mx
+  const sse = y.reduce((s, v, i) => s + (v - (a + b * i)) ** 2, 0)
+  const sErr = n > 2 ? Math.sqrt(sse / (n - 2)) : 0
+
+  const r1 = (v: number) => Math.round(v * 10) / 10
+  const out: ForecastPoint[] = []
+  for (let k = 1; k <= steps; k++) {
+    const x0 = n - 1 + k
+    const yhat = a + b * x0
+    const sePred = Sxx > 0 ? sErr * Math.sqrt(1 + 1 / n + (x0 - mx) ** 2 / Sxx) : sErr
+    out.push({ i: x0, yhat: r1(yhat), lo: r1(Math.max(0, yhat - sePred)), hi: r1(yhat + sePred) })
+  }
+  return out
+}
+
+// ─── Model retencji OLS jako predyktor dowolnych wejść ───────────────────────
+// (Oddzielny od analyzeRetention, by nie zmieniać jego zachowania/testów.)
+
+export interface RetentionModel {
+  predict: (edNr: number, sezonJesien: 0 | 1, nCzl: number) => number
+  r2: number
+  n: number
+  residualSd: number
+  nextEdNr: number
+  meanNCzl: number
+}
+
+export function retentionModel(kohort: Kohorta[]): RetentionModel | null {
+  const complete = kohort.filter((k) => !k.in_progress)
+  if (complete.length < 4) return null
+  const sorted = [...complete].sort((a, b) => a.rok - b.rok || (a.sezon === 'wiosna' ? -1 : 1))
+
+  const edNr = sorted.map((_, i) => i)
+  const sezon = sorted.map((k) => (k.sezon === 'jesien' ? 1 : 0))
+  const nCzl = sorted.map((k) => k.n_czlonkow)
+  const y = sorted.map((k) => k.avg_retention_sem)
+
+  const { betas, r2, yhat } = olsMultiple([edNr, sezon, nCzl], y, [])
+  const intercept = mean(y) - betas[0] * mean(edNr) - betas[1] * mean(sezon) - betas[2] * mean(nCzl)
+  const sse = y.reduce((s, v, i) => s + (v - yhat[i]) ** 2, 0)
+  const residualSd = sorted.length > 4 ? Math.sqrt(sse / (sorted.length - 4)) : 0
+
+  const predict = (e: number, sz: 0 | 1, nc: number) =>
+    Math.max(0, intercept + betas[0] * e + betas[1] * sz + betas[2] * nc)
+
+  return { predict, r2, n: sorted.length, residualSd, nextEdNr: sorted.length, meanNCzl: mean(nCzl) }
+}
