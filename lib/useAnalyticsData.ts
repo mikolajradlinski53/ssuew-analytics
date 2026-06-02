@@ -71,26 +71,27 @@ export function useAnalyticsData() {
 
 // ─── Dane demo (używane gdy Supabase nie jest skonfigurowane) ─────────────────
 
+// Realne dane SSUEW (z dane_zrodlowe/KPI SSUEW.xlsx — "PRZYJĘCI DZIAŁACZE").
+// Zgłoszenia/przyjęci dostępne od rekrutacji Jesień 2023.
 export const DEMO_REKRUTACJE: Rekrutacja[] = [
-  { id:'1', edycja:"W'22", sezon:'wiosna', rok:2022, zgloszenia:13, przyjeci:11, created_at:'' },
-  { id:'2', edycja:"J'22", sezon:'jesien', rok:2022, zgloszenia:40, przyjeci:33, created_at:'' },
-  { id:'3', edycja:"W'23", sezon:'wiosna', rok:2023, zgloszenia:13, przyjeci:10, created_at:'' },
-  { id:'4', edycja:"J'23", sezon:'jesien', rok:2023, zgloszenia:32, przyjeci:28, created_at:'' },
-  { id:'5', edycja:"W'24", sezon:'wiosna', rok:2024, zgloszenia:11, przyjeci:13, created_at:'' },
-  { id:'6', edycja:"J'24", sezon:'jesien', rok:2024, zgloszenia:32, przyjeci:13, created_at:'' },
-  { id:'7', edycja:"W'25", sezon:'wiosna', rok:2025, zgloszenia:10, przyjeci:10, created_at:'' },
-  { id:'8', edycja:"J'25", sezon:'jesien', rok:2025, zgloszenia:43, przyjeci:14, created_at:'' },
+  { id:'1', edycja:"J'23", sezon:'jesien', rok:2023, zgloszenia:100, przyjeci:38, created_at:'' },
+  { id:'2', edycja:"W'24", sezon:'wiosna', rok:2024, zgloszenia:28,  przyjeci:13, created_at:'' },
+  { id:'3', edycja:"J'24", sezon:'jesien', rok:2024, zgloszenia:149, przyjeci:38, created_at:'' },
+  { id:'4', edycja:"W'25", sezon:'wiosna', rok:2025, zgloszenia:31,  przyjeci:10, created_at:'' },
+  { id:'5', edycja:"J'25", sezon:'jesien', rok:2025, zgloszenia:138, przyjeci:45, created_at:'' },
+  { id:'6', edycja:"W'26", sezon:'wiosna', rok:2026, zgloszenia:18,  przyjeci:11, created_at:'' },
 ]
 
+// Realne dane SSUEW (z dane_zrodlowe/Analiza - długość działania.xlsx — PODSUMOWANIE).
+// n_czlonkow = liczebność kohorty; avg/max = semestry aktywności.
 export const DEMO_KOHORTY: Kohorta[] = [
-  { id:'1', edycja:"W'22", sezon:'wiosna', rok:2022, n_czlonkow:11, avg_retention_sem:4.36, max_retention_sem:9,  in_progress:false, created_at:'' },
-  { id:'2', edycja:"J'22", sezon:'jesien', rok:2022, n_czlonkow:33, avg_retention_sem:4.24, max_retention_sem:8,  in_progress:false, created_at:'' },
-  { id:'3', edycja:"W'23", sezon:'wiosna', rok:2023, n_czlonkow:10, avg_retention_sem:4.20, max_retention_sem:7,  in_progress:false, created_at:'' },
-  { id:'4', edycja:"J'23", sezon:'jesien', rok:2023, n_czlonkow:28, avg_retention_sem:3.86, max_retention_sem:6,  in_progress:false, created_at:'' },
+  { id:'1', edycja:"W'22", sezon:'wiosna', rok:2022, n_czlonkow:14, avg_retention_sem:4.36, max_retention_sem:9,  in_progress:false, created_at:'' },
+  { id:'2', edycja:"J'22", sezon:'jesien', rok:2022, n_czlonkow:39, avg_retention_sem:4.24, max_retention_sem:8,  in_progress:false, created_at:'' },
+  { id:'3', edycja:"W'23", sezon:'wiosna', rok:2023, n_czlonkow:11, avg_retention_sem:4.20, max_retention_sem:7,  in_progress:false, created_at:'' },
+  { id:'4', edycja:"J'23", sezon:'jesien', rok:2023, n_czlonkow:39, avg_retention_sem:3.86, max_retention_sem:6,  in_progress:false, created_at:'' },
   { id:'5', edycja:"W'24", sezon:'wiosna', rok:2024, n_czlonkow:13, avg_retention_sem:2.69, max_retention_sem:5,  in_progress:false, created_at:'' },
-  { id:'6', edycja:"J'24", sezon:'jesien', rok:2024, n_czlonkow:30, avg_retention_sem:3.53, max_retention_sem:4,  in_progress:false, created_at:'' },
+  { id:'6', edycja:"J'24", sezon:'jesien', rok:2024, n_czlonkow:38, avg_retention_sem:3.53, max_retention_sem:4,  in_progress:false, created_at:'' },
   { id:'7', edycja:"W'25", sezon:'wiosna', rok:2025, n_czlonkow:10, avg_retention_sem:1.80, max_retention_sem:3,  in_progress:true,  created_at:'' },
-  { id:'8', edycja:"J'25", sezon:'jesien', rok:2025, n_czlonkow:14, avg_retention_sem:0.50, max_retention_sem:1,  in_progress:true,  created_at:'' },
 ]
 
 export const DEMO_KOMISJE: Komisja[] = [

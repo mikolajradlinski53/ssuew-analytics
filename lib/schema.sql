@@ -74,26 +74,25 @@ create policy "auth update kpi_periods"  on kpi_periods  for update using (auth.
 
 -- ─── Dane historyczne SSUEW (seed) ───────────────────────────
 
+-- Realne dane (KPI SSUEW.xlsx — PRZYJĘCI DZIAŁACZE); zgłoszenia od rekrutacji J'23.
 insert into rekrutacje (edycja, sezon, rok, zgloszenia, przyjeci) values
-  ('W''22', 'wiosna', 2022, 13, 11),
-  ('J''22', 'jesien', 2022, 40, 33),
-  ('W''23', 'wiosna', 2023, 13, 10),
-  ('J''23', 'jesien', 2023, 32, 28),
-  ('W''24', 'wiosna', 2024, 11, 13),
-  ('J''24', 'jesien', 2024, 32, 13),
-  ('W''25', 'wiosna', 2025, 10, 10),
-  ('J''25', 'jesien', 2025, 43, 14)
+  ('J''23', 'jesien', 2023, 100, 38),
+  ('W''24', 'wiosna', 2024, 28,  13),
+  ('J''24', 'jesien', 2024, 149, 38),
+  ('W''25', 'wiosna', 2025, 31,  10),
+  ('J''25', 'jesien', 2025, 138, 45),
+  ('W''26', 'wiosna', 2026, 18,  11)
 on conflict (edycja) do nothing;
 
+-- Realne dane (Analiza - długość działania.xlsx — PODSUMOWANIE).
 insert into kohorty (edycja, sezon, rok, n_czlonkow, avg_retention_sem, max_retention_sem, in_progress) values
-  ('W''22', 'wiosna', 2022, 11, 4.36, 9,  false),
-  ('J''22', 'jesien', 2022, 33, 4.24, 8,  false),
-  ('W''23', 'wiosna', 2023, 10, 4.20, 7,  false),
-  ('J''23', 'jesien', 2023, 28, 3.86, 6,  false),
+  ('W''22', 'wiosna', 2022, 14, 4.36, 9,  false),
+  ('J''22', 'jesien', 2022, 39, 4.24, 8,  false),
+  ('W''23', 'wiosna', 2023, 11, 4.20, 7,  false),
+  ('J''23', 'jesien', 2023, 39, 3.86, 6,  false),
   ('W''24', 'wiosna', 2024, 13, 2.69, 5,  false),
-  ('J''24', 'jesien', 2024, 30, 3.53, 4,  false),
-  ('W''25', 'wiosna', 2025, 10, 1.80, 3,  true),
-  ('J''25', 'jesien', 2025, 14, 0.00, 1,  true)
+  ('J''24', 'jesien', 2024, 38, 3.53, 4,  false),
+  ('W''25', 'wiosna', 2025, 10, 1.80, 3,  true)
 on conflict (edycja) do nothing;
 
 insert into komisje (kod, nazwa) values
