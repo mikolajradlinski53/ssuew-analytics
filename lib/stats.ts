@@ -1,4 +1,4 @@
-import type { Rekrutacja, Kohorta, KpiPeriod, StatResult, RegressionResult } from '@/types'
+import type { Rekrutacja, Kohorta, KpiPeriod, StatResult, RegressionResult, Sezon } from '@/types'
 
 // ─── Podstawowe funkcje ──────────────────────────────────────────────────────
 
@@ -181,6 +181,13 @@ export function olsMultiple(
   const betas_mat = matMul(XtXinv, Xty)
   const betas = betas_mat.map(r => r[0])
 
+  // Guard: współliniowe dane → macierz osobliwa → NaN/Infinity. Zwróć degenerację,
+  // którą caller (np. analyzeRetention) zgłosi jako słabe dopasowanie (r2=0).
+  if (betas.some(b => !Number.isFinite(b))) {
+    const my0 = mean(y)
+    return { betas: new Array(X_raw.length).fill(0), r2: 0, yhat: y.map(() => my0) }
+  }
+
   const yhat = X.map(row => betas.reduce((s, b, j) => s + b * row[j], 0))
   const my = mean(y)
   const sst = y.reduce((s, v) => s + (v - my) ** 2, 0)
@@ -315,4 +322,126 @@ export function analyzeKomisje(periods: KpiPeriod[]) {
       interpretation: zInterpretation(zs[i])
     }))
   }
+}
+
+// ─── Krzywa przeżycia kohort (aproksymacja wykładnicza) ──────────────────────
+// S(sem) = exp(−sem / avg). Średnia rozkładu = avg (spójne z avg_retention_sem).
+
+export function retentionFraction(avg: number, sem: number): number {
+  if (avg <= 0) return sem <= 0 ? 1 : 0
+  return Math.exp(-sem / avg)
+}
+
+export function survivalCurve(avg: number, max: number): { sem: number; pct: number }[] {
+  const maxSem = Math.max(0, Math.round(max))
+  const out: { sem: number; pct: number }[] = []
+  for (let s = 0; s <= maxSem; s++) {
+    out.push({ sem: s, pct: Math.round(100 * retentionFraction(avg, s) * 10) / 10 })
+  }
+  return out
+}
+
+// ─── Lejek rekrutacyjny ──────────────────────────────────────────────────────
+
+export interface FunnelStage {
+  stage: string
+  count: number
+  pct: number
+}
+
+export function buildFunnel(
+  rekr: Rekrutacja[],
+  koh: Kohorta[],
+  opts: { edycja?: string; threshold: number },
+): FunnelStage[] {
+  const kohByEd = new Map(koh.map((k) => [k.edycja, k]))
+  const rows = opts.edycja ? rekr.filter((r) => r.edycja === opts.edycja) : rekr
+
+  let zgloszenia = 0
+  let przyjeci = 0
+  let aktywni = 0
+  let utrzymani = 0
+  for (const r of rows) {
+    zgloszenia += r.zgloszenia
+    przyjeci += r.przyjeci
+    const k = kohByEd.get(r.edycja)
+    if (k) {
+      aktywni += k.n_czlonkow
+      utrzymani += Math.round(k.n_czlonkow * retentionFraction(k.avg_retention_sem, opts.threshold))
+    }
+  }
+
+  const raw = [
+    { stage: 'Zgłoszenia', count: zgloszenia },
+    { stage: 'Przyjęci', count: przyjeci },
+    { stage: 'Aktywni', count: aktywni },
+    { stage: `Utrzymani po ${opts.threshold} sem.`, count: utrzymani },
+  ]
+  return raw.map((s) => ({
+    ...s,
+    pct: zgloszenia > 0 ? Math.round((s.count / zgloszenia) * 1000) / 10 : 0,
+  }))
+}
+
+// ─── Mapowanie semestru KPI na edycję + agregat organizacyjny ────────────────
+
+export function parseSemestr(s: string): { sezon: Sezon; rok: number } | null {
+  const m = s.trim().toLowerCase().match(/^(letni|zimowy)\s+(\d{4})\/\d{4}$/)
+  if (!m) return null
+  const typ = m[1]
+  const y1 = Number(m[2])
+  return typ === 'zimowy' ? { sezon: 'jesien', rok: y1 } : { sezon: 'wiosna', rok: y1 + 1 }
+}
+
+export function orgKpiByEdition(periods: KpiPeriod[]): Map<string, number> {
+  const bySem = new Map<string, number[]>()
+  for (const p of periods) {
+    if (p.projekty_planowane <= 0) continue
+    const pct = (p.projekty_zrealizowane / p.projekty_planowane) * 100
+    const arr = bySem.get(p.semestr) ?? []
+    arr.push(pct)
+    bySem.set(p.semestr, arr)
+  }
+  const out = new Map<string, number>()
+  for (const [sem, arr] of bySem) {
+    const ed = parseSemestr(sem)
+    if (!ed) continue
+    const avg = arr.reduce((a, b) => a + b, 0) / arr.length
+    out.set(`${ed.sezon}-${ed.rok}`, Math.round(avg * 10) / 10)
+  }
+  return out
+}
+
+// ─── Macierz korelacji ───────────────────────────────────────────────────────
+
+export interface CorrCell {
+  a: string
+  b: string
+  r: number | null
+  significant: boolean
+}
+
+export function correlationMatrix(
+  rows: Record<string, number | null>[],
+  vars: string[],
+): CorrCell[] {
+  const cells: CorrCell[] = []
+  for (const a of vars) {
+    for (const b of vars) {
+      if (a === b) {
+        cells.push({ a, b, r: 1, significant: true })
+        continue
+      }
+      const pairs = rows
+        .map((row) => [row[a], row[b]] as const)
+        .filter(([x, y]) => x != null && y != null) as [number, number][]
+      if (pairs.length < 3) {
+        cells.push({ a, b, r: null, significant: false })
+        continue
+      }
+      const res = pearsonTest(pairs.map((p) => p[0]), pairs.map((p) => p[1]))
+      cells.push({ a, b, r: res.r, significant: res.significant })
+    }
+  }
+  return cells
 }
