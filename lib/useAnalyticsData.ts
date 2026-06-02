@@ -14,20 +14,26 @@ export function useAnalyticsData() {
     setLoading(true)
     setError(null)
     try {
-      const [rRes, kRes] = await Promise.all([
+      const [rRes, kRes, kohRes] = await Promise.all([
         fetch('/api/rekrutacje'),
         fetch('/api/kpi'),
+        fetch('/api/kohorty'),
       ])
       if (!rRes.ok || !kRes.ok) throw new Error('Błąd pobierania danych')
-      const [rData, kData] = await Promise.all([rRes.json(), kRes.json()])
+      const [rData, kData, kohData] = await Promise.all([
+        rRes.json(),
+        kRes.json(),
+        kohRes.ok ? kohRes.json() : [],
+      ])
 
       // Preferuj dane live; gdy backend pusty/niewdrożony — dane demo (realne SSUEW)
       const liveRekr = Array.isArray(rData) && rData.length > 0
       const liveKpi  = Array.isArray(kData) && kData.length > 0
+      const liveKoh  = Array.isArray(kohData) && kohData.length > 0
       setRekrutacje(liveRekr ? rData : DEMO_REKRUTACJE)
       setKpiMetrics(liveKpi  ? kData : DEMO_KPI_METRICS)
-      setKohorty(DEMO_KOHORTY)   // brak endpointu kohort — dane historyczne
-      setUsingDemo(!liveRekr && !liveKpi)
+      setKohorty(liveKoh ? kohData : DEMO_KOHORTY)
+      setUsingDemo(!liveRekr && !liveKpi && !liveKoh)
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : 'Nieznany błąd'
       setError(msg)
@@ -62,7 +68,17 @@ export function useAnalyticsData() {
     await fetchAll()
   }
 
-  return { rekrutacje, kohorty, kpiMetrics, loading, error, usingDemo, addRekrutacja, addKpiMetric, refresh: fetchAll }
+  const addKohorta = async (payload: Omit<Kohorta, 'id' | 'created_at' | 'survival'>) => {
+    const res = await fetch('/api/kohorty', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    })
+    if (!res.ok) throw new Error(await res.text())
+    await fetchAll()
+  }
+
+  return { rekrutacje, kohorty, kpiMetrics, loading, error, usingDemo, addRekrutacja, addKpiMetric, addKohorta, refresh: fetchAll }
 }
 
 // ─── Dane demo (realne dane SSUEW, używane gdy Supabase nie jest skonfigurowane) ─

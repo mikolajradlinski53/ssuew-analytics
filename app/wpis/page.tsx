@@ -1,8 +1,10 @@
-import { BentoCard } from '@/components/ui/BentoCard'
+import { Suspense } from 'react'
+import WpisClient from '@/components/modules/WpisClient'
+
 export default function Page() {
   return (
-    <BentoCard title="Wpisz dane">
-      <p className="text-xs text-deck-muted">Formularze w przebudowie — wkrótce.</p>
-    </BentoCard>
+    <Suspense fallback={<p className="text-deck-muted text-sm">Ładowanie…</p>}>
+      <WpisClient />
+    </Suspense>
   )
 }
