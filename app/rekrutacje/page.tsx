@@ -1,8 +1,10 @@
-import { BentoCard } from '@/components/ui/BentoCard'
+import { Suspense } from 'react'
+import RekrutacjeClient from '@/components/modules/RekrutacjeClient'
+
 export default function Page() {
   return (
-    <BentoCard title="Rekrutacje">
-      <p className="text-xs text-deck-muted">Moduł w przebudowie — wkrótce.</p>
-    </BentoCard>
+    <Suspense fallback={<p className="text-deck-muted text-sm">Ładowanie…</p>}>
+      <RekrutacjeClient />
+    </Suspense>
   )
 }
