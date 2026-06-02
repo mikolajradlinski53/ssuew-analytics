@@ -8,10 +8,8 @@ export function useFilters() {
   const pathname = usePathname()
   const searchParams = useSearchParams()
 
-  const filters = useMemo(
-    () => parseFilters(new URLSearchParams(searchParams.toString())),
-    [searchParams],
-  )
+  // searchParams (ReadonlyURLSearchParams) rozszerza URLSearchParams — parseFilters tylko czyta.
+  const filters = useMemo(() => parseFilters(searchParams), [searchParams])
 
   const setFilters = useCallback(
     (next: Filters) => {

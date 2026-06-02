@@ -39,7 +39,12 @@ describe('applyFilters', () => {
   it('filtruje po sezonie', () => {
     expect(applyFilters(rows, { sezon: 'jesien', fromYear: null, toYear: null })).toHaveLength(2)
   })
-  it('filtruje po zakresie lat', () => {
+  it('filtruje po zakresie lat (dolna granica)', () => {
     expect(applyFilters(rows, { sezon: 'all', fromYear: 2024, toYear: null })).toHaveLength(2)
+  })
+  it('filtruje po zakresie lat (górna granica)', () => {
+    const out = applyFilters(rows, { sezon: 'all', fromYear: null, toYear: 2023 })
+    expect(out).toHaveLength(1)
+    expect(out[0].rok).toBe(2022)
   })
 })

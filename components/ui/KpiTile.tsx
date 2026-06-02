@@ -19,7 +19,7 @@ export function KpiTile({ label, value, sub, accent = 'default' }: Props) {
   return (
     <div className="bg-deck-panel border border-deck-border rounded-lg p-3">
       <div className="text-[10px] uppercase tracking-wide text-deck-muted">{label}</div>
-      <div className={`text-2xl font-semibold tabular ${valueColor[accent]}`}>{value}</div>
+      <div className={`text-2xl font-semibold tabular-nums ${valueColor[accent]}`}>{value}</div>
       {sub && <div className="text-[10px] text-deck-muted mt-0.5">{sub}</div>}
     </div>
   )

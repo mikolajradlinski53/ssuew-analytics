@@ -17,13 +17,16 @@ function zColor(z: number): string {
 }
 
 export default function OverviewClient() {
-  const { rekrutacje, kohorty, kpiPeriods, loading } = useAnalyticsData()
+  const { rekrutacje, kohorty, kpiPeriods, loading, usingDemo } = useAnalyticsData()
   const { filters } = useFilters()
 
   if (loading) return <p className="text-deck-muted text-sm">Ładowanie…</p>
 
   const rekr = applyFilters(rekrutacje, filters)
-  const m = computeOverview(rekr, kohorty, kpiPeriods)
+  const koh = applyFilters(kohorty, filters)
+  // kpiPeriods nie filtrujemy po roku/sezonie — KpiPeriod jest kluczowane semestrem (string),
+  // bez pól rok/sezon. Z-score komisji liczymy z całości.
+  const m = computeOverview(rekr, koh, kpiPeriods)
   const kom = kpiPeriods.length >= 2 ? analyzeKomisje(kpiPeriods) : null
 
   const barData = [...rekr]
@@ -31,7 +34,13 @@ export default function OverviewClient() {
     .map((r) => ({ edycja: r.edycja, zgłoszenia: r.zgloszenia, przyjęci: r.przyjeci }))
 
   return (
-    <div className="grid grid-cols-4 gap-2">
+    <div className="space-y-3">
+      {usingDemo && (
+        <div className="inline-block text-[11px] text-deck-warn border border-deck-warn/40 rounded-md px-2 py-1">
+          Tryb demo — skonfiguruj Supabase, aby zobaczyć dane na żywo
+        </div>
+      )}
+      <div className="grid grid-cols-4 gap-2">
       <KpiTile
         label="Conversion (avg)"
         value={m.avgConversion != null ? `${m.avgConversion}%` : '—'}
@@ -77,7 +86,7 @@ export default function OverviewClient() {
           <div className="flex gap-2">
             {kom.withZ.map((c) => (
               <div key={c.id} className="flex-1 text-center">
-                <div className={`text-sm font-semibold tabular ${zColor(c.z)}`}>
+                <div className={`text-sm font-semibold tabular-nums ${zColor(c.z)}`}>
                   {c.z > 0 ? '+' : ''}
                   {c.z.toFixed(1)}
                 </div>
@@ -89,6 +98,7 @@ export default function OverviewClient() {
           <p className="text-[11px] text-deck-muted">Za mało danych KPI.</p>
         )}
       </BentoCard>
+      </div>
     </div>
   )
 }

@@ -4,8 +4,10 @@ import { describe, it, expect, vi } from 'vitest'
 
 vi.mock('next/navigation', () => ({ usePathname: () => '/' }))
 vi.mock('next/link', () => ({
-  default: ({ children, href }: { children: ReactNode; href: string }) => (
-    <a href={href}>{children}</a>
+  default: ({ children, href, ...rest }: { children: ReactNode; href: string }) => (
+    <a href={href} {...rest}>
+      {children}
+    </a>
   ),
 }))
 
@@ -18,5 +20,16 @@ describe('Sidebar', () => {
     expect(screen.getByText('Rekrutacje')).toBeInTheDocument()
     expect(screen.getByText('Korelacje')).toBeInTheDocument()
     expect(screen.getByText(/Wpisz dane/)).toBeInTheDocument()
+  })
+
+  it('linki mają poprawne href', () => {
+    render(<Sidebar />)
+    expect(screen.getByRole('link', { name: /Rekrutacje/ })).toHaveAttribute('href', '/rekrutacje')
+    expect(screen.getByRole('link', { name: /Wpisz dane/ })).toHaveAttribute('href', '/wpis')
+  })
+
+  it('podświetla aktywną pozycję (pathname=/)', () => {
+    render(<Sidebar />)
+    expect(screen.getByRole('link', { name: /Przegląd/ }).className).toContain('text-deck-accent')
   })
 })

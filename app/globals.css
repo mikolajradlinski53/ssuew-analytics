@@ -23,7 +23,3 @@ body {
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
 }
-
-.tabular {
-  font-variant-numeric: tabular-nums;
-}
