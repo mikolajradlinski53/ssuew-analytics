@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabase, isConfigured } from '@/lib/supabase'
+import { createClient } from '@/lib/supabase/server'
+import { isConfigured } from '@/lib/supabase/config'
 
 export async function GET() {
   if (!isConfigured) return NextResponse.json([])
+  const supabase = await createClient()
   const { data, error } = await supabase.from('kpi_periods')
     .select('*, komisja:komisje(*)').order('created_at', { ascending: false })
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
@@ -11,6 +13,9 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   if (!isConfigured) return NextResponse.json({ error: 'Supabase nie skonfigurowany' }, { status: 503 })
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return NextResponse.json({ error: 'Wymagane logowanie' }, { status: 401 })
   const body = await req.json()
   const { komisja_id, semestr, projekty_planowane, projekty_zrealizowane, kpi_custom, notatka } = body
   if (!komisja_id || !semestr || !projekty_planowane || projekty_zrealizowane == null)
