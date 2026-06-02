@@ -511,3 +511,18 @@ export function retentionModel(kohort: Kohorta[]): RetentionModel | null {
 
   return { predict, r2, n: sorted.length, residualSd, nextEdNr: sorted.length, meanNCzl: mean(nCzl) }
 }
+
+// ─── Grupowanie KPI po komisji (drill-down / trend) ──────────────────────────
+
+export function kpiByKomisja(periods: KpiPeriod[]): Map<string, KpiPeriod[]> {
+  const m = new Map<string, KpiPeriod[]>()
+  for (const p of periods) {
+    const arr = m.get(p.komisja_id) ?? []
+    arr.push(p)
+    m.set(p.komisja_id, arr)
+  }
+  for (const arr of m.values()) {
+    arr.sort((a, b) => a.created_at.localeCompare(b.created_at))
+  }
+  return m
+}
