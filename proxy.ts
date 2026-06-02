@@ -19,7 +19,17 @@ export async function proxy(request: NextRequest) {
     },
   })
 
-  await supabase.auth.getUser()
+  const { data: { user } } = await supabase.auth.getUser()
+
+  // Pełna blokada: bez logowania nie ma dostępu do żadnej strony (poza /login).
+  // API ma własną autoryzację; zasoby statyczne wykluczone przez matcher.
+  const path = request.nextUrl.pathname
+  if (!user && path !== '/login' && !path.startsWith('/api')) {
+    const url = request.nextUrl.clone()
+    url.pathname = '/login'
+    return NextResponse.redirect(url)
+  }
+
   return response
 }
 

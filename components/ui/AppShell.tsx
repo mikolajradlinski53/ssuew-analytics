@@ -1,11 +1,19 @@
 'use client'
 import { Suspense, type ReactNode } from 'react'
+import { usePathname } from 'next/navigation'
 import { Sidebar } from './Sidebar'
 import { FilterBar } from './FilterBar'
 import { ExportButton } from './ExportButton'
 import { AuthStatus } from './AuthStatus'
 
 export function AppShell({ children }: { children: ReactNode }) {
+  const pathname = usePathname()
+
+  // Strona logowania bez chrome (sidebar/topbar) — „nic nie widać" przed zalogowaniem.
+  if (pathname === '/login') {
+    return <div className="min-h-screen bg-deck-bg-deep">{children}</div>
+  }
+
   return (
     <div className="flex min-h-screen bg-deck-bg-deep">
       <Sidebar />
