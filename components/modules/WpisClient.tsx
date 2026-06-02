@@ -1,19 +1,21 @@
 'use client'
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { useAnalyticsData } from '@/lib/useAnalyticsData'
 import { createClient } from '@/lib/supabase/client'
 import { isConfigured } from '@/lib/supabase/config'
+import { nextOkres } from '@/lib/period'
+import { kpiByKategoria } from '@/lib/stats'
 import { BentoCard } from '@/components/ui/BentoCard'
 import { ModuleSkeleton } from '@/components/ui/ModuleSkeleton'
 
-type Tab = 'rekrutacja' | 'kohorta' | 'kpi'
+type Tab = 'rekrutacja' | 'kohorta' | 'kpi' | 'rocznik'
 const inputCls = 'w-full bg-deck-bg border border-deck-border rounded-md px-3 py-2 text-sm text-deck-text'
 const labelCls = 'block text-[11px] text-deck-muted mb-1'
 const btnCls = 'w-full bg-deck-accent text-deck-bg-deep rounded-md px-3 py-2 text-sm font-semibold disabled:opacity-50'
 
 export default function WpisClient() {
-  const { addRekrutacja, addKohorta, addKpiMetric } = useAnalyticsData()
+  const { kpiMetrics, addRekrutacja, addKohorta, addKpiMetric, addKpiMetricsBulk } = useAnalyticsData()
   const [authed, setAuthed] = useState<boolean | null>(null)
   const [tab, setTab] = useState<Tab>('rekrutacja')
   const [status, setStatus] = useState<{ ok: boolean; msg: string } | null>(null)
@@ -33,6 +35,15 @@ export default function WpisClient() {
   const [rekr, setRekr] = useState({ edycja: '', sezon: 'jesien' as 'jesien' | 'wiosna', rok: new Date().getFullYear(), zgloszenia: '', przyjeci: '' })
   const [koh, setKoh] = useState({ edycja: '', sezon: 'jesien' as 'jesien' | 'wiosna', rok: new Date().getFullYear(), n: '', avg: '', max: '', inProgress: false })
   const [kpi, setKpi] = useState({ kategoria: 'SKS', nazwa: '', okres_poprzedni: '2024/2025', wartosc_poprzednia: '', okres_biezacy: '2025/2026', wartosc_biezaca: '' })
+
+  // Rocznik KPI (wsadowo): nowy okres + wartości per istniejąca metryka
+  const latestOkres = useMemo(() => kpiMetrics[0]?.okres_biezacy ?? '2025/2026', [kpiMetrics])
+  const grouped = useMemo(() => kpiByKategoria(kpiMetrics), [kpiMetrics])
+  const [rocznikOkres, setRocznikOkres] = useState('')
+  const [rocznikVals, setRocznikVals] = useState<Record<string, string>>({})
+  useEffect(() => {
+    if (!rocznikOkres) setRocznikOkres(nextOkres(latestOkres))
+  }, [latestOkres, rocznikOkres])
 
   if (authed === null) return <ModuleSkeleton />
   if (!authed) {
@@ -76,13 +87,31 @@ export default function WpisClient() {
       setKpi({ kategoria: 'SKS', nazwa: '', okres_poprzedni: '2024/2025', wartosc_poprzednia: '', okres_biezacy: '2025/2026', wartosc_biezaca: '' })
     }, `Metryka KPI „${kpi.nazwa}" zapisana.`)
 
+  const submitRocznik = () => {
+    const payloads = kpiMetrics
+      .filter((m) => rocznikVals[m.id]?.trim())
+      .map((m) => ({
+        kategoria: m.kategoria,
+        nazwa: m.nazwa,
+        okres_poprzedni: m.okres_biezacy,
+        wartosc_poprzednia: m.wartosc_biezaca,
+        okres_biezacy: rocznikOkres,
+        wartosc_biezaca: parseFloat(rocznikVals[m.id]),
+      }))
+    run(async () => {
+      if (!payloads.length) throw new Error('Wpisz przynajmniej jedną wartość.')
+      await addKpiMetricsBulk(payloads)
+      setRocznikVals({})
+    }, `Zapisano rocznik ${rocznikOkres} (${payloads.length} metryk).`)
+  }
+
   return (
-    <div className="max-w-xl space-y-3">
-      <div className="flex gap-2">
-        {(['rekrutacja', 'kohorta', 'kpi'] as Tab[]).map((t) => (
+    <div className="max-w-2xl space-y-3">
+      <div className="flex gap-2 flex-wrap">
+        {(['rekrutacja', 'kohorta', 'kpi', 'rocznik'] as Tab[]).map((t) => (
           <button key={t} onClick={() => { setTab(t); setStatus(null) }}
             className={`text-[11px] px-3 py-1 rounded-md border ${tab === t ? 'bg-deck-accent/10 text-deck-accent border-deck-accent/40' : 'text-deck-muted border-deck-border'}`}>
-            {t === 'rekrutacja' ? 'Rekrutacja' : t === 'kohorta' ? 'Kohorta' : 'Metryka KPI'}
+            {t === 'rekrutacja' ? 'Rekrutacja' : t === 'kohorta' ? 'Kohorta' : t === 'kpi' ? 'Metryka KPI' : 'Rocznik KPI'}
           </button>
         ))}
       </div>
@@ -157,6 +186,43 @@ export default function WpisClient() {
               <div><label className={labelCls}>Wartość bieżąca</label><input type="number" step="0.01" className={inputCls} value={kpi.wartosc_biezaca} onChange={(e) => setKpi((p) => ({ ...p, wartosc_biezaca: e.target.value }))} /></div>
             </div>
             <button onClick={submitKpi} disabled={busy || !kpi.nazwa} className={btnCls}>{busy ? 'Zapisywanie…' : 'Zapisz metrykę'}</button>
+          </div>
+        </BentoCard>
+      )}
+
+      {tab === 'rocznik' && (
+        <BentoCard title="Nowy rocznik KPI" sub="wpisz tegoroczne wartości — poprzednie przeniesione automatycznie">
+          <div className="space-y-3">
+            <div className="flex items-end gap-3">
+              <div className="w-40"><label className={labelCls}>Nowy okres</label><input className={inputCls} value={rocznikOkres} onChange={(e) => setRocznikOkres(e.target.value)} /></div>
+              <p className="text-[10px] text-deck-muted pb-2">przenosimy z: {latestOkres}</p>
+            </div>
+            {kpiMetrics.length === 0 ? (
+              <p className="text-[11px] text-deck-muted">Brak istniejących metryk do przeniesienia.</p>
+            ) : (
+              [...grouped.entries()].map(([kat, metrics]) => (
+                <div key={kat}>
+                  <div className="text-[11px] text-deck-text font-medium mb-1">{kat}</div>
+                  <div className="space-y-1">
+                    {metrics.map((m) => (
+                      <div key={m.id} className="flex items-center gap-2 text-[11px]">
+                        <span className="text-deck-muted flex-1 truncate">{m.nazwa}</span>
+                        <span className="text-deck-muted tabular w-16 text-right">{m.wartosc_biezaca} →</span>
+                        <input
+                          type="number"
+                          step="0.01"
+                          placeholder="nowa"
+                          className="w-24 bg-deck-bg border border-deck-border rounded-md px-2 py-1 text-[11px] text-deck-text"
+                          value={rocznikVals[m.id] ?? ''}
+                          onChange={(e) => setRocznikVals((v) => ({ ...v, [m.id]: e.target.value }))}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))
+            )}
+            <button onClick={submitRocznik} disabled={busy} className={btnCls}>{busy ? 'Zapisywanie…' : `Zapisz rocznik ${rocznikOkres}`}</button>
           </div>
         </BentoCard>
       )}

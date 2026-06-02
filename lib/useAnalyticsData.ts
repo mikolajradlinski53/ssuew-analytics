@@ -78,7 +78,18 @@ export function useAnalyticsData() {
     await fetchAll()
   }
 
-  return { rekrutacje, kohorty, kpiMetrics, loading, error, usingDemo, addRekrutacja, addKpiMetric, addKohorta, refresh: fetchAll }
+  // Wsadowy zapis metryk KPI (cały nowy rocznik naraz).
+  const addKpiMetricsBulk = async (payloads: Omit<KpiMetric, 'id' | 'created_at'>[]) => {
+    const res = await fetch('/api/kpi', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payloads),
+    })
+    if (!res.ok) throw new Error(await res.text())
+    await fetchAll()
+  }
+
+  return { rekrutacje, kohorty, kpiMetrics, loading, error, usingDemo, addRekrutacja, addKpiMetric, addKohorta, addKpiMetricsBulk, refresh: fetchAll }
 }
 
 // ─── Dane demo (realne dane SSUEW, używane gdy Supabase nie jest skonfigurowane) ─
