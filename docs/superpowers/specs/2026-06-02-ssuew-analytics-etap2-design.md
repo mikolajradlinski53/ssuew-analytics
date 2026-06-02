@@ -100,7 +100,12 @@ zamiast NaN) — ulepszenie z master-spec §9, bo i tak dotykamy `lib/stats.ts`.
 ## 8. Nie-cele (poza Etapem 2)
 
 - Zmiana schematu Supabase / dane retencji per semestr (świadomie aproksymacja).
-- Alerty/anomalie, eksport PDF/PNG, „co jeśli"/symulacje prognoz, nowe grupy KPI (to Etap 3).
+- **Prognozy i symulacje „co jeśli" — decyzja: Etap 3.** Etap 2 jest *opisowy* (lejek, krzywe,
+  korelacje). Wyświetlanie prognoz (istniejące `analyzeRekrutacje.forecast`, `analyzeRetention.prediction`)
+  z przedziałem niepewności oraz interaktywne suwaki scenariuszy trafiają do Etapu 3, razem z pełnym
+  redesignem modułu Rekrutacje. (Wyjątek: suwak progu utrzymania w Lejku zostaje — to parametr widoku,
+  nie symulacja prognozy.)
+- Alerty/anomalie, eksport PDF/PNG, nowe grupy KPI (to Etap 3).
 - Pełne podłączenie zapisów do Supabase (Etap 3).
 - Responsywność mobilna (desktop-first).
 
