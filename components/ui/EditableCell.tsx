@@ -18,6 +18,8 @@ export function EditableCell({ value, onCommit, editable = true, decimals, suffi
   const shown = decimals != null ? value.toFixed(decimals) : String(value)
   if (!editable) return <span className={`tabular ${className}`}>{shown}{suffix}</span>
 
+  // kreskowany underline = wyraźny sygnał „to pole można kliknąć i edytować"
+
   return (
     <span className="inline-flex items-center">
       <input
@@ -38,7 +40,7 @@ export function EditableCell({ value, onCommit, editable = true, decimals, suffi
             ;(e.target as HTMLInputElement).blur()
           }
         }}
-        className={`w-16 bg-transparent text-right tabular border-b border-transparent hover:border-deck-border focus:border-deck-accent outline-none rounded-sm px-0.5 ${className}`}
+        className={`w-16 bg-transparent text-right tabular cursor-text border-b border-dashed border-deck-muted/40 hover:border-deck-accent hover:bg-white/[0.03] focus:border-solid focus:border-deck-accent outline-none rounded-sm px-0.5 ${className}`}
       />
       {suffix && <span className="text-deck-muted">{suffix}</span>}
     </span>
