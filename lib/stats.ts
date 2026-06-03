@@ -1,4 +1,4 @@
-import type { Rekrutacja, Kohorta, KpiPeriod, KpiMetric, Czlonek, CzlonekStatus, StatResult, RegressionResult, Sezon } from '@/types'
+import type { Rekrutacja, Kohorta, KpiPeriod, KpiMetric, Czlonek, CzlonekStatus, StatResult, RegressionResult, Sezon, StrategicKpi, ExecutiveInsight } from '@/types'
 
 // ─── Podstawowe funkcje ──────────────────────────────────────────────────────
 
@@ -635,6 +635,179 @@ export function kpiSummary(metrics: KpiMetric[]): { up: number; down: number; av
 }
 
 // ─── Członkowie (widok per-osoba) ────────────────────────────────────────────
+
+function clampScore(v: number): number {
+  return Math.max(0, Math.min(100, Math.round(v)))
+}
+
+function scoreTrend(score: number): StrategicKpi['trend'] {
+  if (score >= 70) return 'up'
+  if (score < 45) return 'down'
+  return 'flat'
+}
+
+export function buildStrategicKpis(
+  rekrutacje: Rekrutacja[],
+  kohorty: Kohorta[],
+  metrics: KpiMetric[],
+): StrategicKpi[] {
+  const crs = rekrutacje
+    .filter((r) => r.zgloszenia > 0)
+    .map((r) => (r.przyjeci / r.zgloszenia) * 100)
+  const avgCr = crs.length ? mean(crs) : 0
+  const totalApplications = rekrutacje.reduce((s, r) => s + r.zgloszenia, 0)
+  const totalAccepted = rekrutacje.reduce((s, r) => s + r.przyjeci, 0)
+  const totalCr = totalApplications > 0 ? (totalAccepted / totalApplications) * 100 : 0
+
+  const completed = kohorty.filter((k) => !k.in_progress)
+  const avgRetention = completed.length ? mean(completed.map((k) => k.avg_retention_sem)) : 0
+  const retentionAfter2 = kohorty.length
+    ? mean(kohorty.map((k) => (k.survival?.[2] ?? retentionFraction(k.avg_retention_sem, 2) * 100)))
+    : 0
+
+  const summary = kpiSummary(metrics)
+  const kpiScore = clampScore(summary.avgRatio * 70)
+  const leaderRows = metrics.filter((m) => m.kategoria.toLowerCase().includes('koordynator'))
+  const leaderGrowth = leaderRows.filter((m) => m.wartosc_poprzednia > 0 && kpiRatio(m) >= 1).length
+  const leaderScore = leaderRows.length ? clampScore((leaderGrowth / leaderRows.length) * 100) : 0
+
+  const healthScore = clampScore((totalCr / 65) * 25 + (avgRetention / 4.5) * 30 + (retentionAfter2 / 100) * 25 + kpiScore * 0.2)
+  const activationScore = clampScore(retentionAfter2)
+  const recruitmentQuality = clampScore((avgCr / 55) * 65 + (totalCr / 45) * 35)
+  const deliveryMomentum = clampScore(summary.avgRatio * 100)
+
+  return [
+    {
+      id: 'health',
+      title: 'Organizational Health Score',
+      value: `${healthScore}/100`,
+      score: healthScore,
+      trend: scoreTrend(healthScore),
+      detail: 'Syntetyczny wynik z konwersji, retencji, utrzymania po 2 sem. i KPI r/r.',
+      recommendation:
+        healthScore >= 70
+          ? 'Utrzymac obecny rytm i przeniesc najlepsze praktyki do slabszych obszarow.'
+          : 'Najpierw sprawdzic onboarding, przeciazenie aktywnych osob i metryki ze spadkiem r/r.',
+    },
+    {
+      id: 'leadership',
+      title: 'Leadership Pipeline Index',
+      value: leaderRows.length ? `${leaderGrowth}/${leaderRows.length}` : 'brak',
+      score: leaderScore,
+      trend: scoreTrend(leaderScore),
+      detail: 'Ile metryk koordynatorskich nie spada rok do roku.',
+      recommendation: 'Monitorowac jako wczesny sygnal dostepnosci przyszlych liderow projektow.',
+    },
+    {
+      id: 'retention-2',
+      title: 'Retention After 2 Semesters',
+      value: `${Math.round(retentionAfter2)}%`,
+      score: activationScore,
+      trend: scoreTrend(activationScore),
+      detail: 'Odsetek kohort aktywnych po dwoch semestrach, liczony z krzywych survival.',
+      recommendation: 'To najlepszy szybki test jakosci onboardingu i pierwszych doswiadczen w organizacji.',
+    },
+    {
+      id: 'recruitment-quality',
+      title: 'Recruitment Quality',
+      value: `${Math.round(avgCr)}% avg CR`,
+      score: recruitmentQuality,
+      trend: scoreTrend(recruitmentQuality),
+      detail: `Laczy sredni CR edycji i wazony CR calej historii (${Math.round(totalCr)}%).`,
+      recommendation: 'Interpretowac razem z retencja: wysoki CR bez utrzymania moze oznaczac zbyt miekka selekcje.',
+    },
+    {
+      id: 'momentum',
+      title: 'Strategic Momentum',
+      value: `${Math.round(summary.avgRatio * 100)}% r/r`,
+      score: deliveryMomentum,
+      trend: scoreTrend(deliveryMomentum),
+      detail: `Srednia zmiana KPI rok do roku; rosnie ${summary.up}, spada ${summary.down}.`,
+      recommendation: 'Dobre do kwartalnego przegladu: pokazuje, czy organizacja przyspiesza, czy traci impet.',
+    },
+  ]
+}
+
+export function buildExecutiveInsights(
+  rekrutacje: Rekrutacja[],
+  kohorty: Kohorta[],
+  metrics: KpiMetric[],
+): ExecutiveInsight[] {
+  const insights: ExecutiveInsight[] = []
+  const strategic = buildStrategicKpis(rekrutacje, kohorty, metrics)
+  const health = strategic.find((k) => k.id === 'health')
+  const retention2 = strategic.find((k) => k.id === 'retention-2')
+  const leadership = strategic.find((k) => k.id === 'leadership')
+  const momentum = strategic.find((k) => k.id === 'momentum')
+
+  if (health && health.score < 70) {
+    insights.push({
+      id: 'health-watch',
+      priority: health.score < 45 ? 'high' : 'medium',
+      title: 'Kondycja organizacji wymaga uwagi',
+      metric: health.value,
+      detail: health.detail,
+      action: 'Zrobic przeglad onboardingu, obciazenia aktywnych osob i metryk ze spadkiem r/r.',
+      href: '/kpi',
+    })
+  }
+
+  if (retention2 && retention2.score < 85) {
+    insights.push({
+      id: 'retention-after-2',
+      priority: retention2.score < 65 ? 'high' : 'medium',
+      title: 'Wczesna retencja jest kluczowym punktem kontroli',
+      metric: retention2.value,
+      detail: 'To wskaznik, ktory najszybciej pokazuje, czy nowi czlonkowie przechodza z rekrutacji do realnego dzialania.',
+      action: 'Dopisac check-in po 30/60/90 dniach i mierzyc aktywnosc pierwszego semestru per osoba.',
+      href: '/retencja',
+    })
+  }
+
+  if (leadership && leadership.score < 75) {
+    insights.push({
+      id: 'leadership-pipeline',
+      priority: leadership.score < 50 ? 'high' : 'medium',
+      title: 'Pipeline liderow moze byc waskim gardlem',
+      metric: leadership.value,
+      detail: leadership.detail,
+      action: 'Wprowadzic osobny tracker kandydatow na koordynatorow i mierzyc gotowosc nastepcow per projekt.',
+      href: '/kpi',
+    })
+  }
+
+  if (momentum && momentum.score >= 110) {
+    insights.push({
+      id: 'momentum-upside',
+      priority: 'low',
+      title: 'Organizacja ma dodatni impet strategiczny',
+      metric: momentum.value,
+      detail: 'Sredni wynik KPI rok do roku rosnie, wiec warto znalezc praktyki, ktore napedzaja wzrost.',
+      action: 'Wyciagnac top 3 wzrosty KPI i zamienic je w standard pracy dla podobnych obszarow.',
+      href: '/kpi',
+    })
+  }
+
+  const alerts = buildAlerts(rekrutacje, kohorty, metrics)
+  for (const alert of alerts.slice(0, 3)) {
+    insights.push({
+      id: `alert-${alert.id}`,
+      priority: alert.severity === 'critical' ? 'high' : alert.severity === 'warning' ? 'medium' : 'low',
+      title: alert.title,
+      metric: alert.severity.toUpperCase(),
+      detail: alert.detail,
+      action: alert.recommendation,
+      href: alert.href,
+    })
+  }
+
+  return insights
+    .sort((a, b) => {
+      const order: Record<ExecutiveInsight['priority'], number> = { high: 0, medium: 1, low: 2 }
+      return order[a.priority] - order[b.priority]
+    })
+    .slice(0, 5)
+}
 
 export function kolejneSemestry(sezon: Sezon, rok: number, count: number): { label: string; sezon: Sezon; rok: number }[] {
   const out: { label: string; sezon: Sezon; rok: number }[] = []

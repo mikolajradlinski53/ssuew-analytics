@@ -1,6 +1,6 @@
 'use client'
 import { useAnalyticsData } from '@/lib/useAnalyticsData'
-import { kpiRatio, kpiByKategoria, kpiSummary } from '@/lib/stats'
+import { buildStrategicKpis, kpiRatio, kpiByKategoria, kpiSummary } from '@/lib/stats'
 import { BentoCard } from '@/components/ui/BentoCard'
 import { KpiTile } from '@/components/ui/KpiTile'
 import { ModuleSkeleton } from '@/components/ui/ModuleSkeleton'
@@ -13,8 +13,8 @@ function ratioColor(r: number): string {
 }
 
 export default function KpiClient() {
-  const { kpiMetrics, loading } = useAnalyticsData()
-  if (loading) return <ModuleSkeleton />
+  const { rekrutacje, kohorty, kpiMetrics, loading } = useAnalyticsData()
+  if (loading) return <ModuleSkeleton variant="kpi" />
   if (!kpiMetrics.length) {
     return (
       <BentoCard title="KPI">
@@ -25,6 +25,7 @@ export default function KpiClient() {
 
   const summary = kpiSummary(kpiMetrics)
   const grouped = kpiByKategoria(kpiMetrics)
+  const strategic = buildStrategicKpis(rekrutacje, kohorty, kpiMetrics)
 
   return (
     <div className="space-y-3">
@@ -34,6 +35,26 @@ export default function KpiClient() {
         <KpiTile label="Metryki spadające" value={<AnimatedNumber value={summary.down} />} sub="rok do roku" accent="violet" />
         <KpiTile label="Średni ratio" value={<AnimatedNumber value={Math.round(summary.avgRatio * 100)} suffix="%" />} sub="r/r" />
       </div>
+
+      <BentoCard title="KPI strategiczne" sub="nowe wskaĹşniki dla pracy ZarzÄ…du" span={4}>
+        <div className="grid grid-cols-2 gap-2">
+          {strategic.map((kpi) => (
+            <div key={kpi.id} className="rounded-lg border border-deck-border bg-deck-bg p-3">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <div className="text-xs text-deck-text">{kpi.title}</div>
+                  <div className="text-[10px] text-deck-muted mt-1">{kpi.detail}</div>
+                </div>
+                <div className={`text-lg font-semibold tabular-nums ${kpi.score >= 70 ? 'text-deck-accent' : kpi.score < 45 ? 'text-deck-danger' : 'text-deck-warn'}`}>{kpi.value}</div>
+              </div>
+              <div className="mt-3 h-1.5 rounded-full bg-deck-panel overflow-hidden">
+                <div className="h-full bg-deck-accent/70" style={{ width: `${kpi.score}%` }} />
+              </div>
+              <div className="mt-2 text-[10px] text-deck-muted italic">{kpi.recommendation}</div>
+            </div>
+          ))}
+        </div>
+      </BentoCard>
 
       {[...grouped.entries()].map(([kat, metrics]) => (
         <BentoCard key={kat} title={kat} sub={`${metrics.length} metryk · ${metrics[0].okres_poprzedni} → ${metrics[0].okres_biezacy}`} span={4}>

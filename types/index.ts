@@ -83,3 +83,23 @@ export interface KpiMetric {
   wartosc_biezaca: number
   created_at: string
 }
+
+export interface StrategicKpi {
+  id: string
+  title: string
+  value: string
+  score: number
+  trend: 'up' | 'down' | 'flat'
+  detail: string
+  recommendation: string
+}
+
+export interface ExecutiveInsight {
+  id: string
+  priority: 'high' | 'medium' | 'low'
+  title: string
+  metric: string
+  detail: string
+  action: string
+  href: string
+}

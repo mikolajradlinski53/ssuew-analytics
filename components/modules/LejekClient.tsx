@@ -15,7 +15,7 @@ export default function LejekClient() {
   const [edycja, setEdycja] = useState<string>('')
   const [threshold, setThreshold] = useState(2)
 
-  if (loading) return <ModuleSkeleton />
+  if (loading) return <ModuleSkeleton variant="lejek" />
 
   const rekr = applyFilters(rekrutacje, filters)
   const koh = applyFilters(kohorty, filters)

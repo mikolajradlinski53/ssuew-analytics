@@ -35,8 +35,10 @@ create table if not exists czlonkowie (
   created_at      timestamptz default now()
 );
 alter table czlonkowie enable row level security;
+-- Odczyt tylko dla zalogowanych (dane osobowe — nie publiczne).
 drop policy if exists "public read czlonkowie" on czlonkowie;
-create policy "public read czlonkowie" on czlonkowie for select using (true);
+drop policy if exists "auth read czlonkowie" on czlonkowie;
+create policy "auth read czlonkowie" on czlonkowie for select using (auth.role() = 'authenticated');
 drop policy if exists "auth insert czlonkowie" on czlonkowie;
 create policy "auth insert czlonkowie" on czlonkowie for insert with check (auth.role() = 'authenticated');
 drop policy if exists "auth update czlonkowie" on czlonkowie;

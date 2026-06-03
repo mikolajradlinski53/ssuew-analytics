@@ -44,7 +44,7 @@ export default function CzlonkowieClient() {
     setRows(czlonkowie.filter((c) => c.kohorta_edycja === edycja))
   }, [czlonkowie, edycja])
 
-  if (loading) return <ModuleSkeleton />
+  if (loading) return <ModuleSkeleton variant="czlonkowie" />
 
   const cohort = cohortList.find((c) => c.edycja === edycja)
   const cols = cohort ? colsForCohort(cohort.sezon, cohort.rok) : []

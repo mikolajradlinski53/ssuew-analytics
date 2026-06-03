@@ -12,7 +12,7 @@ import { ModuleSkeleton } from '@/components/ui/ModuleSkeleton'
 export default function RekrutacjeClient() {
   const { rekrutacje, loading } = useAnalyticsData()
   const { filters } = useFilters()
-  if (loading) return <ModuleSkeleton />
+  if (loading) return <ModuleSkeleton variant="rekrutacje" />
 
   const rekr = applyFilters(rekrutacje, filters)
   if (rekr.length < 2) {

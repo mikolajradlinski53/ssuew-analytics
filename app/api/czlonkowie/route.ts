@@ -5,6 +5,8 @@ import { isConfigured } from '@/lib/supabase/config'
 export async function GET() {
   if (!isConfigured) return NextResponse.json([])
   const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return NextResponse.json({ error: 'Wymagane logowanie' }, { status: 401 })
   const { data, error } = await supabase
     .from('czlonkowie').select('*')
     .order('kohorta_edycja', { ascending: true }).order('imie_nazwisko', { ascending: true })

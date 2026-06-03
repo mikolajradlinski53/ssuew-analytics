@@ -11,7 +11,7 @@ import { ModuleSkeleton } from '@/components/ui/ModuleSkeleton'
 export default function RetencjaClient() {
   const { kohorty, loading } = useAnalyticsData()
   const { filters } = useFilters()
-  if (loading) return <ModuleSkeleton />
+  if (loading) return <ModuleSkeleton variant="retencja" />
 
   const koh = applyFilters(kohorty, filters)
   const reg = analyzeRetention(koh)

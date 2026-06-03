@@ -12,7 +12,7 @@ import Symulator from './Symulator'
 export default function PrognozyClient() {
   const { rekrutacje, kohorty, loading } = useAnalyticsData()
   const { filters } = useFilters()
-  if (loading) return <ModuleSkeleton />
+  if (loading) return <ModuleSkeleton variant="rekrutacje" />
 
   const rekr = applyFilters(rekrutacje, filters)
   const koh = applyFilters(kohorty, filters)

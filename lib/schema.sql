@@ -91,7 +91,7 @@ create policy "public read kpi_periods"  on kpi_periods  for select using (true)
 create policy "public read kpi_metrics"  on kpi_metrics  for select using (true);
 create policy "auth insert kpi_metrics"  on kpi_metrics  for insert with check (auth.role() = 'authenticated');
 alter table czlonkowie enable row level security;
-create policy "public read czlonkowie"   on czlonkowie   for select using (true);
+create policy "auth read czlonkowie"     on czlonkowie   for select using (auth.role() = 'authenticated');
 create policy "auth insert czlonkowie"   on czlonkowie   for insert with check (auth.role() = 'authenticated');
 create policy "auth update czlonkowie"   on czlonkowie   for update using (auth.role() = 'authenticated');
 
