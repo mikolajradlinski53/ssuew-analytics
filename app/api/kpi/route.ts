@@ -50,3 +50,23 @@ export async function POST(req: NextRequest) {
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   return NextResponse.json(data, { status: 201 })
 }
+
+export async function PATCH(req: NextRequest) {
+  if (!isConfigured) return NextResponse.json({ error: 'Supabase nie skonfigurowany' }, { status: 503 })
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return NextResponse.json({ error: 'Wymagane logowanie' }, { status: 401 })
+  const body = await req.json()
+  const { id, kategoria, nazwa, okres_poprzedni, wartosc_poprzednia, okres_biezacy, wartosc_biezaca } = body
+  if (!id) return NextResponse.json({ error: 'Brak id' }, { status: 400 })
+  const patch: Record<string, unknown> = {}
+  if (kategoria !== undefined) patch.kategoria = kategoria
+  if (nazwa !== undefined) patch.nazwa = nazwa
+  if (okres_poprzedni !== undefined) patch.okres_poprzedni = okres_poprzedni
+  if (wartosc_poprzednia !== undefined) patch.wartosc_poprzednia = wartosc_poprzednia
+  if (okres_biezacy !== undefined) patch.okres_biezacy = okres_biezacy
+  if (wartosc_biezaca !== undefined) patch.wartosc_biezaca = wartosc_biezaca
+  const { data, error } = await supabase.from('kpi_metrics').update(patch).eq('id', id).select().single()
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  return NextResponse.json(data)
+}
