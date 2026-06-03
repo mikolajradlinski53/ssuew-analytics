@@ -1,5 +1,6 @@
 'use client'
 import { useState, useEffect, useCallback } from 'react'
+import { isConfigured } from '@/lib/supabase/config'
 import type { Czlonek } from '@/types'
 
 export function useCzlonkowie() {
@@ -13,11 +14,13 @@ export function useCzlonkowie() {
       const res = await fetch('/api/czlonkowie')
       const data = res.ok ? await res.json() : []
       const live = Array.isArray(data) && data.length > 0
-      setCzlonkowie(live ? data : DEMO_CZLONKOWIE)
-      setUsingDemo(!live)
+      // Skonfigurowany Supabase + pusta baza = pusta siatka (dodajesz prawdziwych członków),
+      // a NIE zaślepione demo. Demo pokazujemy tylko bez konfiguracji (publiczny pokaz).
+      setCzlonkowie(live ? data : isConfigured ? [] : DEMO_CZLONKOWIE)
+      setUsingDemo(!live && !isConfigured)
     } catch {
-      setCzlonkowie(DEMO_CZLONKOWIE)
-      setUsingDemo(true)
+      setCzlonkowie(isConfigured ? [] : DEMO_CZLONKOWIE)
+      setUsingDemo(!isConfigured)
     } finally {
       setLoading(false)
     }

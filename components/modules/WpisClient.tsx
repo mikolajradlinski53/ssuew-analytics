@@ -116,6 +116,14 @@ export default function WpisClient() {
         ))}
       </div>
 
+      <div className="text-[11px] text-deck-muted bg-deck-panel border border-deck-border rounded-md px-3 py-2 leading-relaxed">
+        {tab === 'rekrutacja' && 'Wyniki rekrutacji: edycja (np. J’26), zgłoszenia, przyjęci. Trafią do modułu Rekrutacje, Lejek i Prognozy.'}
+        {tab === 'kohorta' && 'Kohorta: liczebność i retencja (avg/max). Zasili moduł Retencja i krzywe przeżycia.'}
+        {tab === 'kpi' && 'Pojedyncza metryka KPI rok-do-roku: kategoria, nazwa, wartość zeszłoroczna i tegoroczna (np. SKS / Listopad / 57 → 84).'}
+        {tab === 'rocznik' && 'Najszybszy sposób na nowy rok: wpisz tegoroczne liczby obok istniejących metryk (poprzednie przenoszą się automatycznie) i zapisz wszystkie naraz.'}
+        {' '}Wypełnij i kliknij „Zapisz" — zmiany od razu widać w modułach.
+      </div>
+
       {status && (
         <div className={`text-[11px] px-3 py-2 rounded-md border ${status.ok ? 'border-deck-accent/40 text-deck-accent' : 'border-deck-danger-border text-deck-danger'}`}>
           {status.msg}
