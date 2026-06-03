@@ -6,6 +6,9 @@ export async function proxy(request: NextRequest) {
   let response = NextResponse.next({ request })
   if (!isConfigured) return response
 
+  const path = request.nextUrl.pathname
+  if (path.startsWith('/api')) return response
+
   const supabase = createServerClient(SUPABASE_URL, SUPABASE_ANON, {
     cookies: {
       getAll() {
@@ -23,8 +26,7 @@ export async function proxy(request: NextRequest) {
 
   // Pełna blokada: bez logowania nie ma dostępu do żadnej strony (poza /login).
   // API ma własną autoryzację; zasoby statyczne wykluczone przez matcher.
-  const path = request.nextUrl.pathname
-  if (!user && path !== '/login' && !path.startsWith('/api')) {
+  if (!user && path !== '/login') {
     const url = request.nextUrl.clone()
     url.pathname = '/login'
     return NextResponse.redirect(url)

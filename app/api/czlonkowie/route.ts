@@ -1,15 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { isConfigured } from '@/lib/supabase/config'
+import { withSupabaseTimeout } from '@/lib/supabase/timeout'
 
 export async function GET() {
   if (!isConfigured) return NextResponse.json([])
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { data: { user } } = await withSupabaseTimeout(supabase.auth.getUser())
   if (!user) return NextResponse.json({ error: 'Wymagane logowanie' }, { status: 401 })
-  const { data, error } = await supabase
-    .from('czlonkowie').select('*')
-    .order('kohorta_edycja', { ascending: true }).order('imie_nazwisko', { ascending: true })
+  const { data, error } = await withSupabaseTimeout(
+    supabase
+      .from('czlonkowie').select('*')
+      .order('kohorta_edycja', { ascending: true }).order('imie_nazwisko', { ascending: true }),
+  )
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   return NextResponse.json(data)
 }
@@ -17,7 +20,7 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   if (!isConfigured) return NextResponse.json({ error: 'Supabase nie skonfigurowany' }, { status: 503 })
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { data: { user } } = await withSupabaseTimeout(supabase.auth.getUser())
   if (!user) return NextResponse.json({ error: 'Wymagane logowanie' }, { status: 401 })
   const body = await req.json()
   const { kohorta_edycja, imie_nazwisko, status, aktywnosc } = body
@@ -32,7 +35,7 @@ export async function POST(req: NextRequest) {
 export async function PATCH(req: NextRequest) {
   if (!isConfigured) return NextResponse.json({ error: 'Supabase nie skonfigurowany' }, { status: 503 })
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { data: { user } } = await withSupabaseTimeout(supabase.auth.getUser())
   if (!user) return NextResponse.json({ error: 'Wymagane logowanie' }, { status: 401 })
   const body = await req.json()
   const { id, status, aktywnosc, imie_nazwisko } = body

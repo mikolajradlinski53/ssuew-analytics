@@ -1,13 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { isConfigured } from '@/lib/supabase/config'
+import { withSupabaseTimeout } from '@/lib/supabase/timeout'
 
 export async function GET() {
   if (!isConfigured) return NextResponse.json([])
   const supabase = await createClient()
-  const { data, error } = await supabase
-    .from('kpi_metrics').select('*')
-    .order('kategoria', { ascending: true }).order('nazwa', { ascending: true })
+  const { data, error } = await withSupabaseTimeout(
+    supabase
+      .from('kpi_metrics').select('*')
+      .order('kategoria', { ascending: true }).order('nazwa', { ascending: true }),
+  )
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   return NextResponse.json(data)
 }
