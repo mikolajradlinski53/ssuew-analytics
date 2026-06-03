@@ -57,33 +57,46 @@ update kohorty set survival='{100,100,77,69,23}'             where edycja='W''24
 update kohorty set survival='{100,100,100,80,73}'            where edycja='J''24';
 update kohorty set survival='{100,60,60,60}'                 where edycja='W''25';
 
--- 5. Realne KPI (uruchom RAZ — brak deduplikacji; nie odpalaj wielokrotnie)
-insert into kpi_metrics (kategoria, nazwa, okres_poprzedni, wartosc_poprzednia, okres_biezacy, wartosc_biezaca) values
-  ('SKS', 'Październik', '2024/2025', 48, '2025/2026', 45),
-  ('SKS', 'Listopad',    '2024/2025', 57, '2025/2026', 84),
-  ('SKS', 'Grudzień',    '2024/2025', 43, '2025/2026', 56),
-  ('SKS', 'Styczeń',     '2024/2025', 41, '2025/2026', 56),
-  ('SKS', 'Luty',        '2024/2025', 34, '2025/2026', 44),
-  ('SKS', 'Marzec',      '2024/2025', 42, '2025/2026', 47),
-  ('Wydarzenia', 'JWK',         '2024/2025', 43, '2025/2026', 52),
-  ('Wydarzenia', 'Wigilia',     '2024/2025', 83, '2025/2026', 77),
-  ('Wydarzenia', 'Przydziałki', '2024/2025', 56, '2025/2026', 64),
-  ('Wydarzenia', 'WWK',         '2024/2025', 45, '2025/2026', 40),
-  ('Ankieta', 'Zimowa Zarządu', '2024/2025', 47, '2025/2026', 28),
-  ('Koordynatorzy', 'DA',         '2024/2025', 1, '2025/2026', 1),
-  ('Koordynatorzy', 'RJ',         '2024/2025', 2, '2025/2026', 1),
-  ('Koordynatorzy', 'JWK',        '2024/2025', 1, '2025/2026', 2),
-  ('Koordynatorzy', 'TWE',        '2024/2025', 1, '2025/2026', 2),
-  ('Koordynatorzy', 'ZFUE',       '2024/2025', 1, '2025/2026', 1),
-  ('Koordynatorzy', 'Bal',        '2024/2025', 1, '2025/2026', 1),
-  ('Koordynatorzy', 'ME',         '2024/2025', 2, '2025/2026', 1),
-  ('Koordynatorzy', 'Wigilia',    '2024/2025', 9, '2025/2026', 12),
-  ('Koordynatorzy', 'TEDx',       '2024/2025', 1, '2025/2026', 1),
-  ('Koordynatorzy', 'Przydziałki','2024/2025', 2, '2025/2026', 2),
-  ('Koordynatorzy', 'WWK',        '2024/2025', 1, '2025/2026', 1),
-  ('Koordynatorzy', 'RW',         '2024/2025', 1, '2025/2026', 1),
-  ('Koordynatorzy', 'Adapciak',   '2024/2025', 2, '2025/2026', 1),
-  ('Koordynatorzy', 'Animalia',   '2024/2025', 1, '2025/2026', 2),
-  ('Koordynatorzy', 'LWK',        '2024/2025', 1, '2025/2026', 1),
-  ('Koordynatorzy', 'Gala',       '2024/2025', 1, '2025/2026', 5),
-  ('Koordynatorzy', 'Graduation', '2024/2025', 1, '2025/2026', 2);
+-- 5. Realne KPI (idempotentnie — ponowne uruchomienie nie doda duplikatów)
+with seed(kategoria, nazwa, okres_poprzedni, wartosc_poprzednia, okres_biezacy, wartosc_biezaca) as (
+  values
+    ('SKS', 'Październik', '2024/2025', 48::numeric, '2025/2026', 45::numeric),
+    ('SKS', 'Listopad',    '2024/2025', 57::numeric, '2025/2026', 84::numeric),
+    ('SKS', 'Grudzień',    '2024/2025', 43::numeric, '2025/2026', 56::numeric),
+    ('SKS', 'Styczeń',     '2024/2025', 41::numeric, '2025/2026', 56::numeric),
+    ('SKS', 'Luty',        '2024/2025', 34::numeric, '2025/2026', 44::numeric),
+    ('SKS', 'Marzec',      '2024/2025', 42::numeric, '2025/2026', 47::numeric),
+    ('Wydarzenia', 'JWK',         '2024/2025', 43::numeric, '2025/2026', 52::numeric),
+    ('Wydarzenia', 'Wigilia',     '2024/2025', 83::numeric, '2025/2026', 77::numeric),
+    ('Wydarzenia', 'Przydziałki', '2024/2025', 56::numeric, '2025/2026', 64::numeric),
+    ('Wydarzenia', 'WWK',         '2024/2025', 45::numeric, '2025/2026', 40::numeric),
+    ('Ankieta', 'Zimowa Zarządu', '2024/2025', 47::numeric, '2025/2026', 28::numeric),
+    ('Koordynatorzy', 'DA',         '2024/2025', 1::numeric, '2025/2026', 1::numeric),
+    ('Koordynatorzy', 'RJ',         '2024/2025', 2::numeric, '2025/2026', 1::numeric),
+    ('Koordynatorzy', 'JWK',        '2024/2025', 1::numeric, '2025/2026', 2::numeric),
+    ('Koordynatorzy', 'TWE',        '2024/2025', 1::numeric, '2025/2026', 2::numeric),
+    ('Koordynatorzy', 'ZFUE',       '2024/2025', 1::numeric, '2025/2026', 1::numeric),
+    ('Koordynatorzy', 'Bal',        '2024/2025', 1::numeric, '2025/2026', 1::numeric),
+    ('Koordynatorzy', 'ME',         '2024/2025', 2::numeric, '2025/2026', 1::numeric),
+    ('Koordynatorzy', 'Wigilia',    '2024/2025', 9::numeric, '2025/2026', 12::numeric),
+    ('Koordynatorzy', 'TEDx',       '2024/2025', 1::numeric, '2025/2026', 1::numeric),
+    ('Koordynatorzy', 'Przydziałki','2024/2025', 2::numeric, '2025/2026', 2::numeric),
+    ('Koordynatorzy', 'WWK',        '2024/2025', 1::numeric, '2025/2026', 1::numeric),
+    ('Koordynatorzy', 'RW',         '2024/2025', 1::numeric, '2025/2026', 1::numeric),
+    ('Koordynatorzy', 'Adapciak',   '2024/2025', 2::numeric, '2025/2026', 1::numeric),
+    ('Koordynatorzy', 'Animalia',   '2024/2025', 1::numeric, '2025/2026', 2::numeric),
+    ('Koordynatorzy', 'LWK',        '2024/2025', 1::numeric, '2025/2026', 1::numeric),
+    ('Koordynatorzy', 'Gala',       '2024/2025', 1::numeric, '2025/2026', 5::numeric),
+    ('Koordynatorzy', 'Graduation', '2024/2025', 1::numeric, '2025/2026', 2::numeric)
+)
+insert into kpi_metrics (kategoria, nazwa, okres_poprzedni, wartosc_poprzednia, okres_biezacy, wartosc_biezaca)
+select seed.*
+from seed
+where not exists (
+  select 1
+  from kpi_metrics existing
+  where existing.kategoria = seed.kategoria
+    and existing.nazwa = seed.nazwa
+    and existing.okres_poprzedni = seed.okres_poprzedni
+    and existing.okres_biezacy = seed.okres_biezacy
+);
