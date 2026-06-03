@@ -196,7 +196,7 @@ export default function CzlonkowieClient() {
               type="button"
               onClick={addMember}
               disabled={!newName.trim()}
-              className="text-[11px] px-3 py-1 rounded-md border border-deck-accent/40 text-deck-accent disabled:opacity-40"
+              className="deck-button rounded-md px-3 py-1 text-[11px] font-semibold disabled:opacity-40"
             >
               + dodaj osobę
             </button>

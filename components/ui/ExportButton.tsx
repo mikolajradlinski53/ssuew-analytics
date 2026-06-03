@@ -1,5 +1,6 @@
 'use client'
 import { useState } from 'react'
+import { Download, FileText, ImageDown } from 'lucide-react'
 import { toPng } from 'html-to-image'
 import { jsPDF } from 'jspdf'
 
@@ -10,7 +11,7 @@ function today(): string {
 async function captureRoot(): Promise<string | null> {
   const node = document.getElementById('export-root')
   if (!node) return null
-  return toPng(node, { backgroundColor: '#090B0E', pixelRatio: 2, cacheBust: true })
+  return toPng(node, { backgroundColor: '#07090D', pixelRatio: 2, cacheBust: true })
 }
 
 export function ExportButton() {
@@ -25,8 +26,6 @@ export function ExportButton() {
       a.href = url
       a.download = `ssuew-${today()}.png`
       a.click()
-    } catch {
-      // zrzut nieudany — pomijamy po cichu
     } finally {
       setBusy(null)
     }
@@ -49,20 +48,33 @@ export function ExportButton() {
       })
       pdf.addImage(url, 'PNG', 0, 0, img.width, img.height)
       pdf.save(`ssuew-${today()}.pdf`)
-    } catch {
-      // zrzut nieudany — pomijamy po cichu
     } finally {
       setBusy(null)
     }
   }
 
   return (
-    <div className="flex items-center gap-1">
-      <button onClick={exportPng} disabled={!!busy} className="text-[10px] px-2 py-1 rounded-md border border-deck-border text-deck-muted hover:text-deck-text disabled:opacity-40">
-        {busy === 'png' ? '…' : 'PNG'}
+    <div className="deck-chip flex items-center gap-1 rounded-lg p-1">
+      <span className="grid h-7 w-7 place-items-center text-deck-accent">
+        <Download size={14} />
+      </span>
+      <button
+        type="button"
+        onClick={exportPng}
+        disabled={!!busy}
+        className="grid h-7 w-7 place-items-center rounded-md text-deck-muted transition hover:bg-white/8 hover:text-deck-text disabled:opacity-40"
+        title="Eksport PNG"
+      >
+        {busy === 'png' ? <span className="text-[10px]">...</span> : <ImageDown size={14} />}
       </button>
-      <button onClick={exportPdf} disabled={!!busy} className="text-[10px] px-2 py-1 rounded-md border border-deck-border text-deck-muted hover:text-deck-text disabled:opacity-40">
-        {busy === 'pdf' ? '…' : 'PDF'}
+      <button
+        type="button"
+        onClick={exportPdf}
+        disabled={!!busy}
+        className="grid h-7 w-7 place-items-center rounded-md text-deck-muted transition hover:bg-white/8 hover:text-deck-text disabled:opacity-40"
+        title="Eksport PDF"
+      >
+        {busy === 'pdf' ? <span className="text-[10px]">...</span> : <FileText size={14} />}
       </button>
     </div>
   )

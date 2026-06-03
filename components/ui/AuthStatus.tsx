@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import { LogIn, LogOut, UserCircle } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { isConfigured } from '@/lib/supabase/config'
 
@@ -23,7 +24,8 @@ export function AuthStatus() {
 
   if (!email) {
     return (
-      <Link href="/login" className="text-[10px] px-2 py-1 rounded-md border border-deck-border text-deck-muted hover:text-deck-text">
+      <Link href="/login" className="deck-chip flex h-9 items-center gap-2 rounded-lg px-3 text-[11px] text-deck-muted transition hover:text-deck-text">
+        <LogIn size={14} />
         Zaloguj
       </Link>
     )
@@ -37,10 +39,16 @@ export function AuthStatus() {
   }
 
   return (
-    <div className="flex items-center gap-2">
-      <span className="text-[10px] text-deck-muted max-w-[140px] truncate">{email}</span>
-      <button onClick={logout} className="text-[10px] px-2 py-1 rounded-md border border-deck-border text-deck-muted hover:text-deck-text">
-        Wyloguj
+    <div className="deck-chip flex h-9 items-center gap-2 rounded-lg px-2">
+      <UserCircle size={15} className="text-deck-accent" />
+      <span className="max-w-[150px] truncate text-[10px] text-deck-muted">{email}</span>
+      <button
+        type="button"
+        onClick={logout}
+        className="grid h-6 w-6 place-items-center rounded-md text-deck-muted transition hover:bg-white/8 hover:text-deck-text"
+        title="Wyloguj"
+      >
+        <LogOut size={13} />
       </button>
     </div>
   )

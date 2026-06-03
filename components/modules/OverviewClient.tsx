@@ -1,5 +1,6 @@
 'use client'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
+import { ArrowDownRight, ArrowUpRight, Gauge, Sparkles } from 'lucide-react'
 import { useAnalyticsData } from '@/lib/useAnalyticsData'
 import { useFilters } from '@/lib/useFilters'
 import { applyFilters } from '@/lib/filters'
@@ -27,99 +28,117 @@ export default function OverviewClient() {
   const health = strategic[0]
 
   const movers = [...kpiMetrics]
-    .filter((x) => x.wartosc_poprzednia > 0)
+    .filter((metric) => metric.wartosc_poprzednia > 0)
     .sort((a, b) => kpiRatio(b) - kpiRatio(a))
   const top = movers.slice(0, 3)
   const bottom = movers.slice(-3).reverse()
 
   const barData = [...rekr]
     .sort((a, b) => a.rok - b.rok || (a.sezon === 'wiosna' ? -1 : 1))
-    .map((r) => ({ edycja: r.edycja, zgłoszenia: r.zgloszenia, przyjęci: r.przyjeci }))
+    .map((row) => ({ edycja: row.edycja, zgłoszenia: row.zgloszenia, przyjęci: row.przyjeci }))
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-4">
       {usingDemo && (
-        <div className="inline-block text-[11px] text-deck-warn border border-deck-warn/40 rounded-md px-2 py-1">
-          Tryb demo — skonfiguruj Supabase, aby zobaczyć dane na żywo
+        <div className="deck-chip inline-flex text-[11px] text-deck-warn rounded-lg px-3 py-1.5">
+          Tryb demo - skonfiguruj Supabase, aby zobaczyć dane na żywo
         </div>
       )}
-      <div className="grid grid-cols-4 gap-2">
-        <BentoCard title="Strategic cockpit" sub="syntetyczna ocena kondycji organizacji" span={4} className="bg-gradient-to-br from-deck-panel to-deck-bg">
-          <div className="grid grid-cols-[180px_1fr] gap-4 items-center">
-            <div className="relative h-36 rounded-lg border border-deck-border bg-deck-bg flex items-center justify-center overflow-hidden">
-              <div
-                className="absolute inset-x-0 bottom-0 bg-deck-accent/20"
-                style={{ height: `${health.score}%` }}
-              />
-              <div className="relative text-center">
-                <div className="text-[10px] uppercase tracking-wide text-deck-muted">Health score</div>
-                <div className="text-4xl font-semibold tabular-nums text-deck-accent">{health.value}</div>
-                <div className="text-[10px] text-deck-muted">{health.trend === 'up' ? 'stabilny wzrost' : health.trend === 'down' ? 'ryzyko spadku' : 'do obserwacji'}</div>
-              </div>
+
+      <BentoCard span={4} className="p-0">
+        <div className="grid min-h-[260px] grid-cols-[1.15fr_0.85fr] overflow-hidden rounded-lg">
+          <div className="p-6">
+            <div className="inline-flex items-center gap-2 rounded-lg border border-deck-accent/30 bg-deck-accent/10 px-3 py-1 text-[10px] uppercase tracking-[0.18em] text-deck-accent">
+              <Sparkles size={13} />
+              Live strategy deck
             </div>
-            <div className="grid grid-cols-2 gap-2">
-              {strategic.slice(1).map((kpi) => (
-                <div key={kpi.id} className="rounded-lg border border-deck-border bg-deck-bg p-3">
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="text-[11px] text-deck-text truncate">{kpi.title}</div>
-                    <div className={`text-[11px] tabular-nums ${kpi.score >= 70 ? 'text-deck-accent' : kpi.score < 45 ? 'text-deck-danger' : 'text-deck-warn'}`}>{kpi.value}</div>
+            <h1 className="mt-5 max-w-2xl text-4xl font-semibold leading-tight tracking-normal text-deck-text">
+              Kondycja organizacji w jednym, żywym kokpicie.
+            </h1>
+            <p className="mt-3 max-w-xl text-sm leading-6 text-deck-muted">
+              Rekrutacja, retencja i KPI rok-do-roku składają się tu w jeden obraz decyzji zarządczych.
+            </p>
+            <div className="mt-6 grid max-w-2xl grid-cols-3 gap-2">
+              {strategic.slice(1, 4).map((kpi) => (
+                <div key={kpi.id} className="rounded-lg border border-white/10 bg-white/[0.045] p-3">
+                  <div className="text-[10px] text-deck-muted">{kpi.title}</div>
+                  <div className="mt-1 text-lg font-semibold tabular-nums text-deck-text">{kpi.value}</div>
+                  <div className="mt-2 h-1 rounded-full bg-deck-bg-deep/70">
+                    <div className="h-full rounded-full bg-deck-accent" style={{ width: `${kpi.score}%` }} />
                   </div>
-                  <div className="mt-2 h-1.5 rounded-full bg-deck-panel overflow-hidden">
-                    <div className="h-full bg-deck-accent/70" style={{ width: `${kpi.score}%` }} />
-                  </div>
-                  <div className="mt-2 text-[10px] text-deck-muted">{kpi.detail}</div>
                 </div>
               ))}
             </div>
           </div>
-          <p className="mt-3 text-[11px] text-deck-muted">{health.recommendation}</p>
-        </BentoCard>
-
-        <BentoCard title="NajwaĹĽniejsze wnioski" sub="automatyczna lista dziaĹ‚aĹ„ na podstawie danych" span={4}>
-          {insights.length ? (
-            <div className="grid grid-cols-3 gap-2">
-              {insights.slice(0, 3).map((insight) => (
-                <InsightCard key={insight.id} insight={insight} />
-              ))}
+          <div className="relative border-l border-white/10 bg-deck-bg-deep/55 p-6">
+            <div className="absolute inset-x-6 top-6 h-px bg-gradient-to-r from-transparent via-deck-accent/70 to-transparent" />
+            <div className="grid h-full place-items-center">
+              <div className="relative grid h-44 w-44 place-items-center rounded-full border border-deck-accent/30 bg-deck-accent/8">
+                <div className="absolute inset-4 rounded-full border border-white/10" />
+                <Gauge size={42} className="absolute top-8 text-deck-accent" />
+                <div className="text-center">
+                  <div className="text-[10px] uppercase tracking-[0.18em] text-deck-muted">Health</div>
+                  <div className="mt-2 text-5xl font-semibold tabular-nums text-deck-accent">{health.value}</div>
+                  <div className="mt-1 text-[10px] text-deck-muted">
+                    {health.trend === 'up' ? 'stabilny wzrost' : health.trend === 'down' ? 'ryzyko spadku' : 'do obserwacji'}
+                  </div>
+                </div>
+              </div>
             </div>
-          ) : (
-            <p className="text-[11px] text-deck-muted">Brak pilnych wnioskĂłw przy obecnych filtrach.</p>
-          )}
-        </BentoCard>
+            <p className="absolute inset-x-6 bottom-6 text-[11px] leading-5 text-deck-muted">{health.recommendation}</p>
+          </div>
+        </div>
+      </BentoCard>
 
+      <div className="grid grid-cols-4 gap-3">
         <KpiTile
-          label="Conversion (avg)"
-          value={m.avgConversion != null ? <AnimatedNumber value={m.avgConversion} decimals={1} suffix="%" /> : '—'}
+          label="Conversion avg"
+          value={m.avgConversion != null ? <AnimatedNumber value={m.avgConversion} decimals={1} suffix="%" /> : '-'}
           sub="filtrowane edycje"
           accent="accent"
         />
         <KpiTile
-          label="Retencja (hist.)"
-          value={m.histRetention != null ? <AnimatedNumber value={m.histRetention} decimals={2} suffix=" sem" /> : '—'}
+          label="Retencja hist."
+          value={m.histRetention != null ? <AnimatedNumber value={m.histRetention} decimals={2} suffix=" sem" /> : '-'}
           sub="ukończone kohorty"
           accent="violet"
         />
         <KpiTile
           label={`Przyjęci ${m.lastEdycja ?? ''}`.trim()}
-          value={m.lastAccepted != null ? <AnimatedNumber value={m.lastAccepted} /> : '—'}
+          value={m.lastAccepted != null ? <AnimatedNumber value={m.lastAccepted} /> : '-'}
           sub={m.lastApplications != null ? `z ${m.lastApplications} zgłoszeń` : ''}
         />
         <KpiTile
           label="KPI rosnące r/r"
           value={`${summary.up}/${summary.up + summary.down}`}
-          sub={`śr. ratio ${Math.round(summary.avgRatio * 100)}%`}
+          sub={`średni ratio ${Math.round(summary.avgRatio * 100)}%`}
+          accent="accent"
         />
+      </div>
 
+      <BentoCard title="Najważniejsze wnioski" sub="automatyczna lista działań na podstawie danych" span={4}>
+        {insights.length ? (
+          <div className="grid grid-cols-3 gap-3">
+            {insights.slice(0, 3).map((insight) => (
+              <InsightCard key={insight.id} insight={insight} />
+            ))}
+          </div>
+        ) : (
+          <p className="text-[11px] text-deck-muted">Brak pilnych wniosków przy obecnych filtrach.</p>
+        )}
+      </BentoCard>
+
+      <div className="grid grid-cols-4 gap-3">
         <BentoCard title="Zgłoszenia vs przyjęci" sub="trend historyczny" span={2}>
           {barData.length ? (
-            <ResponsiveContainer width="100%" height={170}>
-              <BarChart data={barData} margin={{ top: 4, right: 8, left: -16, bottom: 0 }}>
+            <ResponsiveContainer width="100%" height={230}>
+              <BarChart data={barData} margin={{ top: 10, right: 8, left: -16, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke={chartTheme.grid} />
                 <XAxis dataKey="edycja" tick={axisTick} />
                 <YAxis tick={axisTick} />
                 <Tooltip contentStyle={tooltipStyle} cursor={{ fill: 'rgba(255,255,255,0.04)' }} />
-                <Bar dataKey="zgłoszenia" fill={chartTheme.series[2]} radius={[3, 3, 0, 0]} />
-                <Bar dataKey="przyjęci" fill={chartTheme.accent} radius={[3, 3, 0, 0]} />
+                <Bar dataKey="zgłoszenia" fill={chartTheme.series[2]} radius={[5, 5, 0, 0]} />
+                <Bar dataKey="przyjęci" fill={chartTheme.accent} radius={[5, 5, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           ) : (
@@ -127,21 +146,31 @@ export default function OverviewClient() {
           )}
         </BentoCard>
 
-        <BentoCard title="KPI — zmiany rok-do-roku" sub="największe wzrosty i spadki" span={2}>
+        <BentoCard title="KPI - zmiany rok-do-roku" sub="największe wzrosty i spadki" span={2}>
           {movers.length ? (
-            <div className="space-y-1">
-              {top.map((x) => (
-                <div key={x.id} className="flex items-center justify-between text-[11px]">
-                  <span className="text-deck-muted truncate">{x.kategoria}: {x.nazwa}</span>
-                  <span className="tabular text-deck-accent">+{Math.round((kpiRatio(x) - 1) * 100)}%</span>
-                </div>
-              ))}
-              {bottom.map((x) => (
-                <div key={x.id} className="flex items-center justify-between text-[11px]">
-                  <span className="text-deck-muted truncate">{x.kategoria}: {x.nazwa}</span>
-                  <span className="tabular text-deck-danger">{Math.round((kpiRatio(x) - 1) * 100)}%</span>
-                </div>
-              ))}
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                {top.map((metric) => (
+                  <div key={metric.id} className="flex items-center justify-between gap-3 rounded-lg bg-white/[0.04] px-3 py-2 text-[11px]">
+                    <span className="truncate text-deck-muted">{metric.kategoria}: {metric.nazwa}</span>
+                    <span className="inline-flex items-center gap-1 tabular text-deck-accent">
+                      <ArrowUpRight size={13} />
+                      {Math.round((kpiRatio(metric) - 1) * 100)}%
+                    </span>
+                  </div>
+                ))}
+              </div>
+              <div className="space-y-2">
+                {bottom.map((metric) => (
+                  <div key={metric.id} className="flex items-center justify-between gap-3 rounded-lg bg-white/[0.04] px-3 py-2 text-[11px]">
+                    <span className="truncate text-deck-muted">{metric.kategoria}: {metric.nazwa}</span>
+                    <span className="inline-flex items-center gap-1 tabular text-deck-danger">
+                      <ArrowDownRight size={13} />
+                      {Math.round((kpiRatio(metric) - 1) * 100)}%
+                    </span>
+                  </div>
+                ))}
+              </div>
             </div>
           ) : (
             <p className="text-[11px] text-deck-muted">Brak metryk KPI.</p>

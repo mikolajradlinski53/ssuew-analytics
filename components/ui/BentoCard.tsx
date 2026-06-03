@@ -19,17 +19,20 @@ const spanClass: Record<NonNullable<Props['span']>, string> = {
 export function BentoCard({ title, sub, span = 1, tone = 'default', className = '', children }: Props) {
   const toneClass =
     tone === 'danger'
-      ? 'bg-deck-danger-bg border-deck-danger-border'
-      : 'bg-deck-panel border-deck-border'
+      ? 'border-deck-danger-border bg-deck-danger-bg/70'
+      : 'deck-card'
   return (
-    <div className={`${spanClass[span]} ${toneClass} border rounded-lg p-3 ${className}`.trim()}>
+    <section className={`${spanClass[span]} ${toneClass} rounded-lg p-4 ${className}`.trim()}>
       {title && (
-        <div className="mb-2">
-          <div className="text-xs text-deck-text">{title}</div>
-          {sub && <div className="text-[10px] text-deck-muted">{sub}</div>}
+        <div className="relative z-10 mb-3 flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <div className="text-sm font-semibold text-deck-text tracking-[0.01em]">{title}</div>
+            {sub && <div className="mt-0.5 text-[10px] text-deck-muted">{sub}</div>}
+          </div>
+          <span className="mt-1 h-1.5 w-1.5 rounded-full bg-deck-accent/80 shadow-[0_0_16px_rgba(46,230,166,0.65)]" />
         </div>
       )}
-      {children}
-    </div>
+      <div className="relative z-10">{children}</div>
+    </section>
   )
 }

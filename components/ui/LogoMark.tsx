@@ -6,16 +6,16 @@ export function LogoMark() {
 
   if (!ok) {
     return (
-      <span className="w-6 h-6 rounded-md bg-deck-accent text-deck-bg-deep font-extrabold text-xs flex items-center justify-center">
+      <span className="grid h-9 w-9 place-items-center rounded-lg bg-deck-accent text-sm font-extrabold text-deck-bg-deep shadow-[0_0_28px_rgba(46,230,166,0.32)]">
         S
       </span>
     )
   }
 
   return (
-    <span className="w-6 h-6 rounded-md overflow-hidden flex items-center justify-center bg-deck-accent">
+    <span className="grid h-9 w-9 place-items-center overflow-hidden rounded-lg border border-deck-accent/35 bg-deck-accent/12 shadow-[0_0_28px_rgba(46,230,166,0.22)]">
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src="/logo.svg" alt="SSUEW" className="w-full h-full object-contain" onError={() => setOk(false)} />
+      <img src="/logo.svg" alt="SSUEW" className="h-8 w-8 object-contain" onError={() => setOk(false)} />
     </span>
   )
 }

@@ -1,39 +1,54 @@
 'use client'
 import { useFilters } from '@/lib/useFilters'
 
+const seasons = [
+  { value: 'all', label: 'Oba' },
+  { value: 'jesien', label: 'Jesień' },
+  { value: 'wiosna', label: 'Wiosna' },
+] as const
+
 export function FilterBar() {
   const { filters, setFilters } = useFilters()
   return (
     <div className="flex items-center gap-2">
-      <select
-        aria-label="Sezon"
-        value={filters.sezon}
-        onChange={(e) => setFilters({ ...filters, sezon: e.target.value as typeof filters.sezon })}
-        className="bg-deck-panel border border-deck-border text-deck-muted text-[11px] rounded-md px-2 py-1"
-      >
-        <option value="all">Sezon: oba</option>
-        <option value="jesien">Jesień</option>
-        <option value="wiosna">Wiosna</option>
-      </select>
+      <div className="flex rounded-md bg-deck-bg-deep/70 p-0.5">
+        {seasons.map((season) => {
+          const active = filters.sezon === season.value
+          return (
+            <button
+              key={season.value}
+              type="button"
+              onClick={() => setFilters({ ...filters, sezon: season.value })}
+              className={`rounded-md px-2 py-1 text-[10px] transition ${
+                active
+                  ? 'bg-deck-accent text-deck-bg-deep shadow-[0_0_18px_rgba(46,230,166,0.25)]'
+                  : 'text-deck-muted hover:text-deck-text'
+              }`}
+            >
+              {season.label}
+            </button>
+          )
+        })}
+      </div>
       <input
         aria-label="Rok od"
         type="number"
         placeholder="od"
         value={filters.fromYear ?? ''}
-        onChange={(e) =>
-          setFilters({ ...filters, fromYear: e.target.value ? Number(e.target.value) : null })
+        onChange={(event) =>
+          setFilters({ ...filters, fromYear: event.target.value ? Number(event.target.value) : null })
         }
-        className="w-16 bg-deck-panel border border-deck-border text-deck-muted text-[11px] rounded-md px-2 py-1"
+        className="deck-input w-16 rounded-md px-2 py-1 text-[11px]"
       />
       <input
         aria-label="Rok do"
         type="number"
         placeholder="do"
         value={filters.toYear ?? ''}
-        onChange={(e) =>
-          setFilters({ ...filters, toYear: e.target.value ? Number(e.target.value) : null })
+        onChange={(event) =>
+          setFilters({ ...filters, toYear: event.target.value ? Number(event.target.value) : null })
         }
-        className="w-16 bg-deck-panel border border-deck-border text-deck-muted text-[11px] rounded-md px-2 py-1"
+        className="deck-input w-16 rounded-md px-2 py-1 text-[11px]"
       />
     </div>
   )
