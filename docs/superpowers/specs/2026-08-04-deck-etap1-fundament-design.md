@@ -117,9 +117,10 @@ components/deck/DeckPulse.tsx      pasek stanu systemu (nowy)
 lib/auth/firebase.ts               inicjalizacja Firebase (nowy)
 lib/auth/useAuth.ts                hook sesji i roli (nowy)
 lib/auth/verify.ts                 weryfikacja tokenu po stronie serwera (nowy)
-lib/gas/client.ts                  klient Apps Script (nowy)
-lib/gas/schema.ts                  mapowanie wierszy arkusza na typy (nowy)
-lib/gas/timeout.ts                 limit czasu wywołania (na wzór lib/supabase/timeout.ts)
+lib/gas/client.ts                  klient Apps Script: limit czasu, cache, obsługa błędów (nowy)
+lib/gas/schema.ts                  nazwy zakładek i ich typy domenowe (nowy)
+lib/auth/role.ts                   adres e-mail → rola (nowy)
+lib/auth/guard.ts                  strażnik tras API (nowy)
 apps-script/Kod.gs                 źródło skryptu, wersjonowane w repo (nowy)
 middleware.ts                      zastępuje proxy.ts
 ```
@@ -314,9 +315,10 @@ wprowadzać drugi, konkurencyjny język animacji.
 2. **Kafelek reaguje na kursor.** Delikatne przechylenie w stronę kursora (maksymalnie 6°)
    i poświata podążająca za wskaźnikiem — pozycja jako zmienna CSS ustawiana w `pointermove`,
    bez ponownego renderowania Reacta.
-3. **Wejście w moduł to rozwinięcie, nie przeskok.** Natywne View Transitions tam, gdzie
-   przeglądarka je wspiera: kafelek rozszerza się w pełny widok modułu. Gdzie nie wspiera —
-   zwykłe przejście, bez migotania.
+3. **Wejście w moduł to docelowo rozwinięcie, nie przeskok** — kafelek rozszerza się w pełny
+   widok przez natywne View Transitions. Rzecz przeniesiona do Etapu 5: dopóki trzy z czterech
+   kafelków są zablokowane, nie ma czego rozwijać, a przejście warto zaprojektować raz, dla
+   kompletu modułów.
 4. **Liczby dojeżdżają.** `AnimatedNumber` (już istnieje) na każdej wartości w kafelku.
 5. **Tło żyje wolno.** Istniejąca siatka z `body::before` plus jedna powolna orbita świetlna;
    cykl 20 s lub dłuższy, żeby nie odbierać uwagi.
@@ -342,9 +344,16 @@ Usuwane w Etapie 1:
 - Formularz e-mail i hasło w `app/login/page.tsx` → przycisk „Zaloguj przez Google";
   cała oprawa wizualna strony logowania zostaje
 
-`lib/stats.ts` wraz z kompletem testów (`stats.*.test.ts`, `filters`, `format`, `period`,
-`overview`) **nie jest dotykany**. To ponad dziesięć plików testowych, które muszą przechodzić przed
-i po migracji — i są głównym dowodem, że migracja niczego nie zepsuła.
+Cała logika obliczeniowa w `lib/stats.ts` — korelacje, regresja, krzywe przeżycia, prognozy,
+alerty — **zostaje bez zmian**. Ponad dziesięć plików testowych (`stats.*.test.ts`, `filters`,
+`format`, `period`, `overview`) musi przechodzić przed i po migracji; są głównym dowodem, że
+niczego nie zepsuliśmy.
+
+Jeden wyjątek, znaleziony przy pisaniu planu: `buildAlerts` i wnioski wykonawcze niosą własne
+adresy jako literały (`href: '/kpi'` i osiem podobnych). Po przenosinach modułów pod `/analytics`
+te dziewięć napisów trzeba poprawić, inaczej każdy alert prowadziłby na stronę 404. To zmiana
+adresów, nie obliczeń — ale nie da się uczciwie powiedzieć, że plik jest nietknięty. Trzy asercje
+w `stats.alerts.test.ts` sprawdzają te adresy i również wymagają aktualizacji.
 
 ---
 
@@ -352,8 +361,9 @@ i po migracji — i są głównym dowodem, że migracja niczego nie zepsuła.
 
 | Co | Jak |
 |---|---|
-| `lib/gas/schema.ts` | Testy jednostkowe: wiersz arkusza → typ domenowy. Puste komórki, liczby jako tekst, `survival` z przecinkami, `in_progress` jako `PRAWDA`/`TRUE`/`1`, wiersz krótszy od nagłówka. |
-| `lib/gas/client.ts` | Testy ze zaślepionym `fetch`: poprawna odpowiedź, `403`, przekroczony czas, treść niebędąca JSON-em. |
+| `apps-script/Kod.gs` | Zamiana wiersza na typ (puste komórki, `survival` po przecinkach, `in_progress` jako `PRAWDA`/`TRUE`/`1`, brakujący nagłówek) mieszka w skrypcie, więc vitest jej nie uruchomi. Sprawdzana ręcznie po wdrożeniu: odczyt `_ping`, a potem porównanie wykresów z liczbami w arkuszu. |
+| `lib/gas/schema.ts` | Nazwy zakładek zgadzają się ze skryptem; `jestTabela` odrzuca nazwę spoza schematu. |
+| `lib/gas/client.ts` | Testy ze zaślepionym `fetch`: poprawna odpowiedź, `ok:false` z kodem ze skryptu, HTML zamiast JSON-a, przekroczony czas, brak konfiguracji. |
 | `lib/auth/verify.ts` | Token ważny, wygasły, zły odbiorca, zły podpis, adres spoza listy. |
 | Trasy `/api/*` | Zapis bez logowania → `401`, z rolą `board` → `403`, z rolą `owner` → `201`. |
 | Kokpit | `DeckTile` renderuje wartości; kafelek zablokowany nie ma odnośnika; rola `board` nie widzi Orbity. |
