@@ -195,14 +195,32 @@ Jedno wdrożenie Web App, „wykonuj jako ja", „dostęp: wszyscy". Źródło w
 żeby zmiany były w historii, a nie tylko w edytorze skryptów.
 
 ```
-GET  ?token=…&t=rekrutacje                    → [ {...}, {...} ]
-POST { token, t:'rekrutacje', op:'upsert', row:{…} }  → { ok: true, row: {…} }
+GET  ?token=…&t=rekrutacje                      → [ {…}, {…} ]
+GET  ?token=…&t=_ping                           → { ok:true, zakladki:[…] }
+POST { token, t, op, rows:[ {…} ] }             → { ok:true, rows:[ {…} ] }
 ```
 
-`op:'upsert'` nadpisuje wiersz o podanym `id`, a gdy `id` jest puste — dopisuje nowy wiersz na
-końcu zakładki i nadaje mu identyfikator. Nie ma dopasowywania po innych kolumnach: dwie rekrutacje
-o tej samej edycji i sezonie to dla skryptu dwa osobne wiersze, bo cichy nadpis danych z powodu
-zbieżnych pól byłby gorszy niż widoczny duplikat.
+Trzy operacje, bo tyle wymagają dzisiejsze trasy — `/api/kpi` przyjmuje zarówno pojedynczą
+metrykę, jak i całą tablicę (zapis całego rocznika naraz), a do tego `PATCH` po `id` dla edycji
+w miejscu:
+
+| `op` | Działanie | Kto tego potrzebuje |
+|---|---|---|
+| `insert` | Dopisuje wiersze, nadaje `id` i `created_at` | `POST /api/kpi` (pojedynczo i wsadowo), `POST /api/czlonkowie` |
+| `upsert` | Nadpisuje wiersz o danym `id`, a bez `id` — o tej samej wartości klucza naturalnego (`edycja`). Gdy nic nie pasuje, dopisuje | `POST /api/rekrutacje`, `POST /api/kohorty` |
+| `update` | Poprawia istniejący wiersz po `id`, nie tworzy nowych | `PATCH /api/kpi`, `PATCH /api/czlonkowie` |
+
+`rows` jest zawsze tablicą, także dla jednego wiersza — jeden kształt żądania zamiast dwóch.
+Pola nieprzesłane przy `upsert` i `update` zostają bez zmian, więc edycja jednej komórki
+nie kasuje reszty wiersza.
+
+**Apps Script zawsze odpowiada kodem HTTP 200**, również przy błędzie — tego nie da się zmienić.
+Prawdziwy kod jedzie więc w treści (`{ ok:false, kod:403, error:'…' }`), a `lib/gas/client.ts`
+sprawdza pole `ok`, nie status odpowiedzi. To jest pułapka, w którą łatwo wpaść przy pisaniu
+klienta i dlatego jest tu zapisana.
+
+Zapisy są obejmowane blokadą (`LockService`) — dwa równoczesne dopisania bez niej mogłyby trafić
+w ten sam wiersz.
 
 Ponieważ dostęp ma „każdy", **adres wdrożenia jest sekretem, a token jest drugim zamkiem**. Oba
 istnieją wyłącznie w zmiennych środowiskowych Vercela (`GAS_URL`, `GAS_TOKEN`) i nigdy nie trafiają
