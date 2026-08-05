@@ -299,6 +299,16 @@ describe('gasList', () => {
     await expect(gasList('kpi')).rejects.toMatchObject({ kod: 502 })
   })
 
+  it('zamienia zerwane czytanie treści na GasError, a nie surowy wyjątek', async () => {
+    // Połączenie urywa się już po nagłówkach, w trakcie pobierania treści.
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+      text: () => Promise.reject(new Error('socket hang up')),
+    } as unknown as Response))
+    const { gasList, GasError } = await import('@/lib/gas/client')
+    await expect(gasList('kpi')).rejects.toBeInstanceOf(GasError)
+    await expect(gasList('kpi')).rejects.toMatchObject({ kod: 504 })
+  })
+
   it('zwraca pustą listę, gdy skrypt nie jest skonfigurowany', async () => {
     vi.stubEnv('GAS_URL', '')
     vi.stubEnv('GAS_TOKEN', '')
@@ -345,9 +355,13 @@ async function wywolaj(url: string, init: Init): Promise<unknown> {
   const przerwij = new AbortController()
   const zegar = setTimeout(() => przerwij.abort(), LIMIT_CZASU_MS)
 
-  let res: Response
+  // Pobranie treści jest wewnątrz tego samego `try` co `fetch` z dwóch powodów:
+  // połączenie może urwać się już po nagłówkach, a limit 8 s ma obejmować całą
+  // wymianę, nie samo nawiązanie połączenia.
+  let tresc: string
   try {
-    res = await fetch(url, { ...init, signal: przerwij.signal })
+    const res = await fetch(url, { ...init, signal: przerwij.signal })
+    tresc = await res.text()
   } catch (e) {
     const przerwane = e instanceof Error && e.name === 'AbortError'
     throw new GasError(
@@ -360,7 +374,6 @@ async function wywolaj(url: string, init: Init): Promise<unknown> {
     clearTimeout(zegar)
   }
 
-  const tresc = await res.text()
   let dane: unknown
   try {
     dane = JSON.parse(tresc)
@@ -393,7 +406,7 @@ export async function gasList<T extends Tabela>(t: T): Promise<TabelaTypy[T][]> 
 - [ ] **Krok 4: Uruchom test i sprawdź, że przechodzi**
 
 Uruchom: `npm test -- lib/gas/client.test.ts`
-Oczekiwane: PASS, 5 testów
+Oczekiwane: PASS, 6 testów
 
 - [ ] **Krok 5: Zatwierdź**
 
@@ -609,7 +622,7 @@ export function rolaDla(email: string | null | undefined): Rola | null {
 - [ ] **Krok 4: Uruchom test i sprawdź, że przechodzi**
 
 Uruchom: `npm test -- lib/auth/role.test.ts`
-Oczekiwane: PASS, 5 testów
+Oczekiwane: PASS, 6 testów
 
 - [ ] **Krok 5: Zatwierdź**
 
@@ -1428,7 +1441,7 @@ export async function POST(req: NextRequest) {
 - [ ] **Krok 4: Uruchom test i sprawdź, że przechodzi**
 
 Uruchom: `npm test -- app/api/rekrutacje/route.test.ts`
-Oczekiwane: PASS, 5 testów
+Oczekiwane: PASS, 6 testów
 
 - [ ] **Krok 5: Zatwierdź**
 
@@ -1977,7 +1990,7 @@ zamiast obwódki, a nie obie naraz.
 - [ ] **Krok 5: Uruchom test i sprawdź, że przechodzi**
 
 Uruchom: `npm test -- components/deck/DeckTile.test.tsx`
-Oczekiwane: PASS, 5 testów
+Oczekiwane: PASS, 6 testów
 
 - [ ] **Krok 6: Zatwierdź**
 
