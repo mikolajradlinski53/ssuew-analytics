@@ -66,3 +66,28 @@ export async function gasList<T extends Tabela>(t: T): Promise<TabelaTypy[T][]> 
   if (!Array.isArray(dane)) throw new GasError('Skrypt zwrócił coś innego niż listę', 502)
   return dane as TabelaTypy[T][]
 }
+
+export type Operacja = 'insert' | 'upsert' | 'update'
+
+/**
+ * Zapis nigdy nie jest cache'owany. `rows` jest zawsze tablicą — także dla jednego wiersza,
+ * żeby po stronie skryptu istniał jeden kształt żądania zamiast dwóch.
+ */
+export async function gasWrite<T extends Tabela>(
+  t: T,
+  op: Operacja,
+  rows: Record<string, unknown>[],
+): Promise<TabelaTypy[T][]> {
+  if (!isConfigured) throw new GasError('Apps Script nie jest skonfigurowany', 503)
+
+  const dane = await wywolaj(GAS_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ token: GAS_TOKEN, t, op, rows }),
+    cache: 'no-store',
+  })
+
+  const koperta = dane as { rows?: unknown }
+  if (!Array.isArray(koperta.rows)) throw new GasError('Skrypt nie zwrócił zapisanych wierszy', 502)
+  return koperta.rows as TabelaTypy[T][]
+}
