@@ -28,7 +28,7 @@ export function pearson(x: number[], y: number[]): number {
   return den === 0 ? 0 : num / den
 }
 
-function approxPval(tStat: number, df: number): { label: string; significant: boolean } {
+function approxPval(tStat: number, _df: number): { label: string; significant: boolean } {
   const t = Math.abs(tStat)
   // Przybliżenie p-value dla dwustronnego testu t
   if (t > 4.5)  return { label: '<0.001', significant: true }
@@ -115,7 +115,7 @@ export function zInterpretation(z: number): string {
 // Uproszczona implementacja bez bibliotek – działa dla 2–4 zmiennych.
 
 function matMul(A: number[][], B: number[][]): number[][] {
-  const rows = A.length, cols = B[0].length, inner = B.length
+  const rows = A.length, cols = B[0].length
   return Array.from({ length: rows }, (_, r) =>
     Array.from({ length: cols }, (_, c) =>
       A[r].reduce((s, _, k) => s + A[r][k] * B[k][c], 0)
@@ -168,9 +168,8 @@ function matInv4(M: number[][]): number[][] {
 export function olsMultiple(
   X_raw: number[][], // każda kolumna = jedna zmienna niezależna
   y: number[],
-  varNames: string[]
+  _varNames: string[] = []
 ): { betas: number[]; r2: number; yhat: number[] } {
-  const n = y.length
   // Dodaj kolumnę stałej (intercept)
   const X = X_raw[0].map((_, i) => [1, ...X_raw.map(col => col[i])])
   const Xt = matTranspose(X)
