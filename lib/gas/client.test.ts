@@ -51,6 +51,16 @@ describe('gasList', () => {
     await expect(gasList('kpi')).rejects.toMatchObject({ kod: 502 })
   })
 
+  it('zamienia zerwane czytanie treści na GasError, a nie surowy wyjątek', async () => {
+    // Połączenie urywa się już po nagłówkach, w trakcie pobierania treści.
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+      text: () => Promise.reject(new Error('socket hang up')),
+    } as unknown as Response))
+    const { gasList, GasError } = await import('@/lib/gas/client')
+    await expect(gasList('kpi')).rejects.toBeInstanceOf(GasError)
+    await expect(gasList('kpi')).rejects.toMatchObject({ kod: 504 })
+  })
+
   it('zwraca pustą listę, gdy skrypt nie jest skonfigurowany', async () => {
     vi.stubEnv('GAS_URL', '')
     vi.stubEnv('GAS_TOKEN', '')

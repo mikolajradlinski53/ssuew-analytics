@@ -23,9 +23,13 @@ async function wywolaj(url: string, init: Init): Promise<unknown> {
   const przerwij = new AbortController()
   const zegar = setTimeout(() => przerwij.abort(), LIMIT_CZASU_MS)
 
-  let res: Response
+  // Pobranie treści jest wewnątrz tego samego `try` co `fetch` z dwóch powodów:
+  // połączenie może urwać się już po nagłówkach, a limit 8 s ma obejmować całą
+  // wymianę, nie samo nawiązanie połączenia.
+  let tresc: string
   try {
-    res = await fetch(url, { ...init, signal: przerwij.signal })
+    const res = await fetch(url, { ...init, signal: przerwij.signal })
+    tresc = await res.text()
   } catch (e) {
     const przerwane = e instanceof Error && e.name === 'AbortError'
     throw new GasError(
@@ -38,7 +42,6 @@ async function wywolaj(url: string, init: Init): Promise<unknown> {
     clearTimeout(zegar)
   }
 
-  const tresc = await res.text()
   let dane: unknown
   try {
     dane = JSON.parse(tresc)
