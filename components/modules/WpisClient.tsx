@@ -2,8 +2,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { useAnalyticsData } from '@/lib/useAnalyticsData'
-import { createClient } from '@/lib/supabase/client'
-import { isConfigured } from '@/lib/supabase/config'
+import { useAuth } from '@/lib/auth/useAuth'
 import { nextOkres } from '@/lib/period'
 import { kpiByKategoria } from '@/lib/stats'
 import { BentoCard } from '@/components/ui/BentoCard'
@@ -16,21 +15,10 @@ const btnCls = 'w-full bg-deck-accent text-deck-bg-deep rounded-md px-3 py-2 tex
 
 export default function WpisClient() {
   const { kpiMetrics, addRekrutacja, addKohorta, addKpiMetric, addKpiMetricsBulk } = useAnalyticsData()
-  const [authed, setAuthed] = useState<boolean | null>(null)
+  const { rola, laduje } = useAuth()
   const [tab, setTab] = useState<Tab>('rekrutacja')
   const [status, setStatus] = useState<{ ok: boolean; msg: string } | null>(null)
   const [busy, setBusy] = useState(false)
-
-  useEffect(() => {
-    if (!isConfigured) {
-      setAuthed(false)
-      return
-    }
-    const supabase = createClient()
-    supabase.auth.getUser().then(({ data }) => setAuthed(!!data.user))
-    const { data: sub } = supabase.auth.onAuthStateChange((_e, s) => setAuthed(!!s?.user))
-    return () => sub.subscription.unsubscribe()
-  }, [])
 
   const [rekr, setRekr] = useState({ edycja: '', sezon: 'jesien' as 'jesien' | 'wiosna', rok: new Date().getFullYear(), zgloszenia: '', przyjeci: '' })
   const [koh, setKoh] = useState({ edycja: '', sezon: 'jesien' as 'jesien' | 'wiosna', rok: new Date().getFullYear(), n: '', avg: '', max: '', inProgress: false })
@@ -45,12 +33,21 @@ export default function WpisClient() {
     if (!rocznikOkres) setRocznikOkres(nextOkres(latestOkres))
   }, [latestOkres, rocznikOkres])
 
-  if (authed === null) return <ModuleSkeleton />
-  if (!authed) {
+  if (laduje) return <ModuleSkeleton />
+  if (rola !== 'owner') {
     return (
       <BentoCard title="Wpisz dane">
         <p className="text-[11px] text-deck-muted">
-          Zaloguj się, by wpisywać dane. <Link href="/login" className="text-deck-accent">Zaloguj →</Link>
+          {rola === 'board' ? (
+            'Dane wpisuje wyłącznie właściciel kokpitu. Masz dostęp do podglądu wszystkich modułów.'
+          ) : (
+            <>
+              Zaloguj się, by wpisywać dane.{' '}
+              <Link href="/login" className="text-deck-accent">
+                Zaloguj →
+              </Link>
+            </>
+          )}
         </p>
       </BentoCard>
     )

@@ -4,7 +4,7 @@ import { ComposedChart, Bar, Line, Area, ScatterChart, Scatter, XAxis, YAxis, Ca
 import { useAnalyticsData } from '@/lib/useAnalyticsData'
 import { useFilters } from '@/lib/useFilters'
 import { applyFilters } from '@/lib/filters'
-import { isConfigured } from '@/lib/supabase/config'
+import { useAuth } from '@/lib/auth/useAuth'
 import { analyzeRekrutacje, linearForecast, mean } from '@/lib/stats'
 import { chartTheme, axisTick, tooltipStyle } from '@/lib/chartTheme'
 import { BentoCard } from '@/components/ui/BentoCard'
@@ -21,11 +21,13 @@ export default function RekrutacjeClient() {
   const [nowa, setNowa] = useState({ edycja: '', sezon: 'jesien' as 'jesien' | 'wiosna', rok: new Date().getFullYear(), zgloszenia: '', przyjeci: '' })
   const [err, setErr] = useState<string | null>(null)
 
+  const { rola } = useAuth()
+
   if (loading) return <ModuleSkeleton variant="rekrutacje" />
 
   const rekr = applyFilters(rekrutacje, filters)
   const sorted = [...rekr].sort((a, b) => a.rok - b.rok || (a.sezon === 'wiosna' ? -1 : 1))
-  const editable = isConfigured
+  const editable = rola === 'owner'
 
   const saveField = (r: Rekrutacja, patch: Partial<Pick<Rekrutacja, 'zgloszenia' | 'przyjeci'>>) => {
     addRekrutacja({ edycja: r.edycja, sezon: r.sezon, rok: r.rok, zgloszenia: r.zgloszenia, przyjeci: r.przyjeci, ...patch }).catch((e) => setErr(String(e)))

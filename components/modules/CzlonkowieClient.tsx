@@ -2,7 +2,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useCzlonkowie } from '@/lib/useCzlonkowie'
 import { useAnalyticsData } from '@/lib/useAnalyticsData'
-import { isConfigured } from '@/lib/supabase/config'
+import { useAuth } from '@/lib/auth/useAuth'
 import { kolejneSemestry, memberStatusCounts, survivalFromMembers } from '@/lib/stats'
 import type { Czlonek, CzlonekStatus, Sezon } from '@/types'
 import { BentoCard } from '@/components/ui/BentoCard'
@@ -45,12 +45,14 @@ export default function CzlonkowieClient() {
     setRows(czlonkowie.filter((c) => c.kohorta_edycja === edycja))
   }, [czlonkowie, edycja])
 
+  const { rola } = useAuth()
+
   if (loading) return <ModuleSkeleton variant="czlonkowie" />
 
   const cohort = cohortList.find((c) => c.edycja === edycja)
   const cols = cohort ? colsForCohort(cohort.sezon, cohort.rok) : []
-  const editable = isConfigured && !usingDemo
-  const canAdd = isConfigured
+  const editable = rola === 'owner' && !usingDemo
+  const canAdd = rola === 'owner'
   const counts = memberStatusCounts(rows)
   const survival = survivalFromMembers(rows)
   const avgSigma = rows.length
@@ -112,7 +114,7 @@ export default function CzlonkowieClient() {
         </select>
         <span className="text-[11px] text-deck-muted">{rows.length} członków</span>
         {usingDemo && <span className="text-[10px] text-deck-warn">demo zaślepione - siatka read-only</span>}
-        {!isConfigured && !usingDemo && <span className="text-[10px] text-deck-warn">tryb demo - read-only</span>}
+        {!usingDemo && rola !== 'owner' && <span className="text-[10px] text-deck-warn">podglad - edycja tylko dla wlasciciela</span>}
         {statusMsg && <span className="text-[10px] text-deck-muted">{statusMsg}</span>}
       </div>
 

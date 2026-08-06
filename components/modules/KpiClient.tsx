@@ -2,7 +2,7 @@
 import { useState } from 'react'
 import { ArrowRight, Plus, Sparkles, TrendingDown, TrendingUp } from 'lucide-react'
 import { useAnalyticsData } from '@/lib/useAnalyticsData'
-import { isConfigured } from '@/lib/supabase/config'
+import { useAuth } from '@/lib/auth/useAuth'
 import { buildStrategicKpis, kpiRatio, kpiByKategoria, kpiSummary } from '@/lib/stats'
 import { BentoCard } from '@/components/ui/BentoCard'
 import { KpiTile } from '@/components/ui/KpiTile'
@@ -28,9 +28,11 @@ export default function KpiClient() {
   const [nowa, setNowa] = useState({ kategoria: '', nazwa: '', poprz: '', biez: '' })
   const [err, setErr] = useState<string | null>(null)
 
+  const { rola } = useAuth()
+
   if (loading) return <ModuleSkeleton variant="kpi" />
 
-  const editable = isConfigured
+  const editable = rola === 'owner'
   const okresP = kpiMetrics[0]?.okres_poprzedni ?? '2024/2025'
   const okresB = kpiMetrics[0]?.okres_biezacy ?? '2025/2026'
 

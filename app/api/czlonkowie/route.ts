@@ -1,50 +1,76 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
-import { isConfigured } from '@/lib/supabase/config'
-import { withSupabaseTimeout } from '@/lib/supabase/timeout'
+import { NextResponse, type NextRequest } from 'next/server'
+import { gasList, gasWrite, GasError, odswiezAnalytics } from '@/lib/gas/client'
+import { isConfigured } from '@/lib/gas/config'
+import { ktoPyta } from '@/lib/auth/guard'
 
-export async function GET() {
-  if (!isConfigured) return NextResponse.json([])
-  const supabase = await createClient()
-  const { data: { user } } = await withSupabaseTimeout(supabase.auth.getUser())
-  if (!user) return NextResponse.json({ error: 'Wymagane logowanie' }, { status: 401 })
-  const { data, error } = await withSupabaseTimeout(
-    supabase
-      .from('czlonkowie').select('*')
-      .order('kohorta_edycja', { ascending: true }).order('imie_nazwisko', { ascending: true }),
-  )
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-  return NextResponse.json(data)
+function blad(e: unknown) {
+  return NextResponse.json({ error: (e as Error).message }, { status: e instanceof GasError ? e.kod : 500 })
+}
+
+/** Zwraca odpowiedź odmowną albo `null`, gdy pytający ma prawo zapisu. */
+async function odmowaZapisu(req: NextRequest) {
+  const pytajacy = await ktoPyta(req)
+  if (!pytajacy) return NextResponse.json({ error: 'Wymagane logowanie' }, { status: 401 })
+  if (pytajacy.rola !== 'owner') return NextResponse.json({ error: 'Brak uprawnień do zapisu' }, { status: 403 })
+  return null
+}
+
+/**
+ * Jedyna trasa wymagająca logowania także do odczytu — to nazwiska, nie liczby.
+ * Czytać mogą obie role; zapisywać, jak wszędzie, tylko `owner`.
+ */
+export async function GET(req: NextRequest) {
+  if (!(await ktoPyta(req))) return NextResponse.json({ error: 'Wymagane logowanie' }, { status: 401 })
+  // Brak arkusza to co innego niż arkusz z pustą zakładką. Przeglądarka nie widzi
+  // GAS_URL, więc rozróżnienie musi przyjść stąd — inaczej pusta lista prawdziwych
+  // członków byłaby nie do odróżnienia od trybu demonstracyjnego.
+  if (!isConfigured) {
+    return NextResponse.json({ error: 'Arkusz nie jest skonfigurowany' }, { status: 503 })
+  }
+  try {
+    return NextResponse.json(await gasList('czlonkowie'))
+  } catch (e) {
+    return blad(e)
+  }
 }
 
 export async function POST(req: NextRequest) {
-  if (!isConfigured) return NextResponse.json({ error: 'Supabase nie skonfigurowany' }, { status: 503 })
-  const supabase = await createClient()
-  const { data: { user } } = await withSupabaseTimeout(supabase.auth.getUser())
-  if (!user) return NextResponse.json({ error: 'Wymagane logowanie' }, { status: 401 })
-  const body = await req.json()
-  const { kohorta_edycja, imie_nazwisko, status, aktywnosc } = body
-  if (!kohorta_edycja || !imie_nazwisko) return NextResponse.json({ error: 'Brakujące pola' }, { status: 400 })
-  const { data, error } = await supabase.from('czlonkowie')
-    .insert({ kohorta_edycja, imie_nazwisko, status: status ?? 'aktywny', aktywnosc: aktywnosc ?? [] })
-    .select().single()
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-  return NextResponse.json(data, { status: 201 })
+  const nie = await odmowaZapisu(req)
+  if (nie) return nie
+
+  const { kohorta_edycja, imie_nazwisko, status, aktywnosc } = await req.json()
+  if (!kohorta_edycja || !imie_nazwisko) {
+    return NextResponse.json({ error: 'Brakujące pola' }, { status: 400 })
+  }
+
+  try {
+    const [wiersz] = await gasWrite('czlonkowie', 'insert', [
+      { kohorta_edycja, imie_nazwisko, status: status ?? 'aktywny', aktywnosc: aktywnosc ?? [] },
+    ])
+    odswiezAnalytics()
+    return NextResponse.json(wiersz, { status: 201 })
+  } catch (e) {
+    return blad(e)
+  }
 }
 
 export async function PATCH(req: NextRequest) {
-  if (!isConfigured) return NextResponse.json({ error: 'Supabase nie skonfigurowany' }, { status: 503 })
-  const supabase = await createClient()
-  const { data: { user } } = await withSupabaseTimeout(supabase.auth.getUser())
-  if (!user) return NextResponse.json({ error: 'Wymagane logowanie' }, { status: 401 })
+  const nie = await odmowaZapisu(req)
+  if (nie) return nie
+
   const body = await req.json()
-  const { id, status, aktywnosc, imie_nazwisko } = body
-  if (!id) return NextResponse.json({ error: 'Brak id' }, { status: 400 })
-  const patch: Record<string, unknown> = {}
-  if (status !== undefined) patch.status = status
-  if (aktywnosc !== undefined) patch.aktywnosc = aktywnosc
-  if (imie_nazwisko !== undefined) patch.imie_nazwisko = imie_nazwisko
-  const { data, error } = await supabase.from('czlonkowie').update(patch).eq('id', id).select().single()
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-  return NextResponse.json(data)
+  if (!body?.id) return NextResponse.json({ error: 'Brak id' }, { status: 400 })
+
+  const zmiany: Record<string, unknown> = { id: body.id }
+  ;(['imie_nazwisko', 'status', 'aktywnosc'] as const).forEach((p) => {
+    if (body[p] !== undefined) zmiany[p] = body[p]
+  })
+
+  try {
+    const [wiersz] = await gasWrite('czlonkowie', 'update', [zmiany])
+    odswiezAnalytics()
+    return NextResponse.json(wiersz)
+  } catch (e) {
+    return blad(e)
+  }
 }

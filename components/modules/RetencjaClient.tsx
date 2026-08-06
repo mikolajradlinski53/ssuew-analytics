@@ -4,7 +4,7 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Responsi
 import { useAnalyticsData } from '@/lib/useAnalyticsData'
 import { useFilters } from '@/lib/useFilters'
 import { applyFilters } from '@/lib/filters'
-import { isConfigured } from '@/lib/supabase/config'
+import { useAuth } from '@/lib/auth/useAuth'
 import { survivalCurve, analyzeRetention } from '@/lib/stats'
 import { chartTheme, axisTick, tooltipStyle } from '@/lib/chartTheme'
 import { BentoCard } from '@/components/ui/BentoCard'
@@ -19,10 +19,12 @@ export default function RetencjaClient() {
   const { filters } = useFilters()
   const [nowa, setNowa] = useState({ edycja: '', sezon: 'jesien' as 'jesien' | 'wiosna', rok: new Date().getFullYear(), n: '', avg: '', max: '', inProgress: false })
   const [err, setErr] = useState<string | null>(null)
+  const { rola } = useAuth()
+
   if (loading) return <ModuleSkeleton variant="retencja" />
 
   const koh = applyFilters(kohorty, filters)
-  const editable = isConfigured
+  const editable = rola === 'owner'
   const sortedKoh = [...koh].sort((a, b) => a.rok - b.rok || (a.sezon === 'wiosna' ? -1 : 1))
   const reg = analyzeRetention(koh)
 

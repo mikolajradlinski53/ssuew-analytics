@@ -1,72 +1,85 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
-import { isConfigured } from '@/lib/supabase/config'
-import { withSupabaseTimeout } from '@/lib/supabase/timeout'
+import { NextResponse, type NextRequest } from 'next/server'
+import { gasList, gasWrite, GasError, odswiezAnalytics } from '@/lib/gas/client'
+import { ktoPyta } from '@/lib/auth/guard'
+
+const POLA = [
+  'kategoria',
+  'nazwa',
+  'okres_poprzedni',
+  'wartosc_poprzednia',
+  'okres_biezacy',
+  'wartosc_biezaca',
+] as const
+
+function kompletny(w: Record<string, unknown>): boolean {
+  return POLA.every((p) => w?.[p] !== undefined && w?.[p] !== null && w?.[p] !== '')
+}
+
+function wybierz(w: Record<string, unknown>): Record<string, unknown> {
+  return Object.fromEntries(POLA.map((p) => [p, w[p]]))
+}
+
+/** Zwraca odpowiedź odmowną albo `null`, gdy pytający ma prawo zapisu. */
+async function odmowa(req: NextRequest) {
+  const pytajacy = await ktoPyta(req)
+  if (!pytajacy) return NextResponse.json({ error: 'Wymagane logowanie' }, { status: 401 })
+  if (pytajacy.rola !== 'owner') return NextResponse.json({ error: 'Brak uprawnień do zapisu' }, { status: 403 })
+  return null
+}
+
+function blad(e: unknown) {
+  return NextResponse.json({ error: (e as Error).message }, { status: e instanceof GasError ? e.kod : 500 })
+}
 
 export async function GET() {
-  if (!isConfigured) return NextResponse.json([])
-  const supabase = await createClient()
-  const { data, error } = await withSupabaseTimeout(
-    supabase
-      .from('kpi_metrics').select('*')
-      .order('kategoria', { ascending: true }).order('nazwa', { ascending: true }),
-  )
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-  return NextResponse.json(data)
+  try {
+    return NextResponse.json(await gasList('kpi'))
+  } catch (e) {
+    return blad(e)
+  }
 }
 
 export async function POST(req: NextRequest) {
-  if (!isConfigured) return NextResponse.json({ error: 'Supabase nie skonfigurowany' }, { status: 503 })
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Wymagane logowanie' }, { status: 401 })
-  const body = await req.json()
+  const nie = await odmowa(req)
+  if (nie) return nie
 
-  // Tryb wsadowy: tablica metryk (np. cały nowy rocznik).
-  if (Array.isArray(body)) {
-    const valid = body.filter(
-      (b) => b && b.kategoria && b.nazwa && b.okres_poprzedni && b.wartosc_poprzednia != null && b.okres_biezacy && b.wartosc_biezaca != null,
+  // Tryb wsadowy: tablica metryk (np. caly nowy rocznik naraz).
+  const body = await req.json()
+  const wchodzace: Record<string, unknown>[] = Array.isArray(body) ? body : [body]
+  const poprawne = wchodzace.filter(kompletny).map(wybierz)
+  if (!poprawne.length) {
+    return NextResponse.json(
+      { error: Array.isArray(body) ? 'Brak prawidłowych wierszy' : 'Brakujące pola' },
+      { status: 400 },
     )
-    if (!valid.length) return NextResponse.json({ error: 'Brak prawidłowych wierszy' }, { status: 400 })
-    const rows = valid.map((b) => ({
-      kategoria: b.kategoria,
-      nazwa: b.nazwa,
-      okres_poprzedni: b.okres_poprzedni,
-      wartosc_poprzednia: b.wartosc_poprzednia,
-      okres_biezacy: b.okres_biezacy,
-      wartosc_biezaca: b.wartosc_biezaca,
-    }))
-    const { data, error } = await supabase.from('kpi_metrics').insert(rows).select()
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-    return NextResponse.json(data, { status: 201 })
   }
 
-  const { kategoria, nazwa, okres_poprzedni, wartosc_poprzednia, okres_biezacy, wartosc_biezaca } = body
-  if (!kategoria || !nazwa || !okres_poprzedni || wartosc_poprzednia == null || !okres_biezacy || wartosc_biezaca == null)
-    return NextResponse.json({ error: 'Brakujące pola' }, { status: 400 })
-  const { data, error } = await supabase.from('kpi_metrics')
-    .insert({ kategoria, nazwa, okres_poprzedni, wartosc_poprzednia, okres_biezacy, wartosc_biezaca })
-    .select().single()
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-  return NextResponse.json(data, { status: 201 })
+  try {
+    const wiersze = await gasWrite('kpi', 'insert', poprawne)
+    odswiezAnalytics()
+    return NextResponse.json(Array.isArray(body) ? wiersze : wiersze[0], { status: 201 })
+  } catch (e) {
+    return blad(e)
+  }
 }
 
 export async function PATCH(req: NextRequest) {
-  if (!isConfigured) return NextResponse.json({ error: 'Supabase nie skonfigurowany' }, { status: 503 })
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Wymagane logowanie' }, { status: 401 })
+  const nie = await odmowa(req)
+  if (nie) return nie
+
   const body = await req.json()
-  const { id, kategoria, nazwa, okres_poprzedni, wartosc_poprzednia, okres_biezacy, wartosc_biezaca } = body
-  if (!id) return NextResponse.json({ error: 'Brak id' }, { status: 400 })
-  const patch: Record<string, unknown> = {}
-  if (kategoria !== undefined) patch.kategoria = kategoria
-  if (nazwa !== undefined) patch.nazwa = nazwa
-  if (okres_poprzedni !== undefined) patch.okres_poprzedni = okres_poprzedni
-  if (wartosc_poprzednia !== undefined) patch.wartosc_poprzednia = wartosc_poprzednia
-  if (okres_biezacy !== undefined) patch.okres_biezacy = okres_biezacy
-  if (wartosc_biezaca !== undefined) patch.wartosc_biezaca = wartosc_biezaca
-  const { data, error } = await supabase.from('kpi_metrics').update(patch).eq('id', id).select().single()
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-  return NextResponse.json(data)
+  if (!body?.id) return NextResponse.json({ error: 'Brak id' }, { status: 400 })
+
+  const zmiany: Record<string, unknown> = { id: body.id }
+  POLA.forEach((p) => {
+    if (body[p] !== undefined) zmiany[p] = body[p]
+  })
+
+  try {
+    const [wiersz] = await gasWrite('kpi', 'update', [zmiany])
+    odswiezAnalytics()
+    return NextResponse.json(wiersz)
+  } catch (e) {
+    return blad(e)
+  }
 }

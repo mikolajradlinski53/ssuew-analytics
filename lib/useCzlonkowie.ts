@@ -1,6 +1,5 @@
 'use client'
 import { useState, useEffect, useCallback } from 'react'
-import { isConfigured } from '@/lib/supabase/config'
 import type { Czlonek } from '@/types'
 
 export function useCzlonkowie() {
@@ -12,15 +11,18 @@ export function useCzlonkowie() {
     setLoading(true)
     try {
       const res = await fetch('/api/czlonkowie')
+      // Podłączony arkusz + pusta zakładka = pusta siatka (dodajesz prawdziwych
+      // członków), a NIE zaślepione demo. Demo pokazujemy tylko wtedy, gdy arkusza
+      // w ogóle nie ma — a to trasa sygnalizuje kodem 503, bo przeglądarka nie widzi
+      // GAS_URL ani GAS_TOKEN i sama tego rozstrzygnąć nie może.
+      const brakArkusza = res.status === 503
       const data = res.ok ? await res.json() : []
       const live = Array.isArray(data) && data.length > 0
-      // Skonfigurowany Supabase + pusta baza = pusta siatka (dodajesz prawdziwych członków),
-      // a NIE zaślepione demo. Demo pokazujemy tylko bez konfiguracji (publiczny pokaz).
-      setCzlonkowie(live ? data : isConfigured ? [] : DEMO_CZLONKOWIE)
-      setUsingDemo(!live && !isConfigured)
+      setCzlonkowie(live ? data : brakArkusza ? DEMO_CZLONKOWIE : [])
+      setUsingDemo(!live && brakArkusza)
     } catch {
-      setCzlonkowie(isConfigured ? [] : DEMO_CZLONKOWIE)
-      setUsingDemo(!isConfigured)
+      setCzlonkowie(DEMO_CZLONKOWIE)
+      setUsingDemo(true)
     } finally {
       setLoading(false)
     }

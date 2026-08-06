@@ -1,8 +1,20 @@
+import { revalidateTag } from 'next/cache'
 import { GAS_URL, GAS_TOKEN, isConfigured } from './config'
 import type { Tabela, TabelaTypy } from './schema'
 
 const LIMIT_CZASU_MS = 8000
 const CACHE_S = 300
+
+/** Jeden znacznik na wszystkie dane analityczne — zapis w dowolnej zakładce unieważnia całość. */
+export const ZNACZNIK = 'analytics'
+
+/**
+ * Po zapisie cache musi zniknąć natychmiast, inaczej własną zmianę zobaczyłbyś
+ * dopiero za pięć minut. `expire: 0` znaczy „nie zostawiaj nic".
+ */
+export function odswiezAnalytics(): void {
+  revalidateTag(ZNACZNIK, { expire: 0 })
+}
 
 export class GasError extends Error {
   readonly kod: number
@@ -65,7 +77,7 @@ async function wywolaj(url: string, init: Init): Promise<unknown> {
 export async function gasList<T extends Tabela>(t: T): Promise<TabelaTypy[T][]> {
   if (!isConfigured) return []
   const url = `${GAS_URL}?token=${encodeURIComponent(GAS_TOKEN)}&t=${t}`
-  const dane = await wywolaj(url, { next: { revalidate: CACHE_S, tags: ['analytics'] } })
+  const dane = await wywolaj(url, { next: { revalidate: CACHE_S, tags: [ZNACZNIK] } })
   if (!Array.isArray(dane)) throw new GasError('Skrypt zwrócił coś innego niż listę', 502)
   return dane as TabelaTypy[T][]
 }
