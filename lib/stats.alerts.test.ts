@@ -19,12 +19,12 @@ describe('buildAlerts', () => {
     const alerts = buildAlerts([], [], metrics)
     const crit = alerts.find((a) => a.severity === 'critical')
     expect(crit).toBeTruthy()
-    expect(crit!.href).toBe('/kpi')
+    expect(crit!.href).toBe('/analytics/kpi')
   })
 
   it('umiarkowany spadek (ratio 0.7) → warning', () => {
     const alerts = buildAlerts([], [], [km('m2', 'SKS', 'Luty', 100, 70)])
-    expect(alerts.some((a) => a.severity === 'warning' && a.href === '/kpi')).toBe(true)
+    expect(alerts.some((a) => a.severity === 'warning' && a.href === '/analytics/kpi')).toBe(true)
   })
 
   it('wzrost r/r → brak alertu KPI', () => {
@@ -34,7 +34,7 @@ describe('buildAlerts', () => {
 
   it('spadkowy trend retencji → ostrzeżenie z linkiem /retencja', () => {
     const cohorts = [koh("W'22", 'wiosna', 2022, 4.4), koh("J'24", 'jesien', 2024, 2.1)]
-    expect(buildAlerts([], cohorts, []).some((a) => a.href === '/retencja')).toBe(true)
+    expect(buildAlerts([], cohorts, []).some((a) => a.href === '/analytics/retencja')).toBe(true)
   })
 
   it('sortuje critical przed warning', () => {

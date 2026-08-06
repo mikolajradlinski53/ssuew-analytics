@@ -325,3 +325,54 @@ body::before {
 .deck-button:hover::before {
   animation: deck-sheen 700ms ease;
 }
+
+/* Poświata podążająca za kursorem — pozycję ustawia DeckTile przez --mx/--my.
+   Nadpisuje obracającą się obwódkę z .deck-card::after, żeby w kafelkach
+   kokpitu widać było jedno albo drugie, a nie oba naraz. */
+.deck-tile::after {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 240ms ease;
+  background: radial-gradient(340px circle at var(--mx, 50%) var(--my, 50%), rgba(46, 230, 166, 0.13), transparent 68%);
+  animation: none;
+}
+
+.deck-tile:hover::after,
+.deck-tile:focus-visible::after {
+  opacity: 1;
+}
+
+.deck-tile-locked {
+  border: 1px dashed rgba(148, 163, 184, 0.16);
+  background: rgba(255, 255, 255, 0.016);
+}
+
+/* Kafelki wjeżdżają po kolei — kolejność prowadzi wzrok od największego do najmniejszego. */
+.deck-tile,
+.deck-tile-locked {
+  animation: deck-rise 640ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+.deck-tile:nth-child(1), .deck-tile-locked:nth-child(1) { animation-delay: 0ms; }
+.deck-tile:nth-child(2), .deck-tile-locked:nth-child(2) { animation-delay: 90ms; }
+.deck-tile:nth-child(3), .deck-tile-locked:nth-child(3) { animation-delay: 170ms; }
+.deck-tile:nth-child(4), .deck-tile-locked:nth-child(4) { animation-delay: 250ms; }
+.deck-tile:nth-child(5), .deck-tile-locked:nth-child(5) { animation-delay: 330ms; }
+
+/*
+  Bez tego „mnóstwo animacji" zamienia się w interfejs, który u części osób
+  wywołuje mdłości — a kilka animacji w tym pliku chodzi w nieskończonej pętli.
+*/
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

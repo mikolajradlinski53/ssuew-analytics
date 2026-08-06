@@ -4,6 +4,7 @@ import { usePathname } from 'next/navigation'
 import {
   Activity,
   AlertTriangle,
+  ArrowLeft,
   BarChart3,
   Brain,
   GitBranch,
@@ -17,15 +18,15 @@ import {
 import { LogoMark } from './LogoMark'
 
 export const NAV = [
-  { href: '/', label: 'Przegląd', icon: LayoutDashboard },
-  { href: '/rekrutacje', label: 'Rekrutacje', icon: BarChart3 },
-  { href: '/retencja', label: 'Retencja', icon: Activity },
-  { href: '/czlonkowie', label: 'Członkowie', icon: Users },
-  { href: '/kpi', label: 'KPI', icon: LineChart },
-  { href: '/lejek', label: 'Lejek', icon: GitBranch },
-  { href: '/korelacje', label: 'Korelacje', icon: Brain },
-  { href: '/prognozy', label: 'Prognozy', icon: Sparkles },
-  { href: '/alerty', label: 'Alerty', icon: AlertTriangle },
+  { href: '/analytics', label: 'Przegląd', icon: LayoutDashboard },
+  { href: '/analytics/rekrutacje', label: 'Rekrutacje', icon: BarChart3 },
+  { href: '/analytics/retencja', label: 'Retencja', icon: Activity },
+  { href: '/analytics/czlonkowie', label: 'Członkowie', icon: Users },
+  { href: '/analytics/kpi', label: 'KPI', icon: LineChart },
+  { href: '/analytics/lejek', label: 'Lejek', icon: GitBranch },
+  { href: '/analytics/korelacje', label: 'Korelacje', icon: Brain },
+  { href: '/analytics/prognozy', label: 'Prognozy', icon: Sparkles },
+  { href: '/analytics/alerty', label: 'Alerty', icon: AlertTriangle },
 ] as const
 
 export function Sidebar() {
@@ -41,6 +42,13 @@ export function Sidebar() {
           </div>
         </div>
       </div>
+      <Link
+        href="/"
+        className="deck-row mb-1 flex items-center gap-2 rounded-lg px-3 py-2 text-[11px] text-deck-muted transition hover:text-deck-text"
+      >
+        <ArrowLeft size={14} />
+        DECK
+      </Link>
       {NAV.map((item) => {
         const active = pathname === item.href
         const Icon = item.icon
@@ -63,7 +71,7 @@ export function Sidebar() {
         )
       })}
       <Link
-        href="/wpis"
+        href="/analytics/wpis"
         className="deck-button mt-auto flex items-center justify-center gap-2 rounded-lg px-3 py-2.5 text-xs font-semibold"
       >
         <Plus size={15} />

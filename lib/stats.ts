@@ -551,9 +551,9 @@ export function buildAlerts(
     const ratio = kpiRatio(m)
     if (m.wartosc_poprzednia > 0 && ratio > 0) {
       if (ratio < 0.6) {
-        alerts.push({ id: `kpi-${m.id}`, severity: 'critical', title: `${m.kategoria}: ${m.nazwa} — duży spadek`, detail: `${m.wartosc_poprzednia} → ${m.wartosc_biezaca} (${Math.round(ratio * 100)}% r/r)`, recommendation: 'Sprawdź przyczyny — priorytet Zarządu.', href: '/kpi' })
+        alerts.push({ id: `kpi-${m.id}`, severity: 'critical', title: `${m.kategoria}: ${m.nazwa} — duży spadek`, detail: `${m.wartosc_poprzednia} → ${m.wartosc_biezaca} (${Math.round(ratio * 100)}% r/r)`, recommendation: 'Sprawdź przyczyny — priorytet Zarządu.', href: '/analytics/kpi' })
       } else if (ratio < 0.8) {
-        alerts.push({ id: `kpi-${m.id}`, severity: 'warning', title: `${m.kategoria}: ${m.nazwa} — spadek r/r`, detail: `${m.wartosc_poprzednia} → ${m.wartosc_biezaca} (${Math.round(ratio * 100)}%)`, recommendation: 'Monitorować trend.', href: '/kpi' })
+        alerts.push({ id: `kpi-${m.id}`, severity: 'warning', title: `${m.kategoria}: ${m.nazwa} — spadek r/r`, detail: `${m.wartosc_poprzednia} → ${m.wartosc_biezaca} (${Math.round(ratio * 100)}%)`, recommendation: 'Monitorować trend.', href: '/analytics/kpi' })
       }
     }
   }
@@ -566,7 +566,7 @@ export function buildAlerts(
     const first = completed[0]
     const last = completed[completed.length - 1]
     if (last.avg_retention_sem < first.avg_retention_sem) {
-      alerts.push({ id: 'ret-decline', severity: 'warning', title: 'Spadkowy trend retencji', detail: `Z ${first.avg_retention_sem.toFixed(1)} (${first.edycja}) do ${last.avg_retention_sem.toFixed(1)} sem. (${last.edycja}).`, recommendation: 'Sprawdź onboarding i obciążenie sesją.', href: '/retencja' })
+      alerts.push({ id: 'ret-decline', severity: 'warning', title: 'Spadkowy trend retencji', detail: `Z ${first.avg_retention_sem.toFixed(1)} (${first.edycja}) do ${last.avg_retention_sem.toFixed(1)} sem. (${last.edycja}).`, recommendation: 'Sprawdź onboarding i obciążenie sesją.', href: '/analytics/retencja' })
     }
   }
 
@@ -576,7 +576,7 @@ export function buildAlerts(
     const meanCR = mean(s.cr)
     const lastCR = s.cr[s.cr.length - 1]
     if (meanCR > 0 && lastCR < 0.7 * meanCR) {
-      alerts.push({ id: 'cr-low', severity: 'warning', title: 'Niski conversion rate ostatniej edycji', detail: `CR ${lastCR}% vs średnia ${meanCR.toFixed(1)}%.`, recommendation: 'Sprawdź jakość kandydatów / proces rekrutacji.', href: '/rekrutacje' })
+      alerts.push({ id: 'cr-low', severity: 'warning', title: 'Niski conversion rate ostatniej edycji', detail: `CR ${lastCR}% vs średnia ${meanCR.toFixed(1)}%.`, recommendation: 'Sprawdź jakość kandydatów / proces rekrutacji.', href: '/analytics/rekrutacje' })
     }
   }
 
@@ -594,7 +594,7 @@ export function buildAlerts(
       }
     }
     if (worstIdx > 0 && worstDrop > 0.5) {
-      alerts.push({ id: 'funnel-leak', severity: 'info', title: 'Duży wyciek w lejku', detail: `${funnel[worstIdx - 1].stage} → ${funnel[worstIdx].stage}: −${Math.round(worstDrop * 100)}%.`, recommendation: 'Najsłabszy etap ścieżki — punkt do poprawy.', href: '/lejek' })
+      alerts.push({ id: 'funnel-leak', severity: 'info', title: 'Duży wyciek w lejku', detail: `${funnel[worstIdx - 1].stage} → ${funnel[worstIdx].stage}: −${Math.round(worstDrop * 100)}%.`, recommendation: 'Najsłabszy etap ścieżki — punkt do poprawy.', href: '/analytics/lejek' })
     }
   }
 
@@ -747,7 +747,7 @@ export function buildExecutiveInsights(
       metric: health.value,
       detail: health.detail,
       action: 'Zrobic przeglad onboardingu, obciazenia aktywnych osob i metryk ze spadkiem r/r.',
-      href: '/kpi',
+      href: '/analytics/kpi',
     })
   }
 
@@ -759,7 +759,7 @@ export function buildExecutiveInsights(
       metric: retention2.value,
       detail: 'To wskaznik, ktory najszybciej pokazuje, czy nowi czlonkowie przechodza z rekrutacji do realnego dzialania.',
       action: 'Dopisac check-in po 30/60/90 dniach i mierzyc aktywnosc pierwszego semestru per osoba.',
-      href: '/retencja',
+      href: '/analytics/retencja',
     })
   }
 
@@ -771,7 +771,7 @@ export function buildExecutiveInsights(
       metric: leadership.value,
       detail: leadership.detail,
       action: 'Wprowadzic osobny tracker kandydatow na koordynatorow i mierzyc gotowosc nastepcow per projekt.',
-      href: '/kpi',
+      href: '/analytics/kpi',
     })
   }
 
@@ -783,7 +783,7 @@ export function buildExecutiveInsights(
       metric: momentum.value,
       detail: 'Sredni wynik KPI rok do roku rosnie, wiec warto znalezc praktyki, ktore napedzaja wzrost.',
       action: 'Wyciagnac top 3 wzrosty KPI i zamienic je w standard pracy dla podobnych obszarow.',
-      href: '/kpi',
+      href: '/analytics/kpi',
     })
   }
 

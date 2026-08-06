@@ -1,19 +1,13 @@
 'use client'
 import { Suspense, type ReactNode } from 'react'
-import { usePathname } from 'next/navigation'
 import { Filter, ShieldCheck } from 'lucide-react'
 import { Sidebar } from './Sidebar'
 import { FilterBar } from './FilterBar'
 import { ExportButton } from './ExportButton'
 import { AuthStatus } from './AuthStatus'
 
+/** Powłoka modułów analitycznych. Kokpit i logowanie mają własne układy. */
 export function AppShell({ children }: { children: ReactNode }) {
-  const pathname = usePathname()
-
-  if (pathname === '/login') {
-    return <div className="min-h-screen bg-deck-bg-deep">{children}</div>
-  }
-
   return (
     <div className="deck-shell flex min-h-screen">
       <Sidebar />
