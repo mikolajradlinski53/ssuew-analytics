@@ -1,97 +1,100 @@
-# SSUEW Analytics Platform
+# DECK
 
-Dashboard analityczny dla **Samorządu Studentów Uniwersytetu Ekonomicznego we Wrocławiu** —
-narzędzie wspierające Wiceprzewodniczącego ds. Strategii i Działań Operacyjnych w monitorowaniu
-i prognozowaniu kluczowych wskaźników organizacji.
+Prywatne centrum dowodzenia wspierające Wiceprzewodniczącego ds. Strategii i Działań Operacyjnych
+**Samorządu Studentów Uniwersytetu Ekonomicznego we Wrocławiu**.
 
-Aplikacja liczy statystyki **bez zewnętrznych bibliotek matematycznych** — korelacja Pearsona,
-test t Welcha, regresja wieloraka OLS i z-score są zaimplementowane od zera w
-[`lib/stats.ts`](lib/stats.ts).
+Kokpit z kafelkami, z którego prowadzi się wszystkie działania. Pierwszym i na razie jedynym
+działającym modułem jest **SSUEW Analytics** — dashboard analityczny samorządu.
 
 ## Moduły
 
-| Moduł | Co analizuje | Metody statystyczne |
-|-------|--------------|---------------------|
-| **Rekrutacje** | Zgłoszenia vs przyjęci, conversion rate, sezonowość | Korelacja Pearsona, test t Welcha, prognoza liniowa |
-| **Retention** | Średnia liczba semestrów aktywności kohort | Regresja wieloraka OLS (trend, sezon, liczebność) |
-| **Komisje** | Realizacja KPI komisji per semestr | Z-score, ranking względem normy organizacyjnej |
-| **Wpisz dane** | Formularze dodawania rekrutacji i KPI | — |
+| Kafelek | Co robi | Stan |
+|---|---|---|
+| **SSUEW Analytics** | Rekrutacje, retencja kohort, KPI rok-do-roku, lejek, korelacje, prognozy, alerty | działa |
+| **Orbita** | Prywatna tablica zadań jako radar: bliżej środka znaczy pilniej | etap 2 |
+| **Planer semestru** | Kalendarz semestru z wykrywaniem kolizji osób i sal | etap 3 |
+| **Strony** | Kliknięcia, wyświetlenia i pozycje nadzorowanych witryn z Search Console | etap 4 |
 
-## Stack technologiczny
+Analytics liczy statystyki **bez zewnętrznych bibliotek matematycznych** — korelacja Pearsona,
+test t Welcha, regresja wieloraka OLS i z-score są zaimplementowane od zera
+w [`lib/stats.ts`](lib/stats.ts).
 
-- **Next.js 16** (App Router) + **React 19**
-- **TypeScript 5**
-- **Tailwind CSS 4**
+## Stack
+
+- **Next.js 16** (App Router) + **React 19** + **TypeScript 5** + **Tailwind CSS 4**
 - **Recharts** — wykresy
-- **Supabase** — baza danych (opcjonalnie; bez konfiguracji aplikacja działa w trybie demo)
+- **Firebase Auth** — logowanie kontem Google, weryfikacja tokenu przez `jose`
+- **Arkusze Google + Apps Script** — baza danych bez bazy danych
 
-## Uruchomienie lokalne
+### Dlaczego taki backend
+
+Aplikacja nie ma własnej bazy. Dane analityczne mieszkają w arkuszu Google, prowadzonym i tak
+ręcznie, a [Apps Script](apps-script/README.md) wystawia je jako JSON. Trasy `/api/*` w Next.js
+istnieją po to, żeby robić dwie rzeczy, których przeglądarka zrobić nie może: chronić token
+do skryptu i cache'ować wolne odpowiedzi (Apps Script odpowiada 1–3 s).
+
+## Uruchomienie
 
 ```bash
-# 1. Zainstaluj zależności
 npm install
-
-# 2. Uruchom serwer deweloperski
+cp .env.example .env.local   # i uzupełnij — patrz niżej
 npm run dev
 ```
 
 Aplikacja wystartuje na [http://localhost:3000](http://localhost:3000).
 
-> **Tryb demo:** bez skonfigurowanego Supabase aplikacja korzysta z historycznych danych SSUEW
-> (zaszytych w [`lib/useAnalyticsData.ts`](lib/useAnalyticsData.ts)), więc działa od razu po
-> `npm run dev`.
+Bez skonfigurowanego arkusza Analytics działa na danych historycznych SSUEW zaszytych
+w [`lib/useAnalyticsData.ts`](lib/useAnalyticsData.ts) i oznacza to w interfejsie.
 
-## Konfiguracja Supabase (opcjonalnie)
+### Konfiguracja
 
-Aby zapisywać prawdziwe dane:
+**Firebase** — załóż projekt na [console.firebase.google.com](https://console.firebase.google.com),
+w *Authentication → Sign-in method* włącz **Google**, a z *Project settings → Your apps* przepisz
+`apiKey`, `authDomain` i `projectId` do `.env.local`.
 
-1. Utwórz projekt na [supabase.com](https://supabase.com).
-2. W **SQL Editor** wklej i wykonaj zawartość [`lib/schema.sql`](lib/schema.sql) — utworzy tabele
-   i wgra dane historyczne.
-3. W katalogu projektu utwórz plik `.env.local`:
+**Lista dostępu** — `DECK_OWNER_EMAIL` i `DECK_BOARD_EMAILS` to adresy kont Google. Samo konto
+Google nie daje niczego; kto nie jest na liście, nie wchodzi. Jeśli nie wiadomo, którym kontem
+następuje logowanie, wystarczy zalogować się raz — strona logowania poda odrzucony adres.
 
-   ```env
-   NEXT_PUBLIC_SUPABASE_URL=https://xxx.supabase.co
-   NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJ...
-   ```
+**Arkusz** — sześć kroków w [`apps-script/README.md`](apps-script/README.md). Skrypt sam zakłada
+zakładki i wgrywa dane historyczne.
 
-4. Zrestartuj serwer. Formularze w zakładce „Wpisz dane" zaczną zapisywać do bazy, a dashboard
-   automatycznie odświeży wykresy.
-
-> ℹ️ Klucz `NEXT_PUBLIC_SUPABASE_ANON_KEY` jest **publiczny z założenia** — dostęp do danych
-> kontroluje Row Level Security skonfigurowane w `schema.sql`. Mimo to plik `.env.local` jest
-> ignorowany przez `.gitignore` i nie trafia do repozytorium.
-
-## Struktura projektu
+## Struktura
 
 ```
 app/
-  api/              # API routes (Supabase)
-  layout.tsx        # root layout
-  page.tsx          # wejście — renderuje Dashboard
-components/modules/
-  Dashboard.tsx     # główny komponent z zakładkami
-  Module*.tsx       # widoki poszczególnych modułów
+  page.tsx            kokpit DECK
+  analytics/          moduły analityczne (własna powłoka z sidebarem)
+  api/                trasy danych i sesji
+  login/              logowanie Google
+components/
+  deck/               kafelki kokpitu
+  modules/            widoki modułów analitycznych
+  ui/                 wspólne komponenty i powłoka
 lib/
-  stats.ts          # ręcznie pisana statystyka
-  supabase.ts       # klient Supabase
-  useAnalyticsData.ts  # hook pobierający dane (z fallbackiem demo)
-  schema.sql        # schemat bazy + dane historyczne
-types/
-  index.ts          # typy domenowe
+  stats.ts            ręcznie pisana statystyka
+  gas/                klient Apps Script
+  auth/               tożsamość, role, strażnik tras
+apps-script/
+  Kod.gs              backend na Arkuszach (wersjonowany tutaj)
+docs/
+  superpowers/        projekty i plany wdrożeń
+  archiwum/           schemat wycofanej bazy Supabase
 ```
 
 ## Uwaga metodologiczna
 
-Analizy opierają się na niewielkiej liczbie obserwacji (kilka–kilkanaście edycji), dlatego prognozy
-i istotności statystyczne traktuj **orientacyjnie**, jako wsparcie decyzji, a nie twardy dowód.
-Wartości p są przybliżane progowo, a modele sygnalizują niskie dopasowanie w polach `warning`.
+Analizy opierają się na niewielkiej liczbie obserwacji (kilka–kilkanaście edycji), dlatego
+prognozy i istotności statystyczne należy traktować **orientacyjnie**, jako wsparcie decyzji,
+a nie twardy dowód. Wartości p są przybliżane progowo, a modele sygnalizują niskie dopasowanie
+w polach `warning`.
 
 ## Skrypty
 
 | Komenda | Działanie |
-|---------|-----------|
+|---|---|
 | `npm run dev` | serwer deweloperski |
 | `npm run build` | build produkcyjny |
 | `npm run start` | uruchomienie buildu |
 | `npm run lint` | ESLint |
+| `npm test` | vitest |
