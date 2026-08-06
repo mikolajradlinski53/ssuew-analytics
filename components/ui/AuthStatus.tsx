@@ -1,50 +1,43 @@
 'use client'
-import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { LogIn, LogOut, UserCircle } from 'lucide-react'
-import { createClient } from '@/lib/supabase/client'
-import { isConfigured } from '@/lib/supabase/config'
+import { useAuth } from '@/lib/auth/useAuth'
 
 export function AuthStatus() {
   const router = useRouter()
-  const [email, setEmail] = useState<string | null>(null)
+  const { user, rola, wyloguj } = useAuth()
 
-  useEffect(() => {
-    if (!isConfigured) return
-    const supabase = createClient()
-    supabase.auth.getUser().then(({ data }) => setEmail(data.user?.email ?? null))
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
-      setEmail(session?.user?.email ?? null)
-    })
-    return () => sub.subscription.unsubscribe()
-  }, [])
-
-  if (!isConfigured) return null
-
-  if (!email) {
+  if (!user) {
     return (
-      <Link href="/login" className="deck-chip flex h-9 items-center gap-2 rounded-lg px-3 text-[11px] text-deck-muted transition hover:text-deck-text">
+      <Link
+        href="/login"
+        className="deck-chip flex h-9 items-center gap-2 rounded-lg px-3 text-[11px] text-deck-muted transition hover:text-deck-text"
+      >
         <LogIn size={14} />
         Zaloguj
       </Link>
     )
   }
 
-  async function logout() {
-    const supabase = createClient()
-    await supabase.auth.signOut()
-    setEmail(null)
+  async function wyjdz() {
+    await wyloguj()
+    router.push('/login')
     router.refresh()
   }
 
   return (
     <div className="deck-chip flex h-9 items-center gap-2 rounded-lg px-2">
       <UserCircle size={15} className="text-deck-accent" />
-      <span className="max-w-[150px] truncate text-[10px] text-deck-muted">{email}</span>
+      <span className="max-w-[150px] truncate text-[10px] text-deck-muted">{user.email}</span>
+      {rola && (
+        <span className="rounded border border-deck-accent/30 bg-deck-accent/10 px-1.5 py-0.5 text-[9px] uppercase tracking-[0.12em] text-deck-accent">
+          {rola}
+        </span>
+      )}
       <button
         type="button"
-        onClick={logout}
+        onClick={wyjdz}
         className="grid h-6 w-6 place-items-center rounded-md text-deck-muted transition hover:bg-white/8 hover:text-deck-text"
         title="Wyloguj"
       >

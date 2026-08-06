@@ -14,13 +14,16 @@ export interface StanSesji {
 const POCZATKOWY: StanSesji = { user: null, rola: null, laduje: true, blad: null }
 
 export function useAuth() {
-  const [stan, setStan] = useState<StanSesji>(POCZATKOWY)
+  // Brak konfiguracji widać już przy pierwszym renderze, więc stan wyjściowy
+  // liczymy tutaj, a nie w efekcie — inaczej byłby to zbędny drugi render.
+  const [stan, setStan] = useState<StanSesji>(() =>
+    firebaseSkonfigurowany
+      ? POCZATKOWY
+      : { ...POCZATKOWY, laduje: false, blad: 'Firebase nie jest skonfigurowany' },
+  )
 
   useEffect(() => {
-    if (!firebaseSkonfigurowany) {
-      setStan({ ...POCZATKOWY, laduje: false, blad: 'Firebase nie jest skonfigurowany' })
-      return
-    }
+    if (!firebaseSkonfigurowany) return
 
     // onIdTokenChanged, a nie onAuthStateChanged: token wygasa po godzinie i Firebase
     // odnawia go sam — ciasteczko musi jechać za nim, inaczej zapisy zaczną zwracać 401.

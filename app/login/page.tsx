@@ -1,9 +1,8 @@
 'use client'
-import { useState } from 'react'
+import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { ArrowRight, LockKeyhole, ShieldCheck, Sparkles } from 'lucide-react'
-import { createClient } from '@/lib/supabase/client'
-import { isConfigured } from '@/lib/supabase/config'
+import { useAuth } from '@/lib/auth/useAuth'
 import { LiveDigits } from '@/components/ui/LiveDigits'
 import { LogoMark } from '@/components/ui/LogoMark'
 
@@ -16,29 +15,14 @@ const logLines = [
 
 export default function LoginPage() {
   const router = useRouter()
-  const [email, setEmail] = useState('')
-  const [haslo, setHaslo] = useState('')
-  const [err, setErr] = useState<string | null>(null)
-  const [busy, setBusy] = useState(false)
+  const { user, laduje, blad, zaloguj } = useAuth()
 
-  async function submit(e: React.FormEvent) {
-    e.preventDefault()
-    if (!isConfigured) {
-      setErr('Supabase nie jest skonfigurowany (tryb demo).')
-      return
+  useEffect(() => {
+    if (user) {
+      router.push('/')
+      router.refresh()
     }
-    setBusy(true)
-    setErr(null)
-    const supabase = createClient()
-    const { error } = await supabase.auth.signInWithPassword({ email, password: haslo })
-    setBusy(false)
-    if (error) {
-      setErr(error.message)
-      return
-    }
-    router.push('/')
-    router.refresh()
-  }
+  }, [user, router])
 
   return (
     <main className="relative min-h-screen overflow-hidden bg-deck-bg-deep">
@@ -100,55 +84,41 @@ export default function LoginPage() {
         </section>
 
         <aside className="grid place-items-center">
-          <form onSubmit={submit} className="deck-card w-full rounded-lg p-6">
+          <div className="deck-card w-full rounded-lg p-6">
             <div className="mb-6">
               <div className="grid h-12 w-12 place-items-center rounded-lg border border-deck-accent/35 bg-deck-accent/12 text-deck-accent shadow-[0_0_28px_rgba(46,230,166,0.24)]">
                 <LockKeyhole size={22} />
               </div>
               <h2 className="mt-4 text-2xl font-semibold text-deck-text">Autoryzacja</h2>
-              <p className="mt-1 text-[11px] leading-5 text-deck-muted">Dostęp do zapisu danych i prywatnych modułów.</p>
+              <p className="mt-1 text-[11px] leading-5 text-deck-muted">
+                Wejście kontem Google. Dostęp mają wyłącznie adresy z listy.
+              </p>
             </div>
 
-            <div className="space-y-4">
-              <label className="block">
-                <span className="mb-1 block text-[11px] text-deck-muted">E-mail</span>
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(event) => setEmail(event.target.value)}
-                  className="deck-input w-full rounded-lg px-3 py-2.5 text-sm"
-                />
-              </label>
-              <label className="block">
-                <span className="mb-1 block text-[11px] text-deck-muted">Hasło</span>
-                <input
-                  type="password"
-                  value={haslo}
-                  onChange={(event) => setHaslo(event.target.value)}
-                  className="deck-input w-full rounded-lg px-3 py-2.5 text-sm"
-                />
-              </label>
-            </div>
-
-            {err && <div className="mt-4 rounded-lg border border-deck-danger-border bg-deck-danger-bg/70 px-3 py-2 text-[11px] text-deck-danger">{err}</div>}
+            {blad && (
+              <div className="mb-4 rounded-lg border border-deck-danger-border bg-deck-danger-bg/70 px-3 py-2 text-[11px] leading-5 text-deck-danger">
+                {blad}
+              </div>
+            )}
 
             <button
-              type="submit"
-              disabled={busy}
-              className="deck-button mt-5 flex w-full items-center justify-center gap-2 rounded-lg px-4 py-3 text-sm font-semibold disabled:opacity-50"
+              type="button"
+              onClick={zaloguj}
+              disabled={laduje}
+              className="deck-button flex w-full items-center justify-center gap-2 rounded-lg px-4 py-3 text-sm font-semibold disabled:opacity-50"
             >
-              {busy ? 'Logowanie...' : 'Wejdź do kokpitu'}
+              {laduje ? 'Sprawdzanie sesji...' : 'Zaloguj przez Google'}
               <ArrowRight size={16} />
             </button>
 
             <div className="mt-5 grid grid-cols-3 gap-2 text-center">
-              {['AUTH', 'RLS', 'LIVE'].map((item) => (
+              {['GOOGLE', 'ALLOWLIST', 'LIVE'].map((item) => (
                 <div key={item} className="rounded-md border border-white/10 bg-white/[0.04] px-2 py-2 text-[10px] text-deck-muted">
                   {item}
                 </div>
               ))}
             </div>
-          </form>
+          </div>
         </aside>
       </div>
     </main>
