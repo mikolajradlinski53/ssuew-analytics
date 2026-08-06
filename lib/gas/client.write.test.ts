@@ -28,6 +28,19 @@ describe('gasWrite', () => {
     expect(body.rows).toHaveLength(1)
   })
 
+  it('nie pozwala cache-ować zapisu', async () => {
+    // Zapis podany z cache oznaczalby ciche gubienie danych — zadanie
+    // wygladaloby na wykonane, a do arkusza nic by nie poszlo.
+    const f = vi.fn().mockResolvedValue(odpowiedz('{"ok":true,"rows":[]}'))
+    vi.stubGlobal('fetch', f)
+    const { gasWrite } = await import('@/lib/gas/client')
+    await gasWrite('rekrutacje', 'upsert', [{ edycja: "J'26" }])
+
+    const [, init] = f.mock.calls[0]
+    expect(init.cache).toBe('no-store')
+    expect(init.next).toBeUndefined()
+  })
+
   it('zwraca wiersze z koperty odpowiedzi', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(
       odpowiedz('{"ok":true,"rows":[{"id":"a"},{"id":"b"}]}'),

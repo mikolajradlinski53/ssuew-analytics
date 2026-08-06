@@ -34,6 +34,28 @@ describe('gasList', () => {
     expect(f.mock.calls[0][0]).toContain('t=kpi')
   })
 
+  it('koduje token w adresie, gdy zawiera znaki specjalne', async () => {
+    // Token generuje Utilities.getUuid(), ale po rotacji przez zmienToken()
+    // nic nie gwarantuje, ze nie trafi sie + albo &, ktore rozbilyby adres.
+    vi.stubEnv('GAS_TOKEN', 'a+b&c=d')
+    const f = vi.fn().mockResolvedValue(odpowiedz('[]'))
+    vi.stubGlobal('fetch', f)
+    const { gasList } = await import('@/lib/gas/client')
+    await gasList('kpi')
+    expect(f.mock.calls[0][0]).toContain('token=a%2Bb%26c%3Dd')
+  })
+
+  it('prosi Next o cache 5 minut pod znacznikiem analytics', async () => {
+    // Bez tego kazde wejscie w modul czekaloby 1-3 s na Apps Script.
+    const f = vi.fn().mockResolvedValue(odpowiedz('[]'))
+    vi.stubGlobal('fetch', f)
+    const { gasList } = await import('@/lib/gas/client')
+    await gasList('kohorty')
+    expect(f.mock.calls[0][1]).toMatchObject({
+      next: { revalidate: 300, tags: ['analytics'] },
+    })
+  })
+
   it('zamienia odpowiedź ok:false na GasError z kodem ze skryptu', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(
       odpowiedz('{"ok":false,"kod":403,"error":"Brak dostepu"}'),
