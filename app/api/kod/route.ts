@@ -37,6 +37,10 @@ export async function POST(req: NextRequest) {
   const wynik = rozpatrzKod(kody, wpisany, urzadzenie)
 
   if (!wynik.ok) {
+    // Sześć cyfr to milion możliwości — bez tej pauzy dałoby się je przemielić
+    // po kolei. Pół sekundy jest niezauważalne przy wpisywaniu ręką i zabójcze
+    // dla zgadywania maszyną.
+    await new Promise((r) => setTimeout(r, 500))
     return NextResponse.json({ error: KOMUNIKAT[wynik.powod] }, { status: 401 })
   }
 

@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { ArrowRight, KeyRound, LockKeyhole, ShieldCheck, Sparkles } from 'lucide-react'
 import { useAuth } from '@/lib/auth/useAuth'
+import { KodInput } from '@/components/deck/KodInput'
 import { LiveDigits } from '@/components/ui/LiveDigits'
 import { LogoMark } from '@/components/ui/LogoMark'
 
@@ -19,8 +20,8 @@ export default function LoginPage() {
   const [droga, setDroga] = useState<'kod' | 'haslo'>('kod')
   const [email, setEmail] = useState('')
   const [haslo, setHaslo] = useState('')
-  const [kod, setKod] = useState('')
   const [zajety, setZajety] = useState(false)
+  const [udalo, setUdalo] = useState(false)
 
   useEffect(() => {
     if (rola) {
@@ -29,11 +30,19 @@ export default function LoginPage() {
     }
   }, [rola, router])
 
+  const stanKodu = udalo ? 'ok' : zajety ? 'sprawdzanie' : blad ? 'blad' : 'wpisywanie'
+
+  async function sprawdzKod(wpisany: string) {
+    setZajety(true)
+    const ok = await zalogujKodem(wpisany)
+    setZajety(false)
+    setUdalo(ok)
+  }
+
   async function wyslij(e: React.FormEvent) {
     e.preventDefault()
     setZajety(true)
-    if (droga === 'kod') await zalogujKodem(kod)
-    else await zalogujHaslem(email, haslo)
+    await zalogujHaslem(email, haslo)
     setZajety(false)
   }
 
@@ -128,16 +137,7 @@ export default function LoginPage() {
             </div>
 
             {droga === 'kod' ? (
-              <label className="block">
-                <span className="mb-1 block text-[11px] text-deck-muted">Kod</span>
-                <input
-                  value={kod}
-                  onChange={(event) => setKod(event.target.value)}
-                  autoComplete="one-time-code"
-                  placeholder="DECK-XXXX"
-                  className="deck-input w-full rounded-lg px-3 py-2.5 text-center font-mono text-lg tracking-[0.3em] uppercase"
-                />
-              </label>
+              <KodInput onKomplet={sprawdzKod} stan={stanKodu} />
             ) : (
               <div className="space-y-4">
                 <label className="block">
@@ -169,14 +169,21 @@ export default function LoginPage() {
               </div>
             )}
 
-            <button
-              type="submit"
-              disabled={laduje || zajety}
-              className="deck-button mt-5 flex w-full items-center justify-center gap-2 rounded-lg px-4 py-3 text-sm font-semibold disabled:opacity-50"
-            >
-              {laduje ? 'Sprawdzanie sesji...' : zajety ? 'Sprawdzam...' : 'Wejdź do kokpitu'}
-              <ArrowRight size={16} />
-            </button>
+            {droga === 'haslo' ? (
+              <button
+                type="submit"
+                disabled={laduje || zajety}
+                className="deck-button mt-5 flex w-full items-center justify-center gap-2 rounded-lg px-4 py-3 text-sm font-semibold disabled:opacity-50"
+              >
+                {laduje ? 'Sprawdzanie sesji...' : zajety ? 'Sprawdzam...' : 'Wejdź do kokpitu'}
+                <ArrowRight size={16} />
+              </button>
+            ) : (
+              // Kod nie ma przycisku: wpisanie szóstej cyfry samo go wysyła.
+              <p className="mt-1 text-center text-[11px] text-deck-muted">
+                {zajety ? 'Sprawdzam...' : udalo ? 'Wchodzę...' : 'Sześć cyfr — wysyła się samo'}
+              </p>
+            )}
 
             <div className="mt-5 grid grid-cols-3 gap-2 text-center">
               {['KOD', 'URZĄDZENIE', 'LIVE'].map((item) => (

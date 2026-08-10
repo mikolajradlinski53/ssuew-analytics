@@ -376,3 +376,236 @@ body::before {
     scroll-behavior: auto !important;
   }
 }
+
+/* ============================================================
+   Ekran kodu — trzy motywy losowane przy każdym wejściu.
+   Zasady przejęte ze źródła, z którego wzięliśmy pomysł:
+   · pierścień jest kropkowany, bo ciągły w tym rozmiarze
+     czyta się jak kręciołek ładowania,
+   · kolor jest zarezerwowany na werdykt — uwagę w stanie
+     spoczynku przyciąga światło, nie barwa,
+   · pierścień płynie, nie mruga.
+   ============================================================ */
+
+.kod {
+  --lod: #dceaff;
+  --dobrze: #2ee6a8;
+  --zle: #ff4d6a;
+  --swiatlo: 0.06;
+  display: grid;
+  place-items: center;
+}
+
+.kod__rzad {
+  position: relative;
+  display: flex;
+  gap: 10px;
+  padding: 26px 8px;
+  perspective: 1000px;
+}
+
+.kod__slot {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 58px;
+  transform-style: preserve-3d;
+}
+
+.kod__pole {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  background: transparent;
+  text-align: center;
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 24px;
+  font-weight: 600;
+  color: var(--lod);
+  caret-color: transparent;
+  outline: none;
+}
+
+.kod__pole:disabled {
+  opacity: 1;
+}
+
+.kod__ramka {
+  position: absolute;
+  inset: 0;
+  border-radius: 10px;
+  border: 1px solid rgba(220, 234, 255, 0.16);
+  background: rgba(220, 234, 255, var(--swiatlo));
+  transition: background 220ms ease, border-color 220ms ease, box-shadow 220ms ease;
+}
+
+/* Aktywna kratka jaśnieje, zamiast zmieniać barwę. */
+.kod__pole:focus + .kod__ramka {
+  background: rgba(220, 234, 255, 0.14);
+  border-color: rgba(220, 234, 255, 0.4);
+  box-shadow: 0 0 0 1px rgba(220, 234, 255, 0.18), 0 10px 30px rgba(0, 0, 0, 0.4);
+}
+
+.kod__luk,
+.kod__pierscien {
+  position: absolute;
+  pointer-events: none;
+  opacity: 0;
+}
+
+.kod__luk {
+  inset: 0;
+  z-index: 1;
+}
+
+.kod__luk-sciezka {
+  fill: none;
+  stroke: var(--lod);
+  stroke-width: 2;
+  vector-effect: non-scaling-stroke;
+}
+
+.kod__pierscien {
+  left: 50%;
+  top: 50%;
+  width: 190px;
+  height: 190px;
+  margin: -95px 0 0 -95px;
+}
+
+.kod__pierscien-sciezka {
+  fill: none;
+  stroke: rgba(220, 234, 255, 0.45);
+  /* Kropkowany celowo — ciągły czytałby się jak spinner. */
+  stroke-dasharray: 2 8;
+  stroke-width: 1.5;
+}
+
+.kod__hub {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 5px;
+  height: 5px;
+  margin: -2.5px 0 0 -2.5px;
+  border-radius: 50%;
+  background: var(--lod);
+  opacity: 0;
+  transition: opacity 300ms ease;
+}
+
+/* ---------- motyw: orbita ---------- */
+
+.kod--orbita .kod__pierscien {
+  opacity: 1;
+  animation: kod-obrot 14s linear infinite;
+}
+
+.kod--orbita .kod__hub {
+  opacity: 0.5;
+}
+
+@keyframes kod-obrot {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ---------- motyw: obwód ---------- */
+
+.kod--obwod .kod__ramka {
+  border-radius: 6px;
+}
+
+/* Cztery druty: kratki łączą się w jeden obwód, gdy kod jest kompletny. */
+.kod--obwod .kod__slot::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  right: -10px;
+  width: 10px;
+  height: 1px;
+  background: rgba(220, 234, 255, 0.2);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 300ms ease, background 300ms ease;
+}
+
+.kod--obwod .kod__slot:last-of-type::after {
+  display: none;
+}
+
+.kod--obwod[data-komplet] .kod__slot::after {
+  transform: scaleX(1);
+  background: var(--dobrze);
+}
+
+/* Obwód zamknięty: sześć wejść staje się jednym przedmiotem. */
+.kod--obwod[data-komplet] .kod__ramka {
+  box-shadow: inset 0 0 0 1.8px var(--dobrze);
+}
+
+/* ---------- motyw: elektron ---------- */
+
+.kod--elektron .kod__pole:focus ~ .kod__luk {
+  opacity: 1;
+}
+
+/* Kreska JEST elektronem: jeden świecący odcinek na ciemnym torze,
+   goniony wzdłuż krawędzi przez przesunięcie kreskowania. */
+.kod--elektron .kod__pole:focus ~ .kod__luk .kod__luk-sciezka {
+  stroke-dasharray: 0.13 0.87;
+  animation: kod-elektron 1.5s linear infinite;
+}
+
+@keyframes kod-elektron {
+  from {
+    stroke-dashoffset: 1;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+.kod--elektron .kod__ramka {
+  border-radius: 10px;
+  border-color: rgba(220, 234, 255, 0.1);
+}
+
+/* ---------- werdykt: jedyne miejsce na kolor ---------- */
+
+.kod--ok .kod__ramka {
+  border-color: var(--dobrze);
+  box-shadow: 0 0 0 1px var(--dobrze), 0 0 26px rgba(46, 230, 168, 0.28);
+}
+
+.kod--ok .kod__pole {
+  color: var(--dobrze);
+}
+
+.kod--blad .kod__ramka {
+  border-color: var(--zle);
+  box-shadow: 0 0 0 1px var(--zle), 0 0 26px rgba(255, 77, 106, 0.24);
+}
+
+.kod--blad .kod__pole {
+  color: var(--zle);
+}
+
+.kod--blad .kod__rzad {
+  animation: kod-odmowa 420ms cubic-bezier(0.36, 0.07, 0.19, 0.97);
+}
+
+@keyframes kod-odmowa {
+  10%, 90% { transform: translateX(-2px); }
+  20%, 80% { transform: translateX(4px); }
+  30%, 50%, 70% { transform: translateX(-7px); }
+  40%, 60% { transform: translateX(7px); }
+}
+
+.kod--sprawdzanie .kod__ramka {
+  border-color: rgba(220, 234, 255, 0.3);
+}

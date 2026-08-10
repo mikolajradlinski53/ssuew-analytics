@@ -5,9 +5,29 @@ export type WynikKodu =
   | { ok: true; kod: KodDostepu; urzadzenie: string; pierwszeUzycie: boolean }
   | { ok: false; powod: 'nieznany' | 'nieaktywny' | 'inne-urzadzenie' }
 
-/** Kod wpisuje człowiek, więc wielkość liter i spacje po bokach nie mogą mieć znaczenia. */
+export const DLUGOSC_KODU = 6
+
+/**
+ * Kod to sześć cyfr. Zostawiamy same cyfry, bo w arkuszu ktoś może wpisać
+ * `123 456` albo `123-456`, a na ekranie i tak wchodzi cyfra po cyfrze.
+ */
 export function normalizujKod(wpisany: string): string {
-  return wpisany.trim().toUpperCase()
+  return wpisany.replace(/\D/g, '')
+}
+
+/**
+ * Losuje kod z generatora kryptograficznego — `Math.random()` bywa przewidywalny.
+ *
+ * Pierwsza cyfra nigdy nie jest zerem, i to nie dla urody: Arkusze traktują
+ * `048291` jako liczbę i zapisują `48291`, przez co kod przestałby pasować,
+ * a przyczyna byłaby nie do odgadnięcia.
+ */
+export function losujKod(): string {
+  const bajty = new Uint8Array(DLUGOSC_KODU)
+  crypto.getRandomValues(bajty)
+  const cyfry = Array.from(bajty, (b) => b % 10)
+  cyfry[0] = (bajty[0] % 9) + 1
+  return cyfry.join('')
 }
 
 /**

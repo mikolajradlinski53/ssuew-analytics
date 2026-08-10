@@ -570,9 +570,9 @@ const SEED = {
 
   czlonkowie: [],
 
-  // Jeden kod na start, zebys mial czym sprawdzic dzialanie. Zmien go
+  // Jeden kod na start (szesc cyfr), zebys mial czym sprawdzic dzialanie. Zmien go
   // albo skasuj wiersz, gdy wygenerujesz wlasne z poziomu kokpitu.
   kody: [
-    { kod: 'DECK-START', etykieta: 'kod probny', rola: 'board', aktywny: true }
+    { kod: '482913', etykieta: 'kod probny', rola: 'board', aktywny: true }
   ]
 };
