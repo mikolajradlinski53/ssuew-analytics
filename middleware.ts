@@ -12,7 +12,9 @@ export function middleware(req: NextRequest) {
   const sciezka = req.nextUrl.pathname
   if (PUBLICZNE.includes(sciezka) || sciezka.startsWith('/api')) return NextResponse.next()
 
-  if (!req.cookies.get('deck_session')) {
+  // Dwie drogi wejścia: konto z hasłem albo kod. Wystarczy jedna.
+  const maSesje = req.cookies.get('deck_session') || req.cookies.get('deck_kod')
+  if (!maSesje) {
     const url = req.nextUrl.clone()
     url.pathname = '/login'
     return NextResponse.redirect(url)

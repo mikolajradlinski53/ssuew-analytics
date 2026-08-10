@@ -132,9 +132,26 @@ osobna, w pełni testowalna funkcja, która nie potrzebuje sieci.
 
 ## 4. Logowanie i uprawnienia
 
-**Firebase Auth, dostawca Google.** Logowanie przez `signInWithPopup`.
+> **Zmiana z 10 sierpnia 2026.** Logowanie przez Google zostało wycofane, zanim ktokolwiek zdążył
+> z niego skorzystać. Zamiast niego są dwie drogi wejścia: **e-mail i hasło** dla dwóch kont
+> oraz **kod dostępu** dla reszty zarządu. Powód: nie każdy z zarządu ma konto Google, którego
+> adres chciałby podawać, a proszenie o to przy każdej zmianie składu jest uciążliwe. Kod można
+> wysłać na Messengerze i działa od razu.
+>
+> **Kod wiąże się z przeglądarką, nie z adresem IP.** Pierwsze użycie zapamiętuje urządzenie
+> i od tej pory tylko ono wejdzie tym kodem. Adres IP zapisujemy obok, do wglądu, ale niczego
+> nim nie blokujemy — sieci komórkowe zmieniają go przy każdym połączeniu, a przez CGNAT
+> dziesiątki osób dzielą jeden adres, więc blokada po IP wyrzucałaby ludzi bez powodu.
 
-**Role.** Dwie, wyznaczone przez adres e-mail:
+**Firebase Auth, dostawca „E-mail/hasło".** Konta zakładane ręcznie w konsoli Firebase —
+rejestracja własna jest wyłączona, więc nikt nie założy sobie konta sam.
+
+**Kody dostępu** mieszkają w zakładce `kody` tego samego arkusza (`id`, `kod`, `etykieta`, `rola`,
+`urzadzenie`, `ip_pierwszy`, `ostatnie_uzycie`, `aktywny`, `created_at`). Kod zawsze daje rolę
+`board`; pełne uprawnienia wymagają hasła. Po realizacji kodu przeglądarka dostaje **podpisany
+bilet** (`deck_kod`) — HMAC z `DECK_SESSION_SECRET`, żeby nie dało się w nim podnieść sobie roli.
+
+**Role.** Dwie, wyznaczone przez adres e-mail (kod daje zawsze `board`):
 
 - `owner` — jeden adres, mój. Odczyt i zapis wszędzie.
 - `board` — adresy zarządu. Odczyt Analytics, pełna praca w Plannerze, **brak dostępu do Orbity**.

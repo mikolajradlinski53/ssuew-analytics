@@ -84,6 +84,20 @@ export interface KpiMetric {
   created_at: string
 }
 
+// Kod dostępu dla osób bez konta z hasłem. Wiąże się z przeglądarką przy
+// pierwszym użyciu; `ip_pierwszy` jest tylko do wglądu i niczego nie blokuje.
+export interface KodDostepu {
+  id: string
+  kod: string
+  etykieta: string
+  rola: 'board'
+  urzadzenie: string
+  ip_pierwszy: string
+  ostatnie_uzycie: string
+  aktywny: boolean
+  created_at: string
+}
+
 export interface StrategicKpi {
   id: string
   title: string

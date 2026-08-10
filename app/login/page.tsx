@@ -1,7 +1,7 @@
 'use client'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { ArrowRight, LockKeyhole, ShieldCheck, Sparkles } from 'lucide-react'
+import { ArrowRight, KeyRound, LockKeyhole, ShieldCheck, Sparkles } from 'lucide-react'
 import { useAuth } from '@/lib/auth/useAuth'
 import { LiveDigits } from '@/components/ui/LiveDigits'
 import { LogoMark } from '@/components/ui/LogoMark'
@@ -15,14 +15,27 @@ const logLines = [
 
 export default function LoginPage() {
   const router = useRouter()
-  const { user, laduje, blad, zaloguj } = useAuth()
+  const { rola, laduje, blad, zalogujHaslem, zalogujKodem } = useAuth()
+  const [droga, setDroga] = useState<'kod' | 'haslo'>('kod')
+  const [email, setEmail] = useState('')
+  const [haslo, setHaslo] = useState('')
+  const [kod, setKod] = useState('')
+  const [zajety, setZajety] = useState(false)
 
   useEffect(() => {
-    if (user) {
+    if (rola) {
       router.push('/')
       router.refresh()
     }
-  }, [user, router])
+  }, [rola, router])
+
+  async function wyslij(e: React.FormEvent) {
+    e.preventDefault()
+    setZajety(true)
+    if (droga === 'kod') await zalogujKodem(kod)
+    else await zalogujHaslem(email, haslo)
+    setZajety(false)
+  }
 
   return (
     <main className="relative min-h-screen overflow-hidden bg-deck-bg-deep">
@@ -84,41 +97,95 @@ export default function LoginPage() {
         </section>
 
         <aside className="grid place-items-center">
-          <div className="deck-card w-full rounded-lg p-6">
+          <form onSubmit={wyslij} className="deck-card w-full rounded-lg p-6">
             <div className="mb-6">
               <div className="grid h-12 w-12 place-items-center rounded-lg border border-deck-accent/35 bg-deck-accent/12 text-deck-accent shadow-[0_0_28px_rgba(46,230,166,0.24)]">
-                <LockKeyhole size={22} />
+                {droga === 'kod' ? <KeyRound size={22} /> : <LockKeyhole size={22} />}
               </div>
               <h2 className="mt-4 text-2xl font-semibold text-deck-text">Autoryzacja</h2>
               <p className="mt-1 text-[11px] leading-5 text-deck-muted">
-                Wejście kontem Google. Dostęp mają wyłącznie adresy z listy.
+                {droga === 'kod'
+                  ? 'Kod zwiąże się z tą przeglądarką przy pierwszym użyciu.'
+                  : 'Konto z hasłem — tylko dla dwóch osób.'}
               </p>
             </div>
 
+            <div className="mb-5 grid grid-cols-2 gap-1 rounded-lg border border-white/10 bg-white/[0.03] p-1">
+              {(['kod', 'haslo'] as const).map((opcja) => (
+                <button
+                  key={opcja}
+                  type="button"
+                  onClick={() => setDroga(opcja)}
+                  className={`rounded-md px-3 py-2 text-[11px] font-medium transition ${
+                    droga === opcja
+                      ? 'bg-deck-accent/15 text-deck-accent shadow-[inset_0_0_0_1px_rgba(46,230,166,0.3)]'
+                      : 'text-deck-muted hover:text-deck-text'
+                  }`}
+                >
+                  {opcja === 'kod' ? 'Kod dostępu' : 'E-mail i hasło'}
+                </button>
+              ))}
+            </div>
+
+            {droga === 'kod' ? (
+              <label className="block">
+                <span className="mb-1 block text-[11px] text-deck-muted">Kod</span>
+                <input
+                  value={kod}
+                  onChange={(event) => setKod(event.target.value)}
+                  autoComplete="one-time-code"
+                  placeholder="DECK-XXXX"
+                  className="deck-input w-full rounded-lg px-3 py-2.5 text-center font-mono text-lg tracking-[0.3em] uppercase"
+                />
+              </label>
+            ) : (
+              <div className="space-y-4">
+                <label className="block">
+                  <span className="mb-1 block text-[11px] text-deck-muted">E-mail</span>
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(event) => setEmail(event.target.value)}
+                    autoComplete="username"
+                    className="deck-input w-full rounded-lg px-3 py-2.5 text-sm"
+                  />
+                </label>
+                <label className="block">
+                  <span className="mb-1 block text-[11px] text-deck-muted">Hasło</span>
+                  <input
+                    type="password"
+                    value={haslo}
+                    onChange={(event) => setHaslo(event.target.value)}
+                    autoComplete="current-password"
+                    className="deck-input w-full rounded-lg px-3 py-2.5 text-sm"
+                  />
+                </label>
+              </div>
+            )}
+
             {blad && (
-              <div className="mb-4 rounded-lg border border-deck-danger-border bg-deck-danger-bg/70 px-3 py-2 text-[11px] leading-5 text-deck-danger">
+              <div className="mt-4 rounded-lg border border-deck-danger-border bg-deck-danger-bg/70 px-3 py-2 text-[11px] leading-5 text-deck-danger">
                 {blad}
               </div>
             )}
 
             <button
-              type="button"
-              onClick={zaloguj}
-              disabled={laduje}
-              className="deck-button flex w-full items-center justify-center gap-2 rounded-lg px-4 py-3 text-sm font-semibold disabled:opacity-50"
+              type="submit"
+              disabled={laduje || zajety}
+              className="deck-button mt-5 flex w-full items-center justify-center gap-2 rounded-lg px-4 py-3 text-sm font-semibold disabled:opacity-50"
             >
-              {laduje ? 'Sprawdzanie sesji...' : 'Zaloguj przez Google'}
+              {laduje ? 'Sprawdzanie sesji...' : zajety ? 'Sprawdzam...' : 'Wejdź do kokpitu'}
               <ArrowRight size={16} />
             </button>
 
             <div className="mt-5 grid grid-cols-3 gap-2 text-center">
-              {['GOOGLE', 'ALLOWLIST', 'LIVE'].map((item) => (
+              {['KOD', 'URZĄDZENIE', 'LIVE'].map((item) => (
                 <div key={item} className="rounded-md border border-white/10 bg-white/[0.04] px-2 py-2 text-[10px] text-deck-muted">
                   {item}
                 </div>
               ))}
             </div>
-          </div>
+          </form>
         </aside>
       </div>
     </main>

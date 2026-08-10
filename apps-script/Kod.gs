@@ -80,6 +80,26 @@ const SCHEMAT = {
     },
     sort: ['kohorta_edycja', 'imie_nazwisko'],
     kluczNaturalny: null
+  },
+  // Kody dostepu dla osob bez konta z haslem.
+  // `urzadzenie` jest puste do pierwszego uzycia — wtedy kod wiaze sie z ta
+  // przegladarka i od tej pory tylko ona nim wejdzie. `ip_pierwszy` sluzy
+  // wylacznie do wgladu, kto skad wchodzil; niczego nie blokuje, bo sieci
+  // komorkowe zmieniaja adres przy kazdym polaczeniu.
+  kody: {
+    kolumny: {
+      id: 'text',
+      kod: 'text',
+      etykieta: 'text',
+      rola: 'text',
+      urzadzenie: 'text',
+      ip_pierwszy: 'text',
+      ostatnie_uzycie: 'text',
+      aktywny: 'boolean',
+      created_at: 'text'
+    },
+    sort: ['etykieta'],
+    kluczNaturalny: 'kod'
   }
 };
 
@@ -548,5 +568,11 @@ const SEED = {
     { kategoria: 'Koordynatorzy', nazwa: 'Graduation',  okres_poprzedni: '2024/2025', wartosc_poprzednia: 1, okres_biezacy: '2025/2026', wartosc_biezaca: 2 }
   ],
 
-  czlonkowie: []
+  czlonkowie: [],
+
+  // Jeden kod na start, zebys mial czym sprawdzic dzialanie. Zmien go
+  // albo skasuj wiersz, gdy wygenerujesz wlasne z poziomu kokpitu.
+  kody: [
+    { kod: 'DECK-START', etykieta: 'kod probny', rola: 'board', aktywny: true }
+  ]
 };

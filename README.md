@@ -23,7 +23,7 @@ w [`lib/stats.ts`](lib/stats.ts).
 
 - **Next.js 16** (App Router) + **React 19** + **TypeScript 5** + **Tailwind CSS 4**
 - **Recharts** — wykresy
-- **Firebase Auth** — logowanie kontem Google, weryfikacja tokenu przez `jose`
+- **Firebase Auth** — logowanie e-mailem i hasłem, weryfikacja tokenu przez `jose`
 - **Arkusze Google + Apps Script** — baza danych bez bazy danych
 
 ### Dlaczego taki backend
@@ -49,12 +49,17 @@ w [`lib/useAnalyticsData.ts`](lib/useAnalyticsData.ts) i oznacza to w interfejsi
 ### Konfiguracja
 
 **Firebase** — załóż projekt na [console.firebase.google.com](https://console.firebase.google.com),
-w *Authentication → Sign-in method* włącz **Google**, a z *Project settings → Your apps* przepisz
-`apiKey`, `authDomain` i `projectId` do `.env.local`.
+w *Authentication → Sign-in method* włącz **E-mail/hasło**, a z *Project settings → Your apps*
+przepisz `apiKey`, `authDomain` i `projectId` do `.env.local`. Dwa konta zakładasz ręcznie
+w *Authentication → Users* — rejestracja własna jest wyłączona.
 
-**Lista dostępu** — `DECK_OWNER_EMAIL` i `DECK_BOARD_EMAILS` to adresy kont Google. Samo konto
-Google nie daje niczego; kto nie jest na liście, nie wchodzi. Jeśli nie wiadomo, którym kontem
-następuje logowanie, wystarczy zalogować się raz — strona logowania poda odrzucony adres.
+**Dwie drogi wejścia.** Konto z hasłem mają dwie osoby: `DECK_OWNER_EMAIL` (pełne uprawnienia,
+jako jedyny widzi Orbitę) i `DECK_BOARD_EMAILS`. Reszta zarządu wchodzi **kodem** z zakładki
+`kody` w arkuszu — kod wiąże się z przeglądarką przy pierwszym użyciu i od tej pory tylko ona
+nim wejdzie. Kod zawsze daje rolę `board`; pełne uprawnienia wymagają hasła.
+
+**`DECK_SESSION_SECRET`** podpisuje bilety sesji kodowych. Minimum 32 znaki — bez niego
+aplikacja odmawia działania zamiast po cichu wpuszczać kogokolwiek.
 
 **Arkusz** — sześć kroków w [`apps-script/README.md`](apps-script/README.md). Skrypt sam zakłada
 zakładki i wgrywa dane historyczne.

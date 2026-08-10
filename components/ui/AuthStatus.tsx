@@ -1,14 +1,14 @@
 'use client'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { LogIn, LogOut, UserCircle } from 'lucide-react'
+import { KeyRound, LogIn, LogOut, UserCircle } from 'lucide-react'
 import { useAuth } from '@/lib/auth/useAuth'
 
 export function AuthStatus() {
   const router = useRouter()
-  const { user, rola, wyloguj } = useAuth()
+  const { kto, rola, sposob, wyloguj } = useAuth()
 
-  if (!user) {
+  if (!rola) {
     return (
       <Link
         href="/login"
@@ -28,13 +28,15 @@ export function AuthStatus() {
 
   return (
     <div className="deck-chip flex h-9 items-center gap-2 rounded-lg px-2">
-      <UserCircle size={15} className="text-deck-accent" />
-      <span className="max-w-[150px] truncate text-[10px] text-deck-muted">{user.email}</span>
-      {rola && (
-        <span className="rounded border border-deck-accent/30 bg-deck-accent/10 px-1.5 py-0.5 text-[9px] uppercase tracking-[0.12em] text-deck-accent">
-          {rola}
-        </span>
+      {sposob === 'kod' ? (
+        <KeyRound size={15} className="text-deck-accent" />
+      ) : (
+        <UserCircle size={15} className="text-deck-accent" />
       )}
+      <span className="max-w-[150px] truncate text-[10px] text-deck-muted">{kto}</span>
+      <span className="rounded border border-deck-accent/30 bg-deck-accent/10 px-1.5 py-0.5 text-[9px] uppercase tracking-[0.12em] text-deck-accent">
+        {rola}
+      </span>
       <button
         type="button"
         onClick={wyjdz}

@@ -1,8 +1,24 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { zweryfikujToken } from '@/lib/auth/verify'
 import { rolaDla } from '@/lib/auth/role'
+import { ktoPyta } from '@/lib/auth/guard'
 
 const GODZINA_S = 60 * 60
+
+/**
+ * Kim jestem? Jedna odpowiedź dla obu dróg wejścia — konto z hasłem przychodzi
+ * z Firebase, a sesja kodowa w ogóle przez Firebase nie przechodzi, więc
+ * przeglądarka nie ma jak sama tego ustalić.
+ */
+export async function GET(req: NextRequest) {
+  const kto = await ktoPyta(req)
+  if (!kto) return NextResponse.json({ error: 'Brak sesji' }, { status: 401 })
+  return NextResponse.json({
+    kto: kto.email,
+    rola: kto.rola,
+    sposob: kto.uid.startsWith('kod:') ? 'kod' : 'haslo',
+  })
+}
 
 export async function POST(req: NextRequest) {
   const { token } = await req.json().catch(() => ({ token: null }))
