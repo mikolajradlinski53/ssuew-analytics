@@ -4,6 +4,8 @@ import { useRouter } from 'next/navigation'
 import { ArrowRight, KeyRound, LockKeyhole, ShieldCheck, Sparkles } from 'lucide-react'
 import { useAuth } from '@/lib/auth/useAuth'
 import { KodInput } from '@/components/deck/KodInput'
+import { MatrixRain } from '@/components/deck/MatrixRain'
+import { TekstDekodowany } from '@/components/deck/TekstDekodowany'
 import { LiveDigits } from '@/components/ui/LiveDigits'
 import { LogoMark } from '@/components/ui/LogoMark'
 
@@ -50,8 +52,11 @@ export default function LoginPage() {
     <main className="relative min-h-screen overflow-hidden bg-deck-bg-deep">
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_25%_20%,rgba(46,230,166,0.16),transparent_34%),radial-gradient(circle_at_80%_70%,rgba(217,176,106,0.13),transparent_32%)]" />
       <div className="absolute left-1/2 top-1/2 h-[560px] w-[560px] -translate-x-1/2 -translate-y-1/2 rounded-full border border-deck-accent/10 bg-deck-accent/5 blur-3xl" />
-      <div className="relative grid min-h-screen grid-cols-[1fr_420px] gap-10 px-10 py-8">
-        <section className="flex flex-col justify-between">
+      <MatrixRain moc={0.3} />
+      {/* Do 1100 px jedna kolumna: sztywne 420 px obok elastycznej reszty
+          rozjeżdżało się na laptopie i było nieczytelne na telefonie. */}
+      <div className="relative z-10 grid min-h-screen grid-cols-1 gap-8 px-5 py-8 lg:grid-cols-[1fr_420px] lg:gap-10 lg:px-10">
+        <section className="flex flex-col justify-between gap-8">
           <div className="flex items-center gap-3">
             <LogoMark />
             <div>
@@ -65,21 +70,24 @@ export default function LoginPage() {
               <Sparkles size={13} />
               encrypted cockpit
             </div>
-            <h1 className="mt-6 text-6xl font-semibold leading-[1.02] tracking-normal text-deck-text">
-              Dane, które wyglądają jak centrum dowodzenia.
-            </h1>
+            <TekstDekodowany
+              as="h1"
+              tekst="Dane, które wyglądają jak centrum dowodzenia."
+              tempo={26}
+              className="mt-6 text-4xl font-semibold leading-[1.05] tracking-normal text-deck-text sm:text-5xl xl:text-6xl"
+            />
             <p className="mt-5 max-w-xl text-base leading-7 text-deck-muted">
               Wejdź do prywatnego kokpitu strategii SSUEW. W tle już pulsują rekrutacje, retencja i KPI rok-do-roku.
             </p>
 
-            <div className="mt-8 grid max-w-3xl grid-cols-3 gap-3">
+            <div className="mt-8 grid max-w-3xl grid-cols-1 gap-3 sm:grid-cols-3">
               <LiveDigits label="conversion" value="61.1%" />
               <LiveDigits label="retention" value="3.81 sem" speed={110} />
               <LiveDigits label="kpi growth" value="20/28" speed={125} />
             </div>
           </div>
 
-          <div className="grid max-w-3xl grid-cols-2 gap-3">
+          <div className="hidden max-w-3xl grid-cols-2 gap-3 lg:grid">
             <div className="deck-card deck-scan rounded-lg p-4">
               <div className="flex items-center gap-2 text-[10px] uppercase tracking-[0.18em] text-deck-accent">
                 <ShieldCheck size={14} />
@@ -99,7 +107,7 @@ export default function LoginPage() {
                 <div className="deck-meter-fill h-full w-[82%] rounded-full bg-gradient-to-r from-deck-accent to-deck-warn" />
               </div>
               <p className="mt-4 text-[11px] leading-5 text-deck-muted">
-                Publiczne dane są separowane od prywatnych nazwisk i edycji członków przez sesję Supabase.
+                Nazwiska członków i zapis danych są za sesją — kod otwiera podgląd, hasło otwiera edycję.
               </p>
             </div>
           </div>

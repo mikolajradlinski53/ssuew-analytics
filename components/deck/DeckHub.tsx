@@ -5,6 +5,8 @@ import { AnimatedNumber } from '@/components/ui/AnimatedNumber'
 import { LogoMark } from '@/components/ui/LogoMark'
 import { useAuth } from '@/lib/auth/useAuth'
 import { DeckTile } from './DeckTile'
+import { MatrixRain } from './MatrixRain'
+import { TekstDekodowany } from './TekstDekodowany'
 import type { Rola } from '@/lib/auth/role'
 
 export interface DaneKokpitu {
@@ -35,12 +37,19 @@ export function DeckHub({ rola, email, dane }: Props) {
   })
 
   return (
-    <div className="mx-auto flex min-h-screen max-w-[1360px] flex-col gap-7 p-[clamp(16px,2.4vw,34px)]">
+    <>
+      <MatrixRain moc={0.2} />
+      <div className="relative z-10 mx-auto flex min-h-screen max-w-[1360px] flex-col gap-7 p-[clamp(16px,2.4vw,34px)]">
       <header className="flex flex-wrap items-end justify-between gap-6 border-b border-white/8 pb-[18px]">
         <div className="flex items-center gap-3.5">
           <LogoMark />
           <div>
-            <h1 className="text-[27px] font-extrabold leading-none tracking-[0.26em] text-deck-text">DECK</h1>
+            <TekstDekodowany
+              as="h1"
+              tekst="DECK"
+              tempo={90}
+              className="text-[27px] font-extrabold leading-none tracking-[0.26em] text-deck-text"
+            />
             <p className="mt-1.5 font-mono text-[10px] uppercase tracking-[0.2em] text-deck-muted/70">
               prywatne centrum dowodzenia
             </p>
@@ -137,10 +146,11 @@ export function DeckHub({ rola, email, dane }: Props) {
         </span>
         <span className="inline-flex items-center gap-2">
           <i className="h-1.5 w-1.5 rounded-full bg-deck-accent shadow-[0_0_9px_var(--color-deck-accent)]" />
-          <b className="font-medium text-deck-muted">sesja</b> Google, aktywna
+          <b className="font-medium text-deck-muted">sesja</b> {rola === 'owner' ? 'hasło' : 'kod'}, aktywna
         </span>
       </footer>
-    </div>
+      </div>
+    </>
   )
 }
 

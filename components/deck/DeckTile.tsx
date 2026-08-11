@@ -20,14 +20,25 @@ const spanClass = { 1: '', 2: 'col-span-2' } as const
 const rowsClass = { 1: '', 2: 'row-span-2' } as const
 
 /**
- * Poświata idzie za kursorem przez zmienne CSS, nie przez stan Reacta —
- * ruch myszy nie może powodować przerysowania drzewa.
+ * Lekkie przechylenie w stronę kursora — maksymalnie 3°, bo więcej rozmazuje
+ * tekst. Idzie przez zmienne CSS, nie przez stan Reacta: ruch myszy nie może
+ * przerysowywać drzewa.
+ *
+ * Rozmyta poświata pod kursorem wylądowała w koszu — zabierała czytelność
+ * liczbom, a to one są tu treścią.
  */
 function sledzKursor(e: PointerEvent<HTMLElement>) {
   const el = e.currentTarget
   const r = el.getBoundingClientRect()
-  el.style.setProperty('--mx', `${((e.clientX - r.left) / r.width) * 100}%`)
-  el.style.setProperty('--my', `${((e.clientY - r.top) / r.height) * 100}%`)
+  const px = (e.clientX - r.left) / r.width - 0.5
+  const py = (e.clientY - r.top) / r.height - 0.5
+  el.style.setProperty('--tilt-x', `${(-py * 3).toFixed(2)}deg`)
+  el.style.setProperty('--tilt-y', `${(px * 3).toFixed(2)}deg`)
+}
+
+function odsunKursor(e: PointerEvent<HTMLElement>) {
+  e.currentTarget.style.setProperty('--tilt-x', '0deg')
+  e.currentTarget.style.setProperty('--tilt-y', '0deg')
 }
 
 export function DeckTile({
@@ -75,8 +86,14 @@ export function DeckTile({
     <Link
       href={href}
       onPointerMove={sledzKursor}
+      onPointerLeave={odsunKursor}
       className={`${uklad} deck-card deck-tile flex flex-col gap-3 rounded-lg p-[18px] text-deck-text no-underline`}
     >
+      {/* Narożniki celownika — rysują się dopiero przy najechaniu. */}
+      <i className="deck-tile__rog deck-tile__rog--lg" aria-hidden="true" />
+      <i className="deck-tile__rog deck-tile__rog--pg" aria-hidden="true" />
+      <i className="deck-tile__rog deck-tile__rog--ld" aria-hidden="true" />
+      <i className="deck-tile__rog deck-tile__rog--pd" aria-hidden="true" />
       <div className="relative z-10 flex flex-1 flex-col gap-3">
         {naglowek}
         <div className="flex-1">{children}</div>

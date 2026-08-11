@@ -326,23 +326,79 @@ body::before {
   animation: deck-sheen 700ms ease;
 }
 
-/* Poświata podążająca za kursorem — pozycję ustawia DeckTile przez --mx/--my.
-   Nadpisuje obracającą się obwódkę z .deck-card::after, żeby w kafelkach
-   kokpitu widać było jedno albo drugie, a nie oba naraz. */
+/* Rozmyta poświata pod kursorem wyleciala: zabierala czytelnosc liczbom,
+   a to one sa tu trescia. W jej miejsce ostra linia skanu, ktora przejezdza
+   raz przy najechaniu — i narozniki celownika nizej. */
 .deck-tile::after {
   content: "";
   position: absolute;
-  inset: -1px;
+  inset: 0;
   pointer-events: none;
   opacity: 0;
-  transition: opacity 240ms ease;
-  background: radial-gradient(340px circle at var(--mx, 50%) var(--my, 50%), rgba(46, 230, 166, 0.13), transparent 68%);
+  background: linear-gradient(
+    180deg,
+    transparent 0%,
+    rgba(46, 230, 166, 0.10) 46%,
+    rgba(190, 255, 230, 0.22) 50%,
+    rgba(46, 230, 166, 0.10) 54%,
+    transparent 100%
+  );
   animation: none;
 }
 
 .deck-tile:hover::after,
 .deck-tile:focus-visible::after {
+  animation: deck-skan 620ms cubic-bezier(0.3, 0, 0.2, 1);
+}
+
+@keyframes deck-skan {
+  from { opacity: 0; transform: translateY(-100%); }
+  30%  { opacity: 1; }
+  to   { opacity: 0; transform: translateY(100%); }
+}
+
+/* Przechylenie w strone kursora: 3 stopnie, bo wiecej rozmazuje tekst. */
+.deck-tile {
+  transform: perspective(900px) rotateX(var(--tilt-x, 0deg)) rotateY(var(--tilt-y, 0deg));
+  transition: transform 220ms cubic-bezier(0.2, 0.8, 0.2, 1), border-color 200ms ease, box-shadow 200ms ease;
+}
+
+.deck-tile:hover {
+  border-color: rgba(46, 230, 166, 0.55);
+  box-shadow: 0 26px 66px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(46, 230, 166, 0.16);
+}
+
+/* Narozniki celownika — dorysowuja sie przy najechaniu, jak w celowniku HUD. */
+.deck-tile__rog {
+  position: absolute;
+  z-index: 3;
+  width: 14px;
+  height: 14px;
+  pointer-events: none;
+  opacity: 0;
+  border: 0 solid var(--color-deck-accent);
+  transition: opacity 200ms ease, width 260ms ease, height 260ms ease;
+}
+
+.deck-tile:hover .deck-tile__rog,
+.deck-tile:focus-visible .deck-tile__rog {
   opacity: 1;
+  width: 20px;
+  height: 20px;
+}
+
+.deck-tile__rog--lg { top: 7px;  left: 7px;  border-top-width: 1.5px; border-left-width: 1.5px; }
+.deck-tile__rog--pg { top: 7px;  right: 7px; border-top-width: 1.5px; border-right-width: 1.5px; }
+.deck-tile__rog--ld { bottom: 7px; left: 7px; border-bottom-width: 1.5px; border-left-width: 1.5px; }
+.deck-tile__rog--pd { bottom: 7px; right: 7px; border-bottom-width: 1.5px; border-right-width: 1.5px; }
+
+/* Deszcz znakow pod cala strona. */
+.deck-rain {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.85;
 }
 
 .deck-tile-locked {
@@ -402,6 +458,15 @@ body::before {
   gap: 10px;
   padding: 26px 8px;
   perspective: 1000px;
+}
+
+/* Szesc kratek po 46 px to 326 px sztywnej szerokosci. Na waskim ekranie
+   rozpychalo to karte poza widok — dlatego ponizej 400 px kratki chudna. */
+@media (max-width: 400px) {
+  .kod__rzad { gap: 6px; padding: 22px 2px; }
+  .kod__slot { width: 38px; height: 50px; }
+  .kod__pole { font-size: 20px; }
+  .kod__pierscien { width: 150px; height: 150px; margin: -75px 0 0 -75px; }
 }
 
 .kod__slot {

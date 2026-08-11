@@ -141,8 +141,11 @@ export function KodInput({ onKomplet, stan, motyw }: Props) {
               className="kod__pole"
             />
             <span className="kod__ramka" aria-hidden="true" />
-            <svg className="kod__luk" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
-              <rect className="kod__luk-sciezka" x="1" y="1" width="98" height="98" rx="10" pathLength={1} />
+            {/* viewBox w proporcjach kratki (46x58). Kwadratowy rozciągany
+                przez preserveAspectRatio="none" zamieniał zaokrąglone rogi
+                w elipsy i wyglądało to na zepsute. */}
+            <svg className="kod__luk" viewBox="0 0 46 58" aria-hidden="true">
+              <rect className="kod__luk-sciezka" x="1" y="1" width="44" height="56" rx="9" pathLength={1} />
             </svg>
           </label>
         ))}
