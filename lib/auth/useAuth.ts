@@ -99,15 +99,19 @@ export function useAuth() {
     [odswiez],
   )
 
+  /**
+   * Wylogowanie nie pyta, którą drogą się weszło — kasuje wszystko.
+   * Rozgałęzianie po sposobie zostawiało drugi bilet ważny i człowiek wracał
+   * zalogowany, mimo że kliknął „wyloguj".
+   */
   const wyloguj = useCallback(async () => {
-    if (stan.sposob === 'haslo' && firebaseSkonfigurowany) {
-      await signOut(auth())
-      await fetch('/api/session', { method: 'DELETE' })
-    } else {
-      await fetch('/api/kod', { method: 'DELETE' })
+    if (firebaseSkonfigurowany) {
+      // Bez sesji hasłowej to nic nie robi, więc nie ma czego sprawdzać.
+      await signOut(auth()).catch(() => {})
     }
+    await fetch('/api/session', { method: 'DELETE' })
     setStan({ ...PUSTA, laduje: false })
-  }, [stan.sposob])
+  }, [])
 
   return { ...stan, zalogujHaslem, zalogujKodem, wyloguj }
 }

@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { render, screen, fireEvent } from '@testing-library/react'
 import { describe, it, expect, vi } from 'vitest'
 import type { ReactNode } from 'react'
 import { DeckHub } from '@/components/deck/DeckHub'
@@ -10,6 +10,11 @@ vi.mock('next/link', () => ({
     </a>
   ),
 }))
+
+const wyloguj = vi.fn()
+const push = vi.fn()
+vi.mock('next/navigation', () => ({ useRouter: () => ({ push, refresh: vi.fn() }) }))
+vi.mock('@/lib/auth/useAuth', () => ({ useAuth: () => ({ wyloguj }) }))
 
 const dane = { konwersja: 61.1, retencja: 3.81, kpiWzrosty: 20, kpiRazem: 28, alerty: 2 }
 
@@ -45,5 +50,15 @@ describe('DeckHub', () => {
     render(<DeckHub rola="board" email="zarzad@e.com" dane={dane} />)
     expect(screen.getByText('zarzad@e.com')).toBeInTheDocument()
     expect(screen.getByText('board')).toBeInTheDocument()
+  })
+
+  it('ma przycisk wylogowania', () => {
+    // Kokpit jest ekranem, na ktorym sie laduje po zalogowaniu. Bez tego
+    // przycisku nie da sie z niego wyjsc — powloka z sidebarem obejmuje
+    // wylacznie /analytics/*, wiec tam wylogowania po prostu nie widac.
+    render(<DeckHub rola="owner" email="ja@e.com" dane={dane} />)
+    const przycisk = screen.getByRole('button', { name: /wyloguj/i })
+    fireEvent.click(przycisk)
+    expect(wyloguj).toHaveBeenCalled()
   })
 })

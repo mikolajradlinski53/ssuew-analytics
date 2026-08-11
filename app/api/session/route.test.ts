@@ -55,10 +55,22 @@ describe('POST /api/session', () => {
 })
 
 describe('DELETE /api/session', () => {
-  it('kasuje ciasteczko sesji', async () => {
+  it('kasuje OBA bilety, nie tylko ten hasłowy', async () => {
+    // Kto wszedł kiedyś kodem, a potem hasłem, ma jedno i drugie. Skasowanie
+    // samego deck_session zostawiało ważny bilet kodowy i strażnik wpuszczał
+    // z powrotem — wyglądało to jak niedziałające wylogowanie.
     const { DELETE } = await import('@/app/api/session/route')
     const res = await DELETE()
     expect(res.status).toBe(200)
     expect(res.cookies.get('deck_session')?.value).toBe('')
+    expect(res.cookies.get('deck_kod')?.value).toBe('')
+  })
+
+  it('zostawia znak rozpoznawczy urządzenia', async () => {
+    // deck_device to nie sesja. Skasowany kazałby własnemu kodowi wyglądać
+    // na próbę wejścia z obcego sprzętu.
+    const { DELETE } = await import('@/app/api/session/route')
+    const res = await DELETE()
+    expect(res.cookies.get('deck_device')).toBeUndefined()
   })
 })

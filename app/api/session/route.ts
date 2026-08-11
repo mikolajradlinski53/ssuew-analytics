@@ -53,8 +53,18 @@ export async function POST(req: NextRequest) {
   return res
 }
 
+/**
+ * Wylogowanie kasuje OBA bilety, nie tylko ten, którym się weszło.
+ * Kto wszedł kiedyś kodem, a potem hasłem, ma jedno i drugie — skasowanie
+ * samego `deck_session` zostawiałoby ważny bilet kodowy i strażnik wpuszczałby
+ * z powrotem. Wyglądało to dokładnie jak niedziałające wylogowanie.
+ *
+ * `deck_device` zostaje: to znak rozpoznawczy przeglądarki, nie sesja.
+ * Skasowany kazałby własnemu kodowi wyglądać na próbę wejścia z obcego sprzętu.
+ */
 export async function DELETE() {
   const res = NextResponse.json({ ok: true })
   res.cookies.delete('deck_session')
+  res.cookies.delete('deck_kod')
   return res
 }

@@ -1,6 +1,9 @@
 'use client'
+import { useRouter } from 'next/navigation'
+import { LogOut } from 'lucide-react'
 import { AnimatedNumber } from '@/components/ui/AnimatedNumber'
 import { LogoMark } from '@/components/ui/LogoMark'
+import { useAuth } from '@/lib/auth/useAuth'
 import { DeckTile } from './DeckTile'
 import type { Rola } from '@/lib/auth/role'
 
@@ -15,6 +18,15 @@ export interface DaneKokpitu {
 type Props = { rola: Rola; email: string; dane: DaneKokpitu }
 
 export function DeckHub({ rola, email, dane }: Props) {
+  const router = useRouter()
+  const { wyloguj } = useAuth()
+
+  async function wyjdz() {
+    await wyloguj()
+    router.push('/login')
+    router.refresh()
+  }
+
   const dzis = new Date().toLocaleDateString('pl-PL', {
     weekday: 'long',
     day: 'numeric',
@@ -40,6 +52,15 @@ export function DeckHub({ rola, email, dane }: Props) {
             <span className="rounded-full border border-deck-accent/34 bg-deck-accent/10 px-2 py-0.5 text-[9.5px] uppercase tracking-[0.16em] text-deck-accent">
               {rola}
             </span>
+            <button
+              type="button"
+              onClick={wyjdz}
+              title="Wyloguj"
+              aria-label="Wyloguj"
+              className="grid h-7 w-7 place-items-center rounded-md border border-white/10 text-deck-muted transition hover:border-deck-danger/40 hover:bg-white/[0.06] hover:text-deck-danger"
+            >
+              <LogOut size={13} />
+            </button>
           </div>
           <div className="mt-1.5 text-[10.5px] uppercase tracking-[0.12em] text-deck-muted/70">{dzis}</div>
         </div>
