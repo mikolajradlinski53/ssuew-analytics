@@ -6,7 +6,7 @@ import { LogoMark } from '@/components/ui/LogoMark'
 import { useAuth } from '@/lib/auth/useAuth'
 import { DeckTile } from './DeckTile'
 import { MatrixRain } from './MatrixRain'
-import { TekstDekodowany } from './TekstDekodowany'
+import { SekwencjaStartowa } from './SekwencjaStartowa'
 import type { Rola } from '@/lib/auth/role'
 
 export interface DaneKokpitu {
@@ -44,12 +44,12 @@ export function DeckHub({ rola, email, dane }: Props) {
         <div className="flex items-center gap-3.5">
           <LogoMark />
           <div>
-            <TekstDekodowany
-              as="h1"
-              tekst="DECK"
-              tempo={90}
-              className="text-[27px] font-extrabold leading-none tracking-[0.26em] text-deck-text"
-            />
+            <h1
+              className="deck-glitch text-[27px] font-extrabold leading-none tracking-[0.26em] text-deck-text"
+              data-tekst="DECK"
+            >
+              DECK
+            </h1>
             <p className="mt-1.5 font-mono text-[10px] uppercase tracking-[0.2em] text-deck-muted/70">
               prywatne centrum dowodzenia
             </p>
@@ -139,15 +139,15 @@ export function DeckHub({ rola, email, dane }: Props) {
         </DeckTile>
       </main>
 
-      <footer className="flex flex-wrap items-center gap-5 border-t border-white/8 pt-3.5 font-mono text-[10.5px] tracking-[0.06em] text-deck-muted/70">
-        <span className="inline-flex items-center gap-2">
-          <i className="h-1.5 w-1.5 rounded-full bg-deck-accent shadow-[0_0_9px_var(--color-deck-accent)]" />
-          <b className="font-medium text-deck-muted">arkusz</b> podłączony
-        </span>
-        <span className="inline-flex items-center gap-2">
-          <i className="h-1.5 w-1.5 rounded-full bg-deck-accent shadow-[0_0_9px_var(--color-deck-accent)]" />
-          <b className="font-medium text-deck-muted">sesja</b> {rola === 'owner' ? 'hasło' : 'kod'}, aktywna
-        </span>
+      <footer className="border-t border-white/8 pt-3.5 font-mono text-[10.5px] tracking-[0.06em] text-deck-muted/70">
+        <SekwencjaStartowa
+          linie={[
+            'arkusz podłączony',
+            `sesja ${rola === 'owner' ? 'hasło' : 'kod'}, aktywna`,
+            `${dane.kpiRazem} metryk w pamięci`,
+            'kokpit gotowy',
+          ]}
+        />
       </footer>
       </div>
     </>

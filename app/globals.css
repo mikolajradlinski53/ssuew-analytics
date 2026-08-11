@@ -180,15 +180,9 @@ body::before {
     inset 0 1px 0 rgba(255, 255, 255, 0.1);
 }
 
-.deck-card::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  background: linear-gradient(110deg, transparent 10%, rgba(255, 255, 255, 0.08) 45%, transparent 62%);
-  transform: translateX(-120%);
-  opacity: 0;
-}
+/* Promien swiatla przejezdzajacy przy najechaniu zostal usuniety: byl
+   nieczytelny i rozmywal liczby, ktore sa trescia kart. Sprzezenie zwrotne
+   daja teraz obwodka i narozniki celownika. */
 
 .deck-card::after {
   content: "";
@@ -205,10 +199,7 @@ body::before {
   opacity: 1;
 }
 
-.deck-card:hover::before {
-  opacity: 1;
-  animation: deck-sheen 900ms ease;
-}
+
 
 .deck-chip {
   border: 1px solid rgba(148, 163, 184, 0.18);
@@ -329,32 +320,10 @@ body::before {
 /* Rozmyta poświata pod kursorem wyleciala: zabierala czytelnosc liczbom,
    a to one sa tu trescia. W jej miejsce ostra linia skanu, ktora przejezdza
    raz przy najechaniu — i narozniki celownika nizej. */
+/* Obracajaca sie obwodka z .deck-card::after tez znika na kafelkach —
+   ruch w tle odciagal wzrok od liczb. */
 .deck-tile::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  opacity: 0;
-  background: linear-gradient(
-    180deg,
-    transparent 0%,
-    rgba(46, 230, 166, 0.10) 46%,
-    rgba(190, 255, 230, 0.22) 50%,
-    rgba(46, 230, 166, 0.10) 54%,
-    transparent 100%
-  );
-  animation: none;
-}
-
-.deck-tile:hover::after,
-.deck-tile:focus-visible::after {
-  animation: deck-skan 620ms cubic-bezier(0.3, 0, 0.2, 1);
-}
-
-@keyframes deck-skan {
-  from { opacity: 0; transform: translateY(-100%); }
-  30%  { opacity: 1; }
-  to   { opacity: 0; transform: translateY(100%); }
+  display: none;
 }
 
 /* Przechylenie w strone kursora: 3 stopnie, bo wiecej rozmazuje tekst. */
@@ -673,4 +642,107 @@ body::before {
 
 .kod--sprawdzanie .kod__ramka {
   border-color: rgba(220, 234, 255, 0.3);
+}
+
+/* ============================================================
+   Warstwa CRT i glitch. Zasada, ktora rzadzi wszystkim ponizej:
+   zaden efekt nie przejezdza nad liczbami. Atmosfera siedzi
+   w tle i w naglowkach, dane zostaja czyste.
+   ============================================================ */
+
+/* Linie kineskopu na calej stronie. Okres 3 px zamiast 1 px, bo na
+   ekranach o duzej gestosci jednopikselowe paski robia more. */
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    0deg,
+    rgba(0, 0, 0, 0.22) 0px,
+    rgba(0, 0, 0, 0.22) 1px,
+    transparent 1px,
+    transparent 3px
+  );
+  opacity: 0.5;
+  animation: deck-crt-dryf 8s linear infinite;
+}
+
+@keyframes deck-crt-dryf {
+  from { transform: translateY(0); }
+  to   { transform: translateY(3px); }
+}
+
+/* ---------- glitch na napisie ---------- */
+
+.deck-glitch {
+  position: relative;
+  display: inline-block;
+}
+
+/* Dwie kopie napisu rozjezdzaja sie w czerwien i blekit — tak dziala
+   aberracja chromatyczna na zepsutym sygnale. Kopie sa ukryte przed
+   czytnikami ekranu, bo tekst juz raz zostal odczytany. */
+.deck-glitch::before,
+.deck-glitch::after {
+  content: attr(data-tekst);
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: inherit;
+  opacity: 0;
+}
+
+.deck-glitch::before {
+  color: #ff4d6a;
+  animation: deck-glitch-a 6s steps(1) infinite;
+}
+
+.deck-glitch::after {
+  color: #4dd8ff;
+  animation: deck-glitch-b 6s steps(1) infinite;
+}
+
+/* Rwie sie tylko przez ~5% czasu — glitch bez przerwy przestaje byc
+   glitchem i zaczyna byc migotaniem, ktore meczy. */
+@keyframes deck-glitch-a {
+  0%, 92%, 100% { opacity: 0; transform: none; clip-path: none; }
+  93% { opacity: 0.9; transform: translate(-2px, 1px); clip-path: inset(12% 0 58% 0); }
+  95% { opacity: 0.9; transform: translate(3px, -1px); clip-path: inset(64% 0 12% 0); }
+  97% { opacity: 0.9; transform: translate(-1px, 0);  clip-path: inset(38% 0 40% 0); }
+}
+
+@keyframes deck-glitch-b {
+  0%, 92%, 100% { opacity: 0; transform: none; clip-path: none; }
+  93% { opacity: 0.85; transform: translate(2px, -1px); clip-path: inset(70% 0 8% 0); }
+  95% { opacity: 0.85; transform: translate(-3px, 1px); clip-path: inset(20% 0 62% 0); }
+  97% { opacity: 0.85; transform: translate(1px, 0);   clip-path: inset(46% 0 34% 0); }
+}
+
+/* ---------- kafelek melduje sie po zamontowaniu ---------- */
+
+.deck-tile__rog {
+  /* Bez `both`: po zakonczeniu element wraca do stylu z arkusza (opacity 0),
+     dzieki czemu przejscie przy najechaniu dalej dziala. */
+  animation: deck-uzbrojenie 900ms ease;
+}
+
+@keyframes deck-uzbrojenie {
+  0%   { opacity: 0; }
+  55%  { opacity: 0.85; width: 26px; height: 26px; }
+  100% { opacity: 0; }
+}
+
+/* ---------- sekwencja startowa w stopce ---------- */
+
+.deck-boot span {
+  display: inline-block;
+  opacity: 0;
+  animation: deck-boot-wejscie 420ms ease forwards;
+}
+
+@keyframes deck-boot-wejscie {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
