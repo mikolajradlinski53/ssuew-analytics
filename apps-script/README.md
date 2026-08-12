@@ -91,8 +91,21 @@ Odpowiedź: `{ ok: true, rows: [ … ] }` albo `{ ok: false, kod: 403, error: "�
 |---|---|
 | `rekrutacje` | `id`, `edycja`, `sezon`, `rok`, `zgloszenia`, `przyjeci`, `created_at` |
 | `kohorty` | `id`, `edycja`, `sezon`, `rok`, `n_czlonkow`, `avg_retention_sem`, `max_retention_sem`, `in_progress`, `survival`, `created_at` |
-| `kpi` | `id`, `kategoria`, `nazwa`, `okres_poprzedni`, `wartosc_poprzednia`, `okres_biezacy`, `wartosc_biezaca`, `created_at` |
+| `kpi_punkty` | `id`, `kategoria`, `nazwa`, `okres`, `wartosc`, `created_at` |
+| `kpi` | **archiwum** — stary format dwuokresowy, nieczytany przez aplikację |
 | `czlonkowie` | `id`, `kohorta_edycja`, `imie_nazwisko`, `status`, `aktywnosc`, `created_at` |
+
+W `kpi_punkty` **jeden wiersz to jeden pomiar**. Metryka jest rozpoznawana po parze
+`kategoria` + `nazwa`, a kolejne lata to kolejne wiersze:
+
+```
+Koordynatorzy | Adapciak | 2024/2025 | 2
+Koordynatorzy | Adapciak | 2025/2026 | 1
+Koordynatorzy | Adapciak | 2026/2027 | 3
+```
+
+Dodanie roku to dopisanie wierszy — kodu nie trzeba dotykać. Zmiana nazwy metryki
+rozrywa jej historię na dwie serie, więc nazwy raz ustalone lepiej zostawić w spokoju.
 
 `survival` i `aktywnosc` to listy liczb w jednej komórce, po przecinku: `100,100,97,83,63`.
 Arkusz ma być czytelny dla człowieka, więc lista wygrywa z JSON-em.
@@ -107,12 +120,28 @@ Czego nie robić: nie usuwaj ani nie zmieniaj nazw nagłówków. Brakujący nag�
 a nie ciche zero — celowo, bo zera w kolumnie „zgłoszenia" dałyby wykresy, które wyglądają
 wiarygodnie i są nieprawdziwe.
 
+## Migracja KPI na format wieloletni (jednorazowo)
+
+Robisz to raz, przy przejściu ze starego modelu dwuokresowego. **Kolejność jest wiążąca** —
+odwrotna daje błąd w module KPI, bo aplikacja szukałaby zakładki, której jeszcze nie ma.
+
+1. Wklej aktualny `Kod.gs` do edytora Apps Script i zapisz.
+2. Wybierz z listy funkcję **`migrujKpi`** i kliknij **Uruchom**.
+   Nie uruchamiaj `setup()` — ta wgrałaby dane przykładowe zamiast Twoich.
+3. Sprawdź nową zakładkę `kpi_punkty`. Wierszy ma być **dwa razy tyle co w `kpi`**
+   (każdy stary wiersz zawierał dwa pomiary). Funkcja wypisuje dokładną liczbę w dzienniku.
+4. Dopiero teraz wypchnij aplikację.
+
+Stara zakładka `kpi` zostaje nietknięta jako archiwum. Nic jej już nie czyta, ale jest dokąd
+wrócić, gdyby migracja wyszła krzywo. `migrujKpi()` można puścić wielokrotnie — czyści
+`kpi_punkty` przed zapisem, więc nie narobi duplikatów.
+
 ## Sprawdzenie, czy działa
 
 Wklej w przeglądarkę adres wdrożenia z `&t=_ping` i swoim tokenem. Poprawna odpowiedź:
 
 ```json
-{ "ok": true, "zakladki": ["rekrutacje","kohorty","kpi","czlonkowie"], "czas": "…" }
+{ "ok": true, "zakladki": ["rekrutacje","kohorty","kpi","kpi_punkty","czlonkowie","kody"], "czas": "…" }
 ```
 
 Odpowiedź `{ "ok": false, "kod": 403 }` oznacza zły token. Strona logowania Google zamiast

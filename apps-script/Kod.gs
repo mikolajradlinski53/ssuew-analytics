@@ -55,6 +55,9 @@ const SCHEMAT = {
     sort: ['rok', 'sezon'],
     kluczNaturalny: 'edycja'
   },
+  // Stary format: dwa okresy w jednym wierszu. Aplikacja go juz nie czyta —
+  // zakladka zostaje jako archiwum, a schemat tutaj tylko po to, zeby
+  // migrujKpi() miala z czego przepisywac.
   kpi: {
     kolumny: {
       id: 'text',
@@ -67,6 +70,21 @@ const SCHEMAT = {
       created_at: 'text'
     },
     sort: ['kategoria', 'nazwa'],
+    kluczNaturalny: null
+  },
+  // Format dlugi: jeden wiersz to jeden pomiar. Dodanie roku to dopisanie
+  // wierszy, bez zmiany kodu. Metryka jest rozpoznawana po parze
+  // (kategoria, nazwa) — zmiana nazwy rozrywa serie na dwie.
+  kpi_punkty: {
+    kolumny: {
+      id: 'text',
+      kategoria: 'text',
+      nazwa: 'text',
+      okres: 'text',
+      wartosc: 'number',
+      created_at: 'text'
+    },
+    sort: ['kategoria', 'nazwa', 'okres'],
     kluczNaturalny: null
   },
   czlonkowie: {
@@ -576,3 +594,117 @@ const SEED = {
     { kod: '482913', etykieta: 'kod probny', rola: 'board', aktywny: true }
   ]
 };
+
+/**
+ * Rozwija wiersze w formacie szerokim (dwa okresy obok siebie) na pojedyncze
+ * pomiary. Ten sam okres wystepuje w danych dwa razy — jako biezacy jednego
+ * wiersza i poprzedni nastepnego — wiec kluczujemy po (kategoria, nazwa, okres)
+ * i zostawiamy wystapienie pozniejsze: poprawki dopisuje sie na dole.
+ *
+ * Uzywaja tego i `setup()`, i `migrujKpi()`. Gdyby kazde mialo wlasna kopie,
+ * predzej czy pozniej by sie rozjechaly.
+ */
+function punktyZPar_(wiersze) {
+  const mapa = {};
+  const kolejnosc = [];
+
+  (wiersze || []).forEach(function (w) {
+    const kat = String(w.kategoria || '').trim();
+    const naz = String(w.nazwa || '').trim();
+    if (!kat || !naz) return;
+
+    [
+      [w.okres_poprzedni, w.wartosc_poprzednia],
+      [w.okres_biezacy, w.wartosc_biezaca]
+    ].forEach(function (para) {
+      const okres = String(para[0] || '').trim();
+      const surowa = para[1];
+      if (!okres || surowa === '' || surowa === null || surowa === undefined) return;
+      const wartosc = Number(surowa);
+      if (isNaN(wartosc)) return;
+
+      const klucz = kat + ' ' + naz + ' ' + okres;
+      if (!(klucz in mapa)) kolejnosc.push(klucz);
+      mapa[klucz] = { kategoria: kat, nazwa: naz, okres: okres, wartosc: wartosc };
+    });
+  });
+
+  return kolejnosc.map(function (k) { return mapa[k]; }).sort(function (a, b) {
+    return a.kategoria.localeCompare(b.kategoria)
+      || a.nazwa.localeCompare(b.nazwa)
+      || a.okres.localeCompare(b.okres);
+  });
+}
+
+// Zakladka `kpi_punkty` bierze te same liczby co archiwalna `kpi`, tylko
+// rozwiniete. Wypisanie ich drugi raz wprost prosiloby sie o rozjazd.
+SEED.kpi_punkty = punktyZPar_(SEED.kpi);
+
+/**
+ * Przenosi zakladke `kpi` (format szeroki: dwa okresy w jednym wierszu)
+ * do `kpi_punkty` (format dlugi: jeden pomiar na wiersz).
+ *
+ * Uruchamiasz recznie z edytora Apps Script — wybierasz `migrujKpi` z listy
+ * funkcji i klikasz Uruchom.
+ *
+ * Stara zakladka zostaje nietknieta jako archiwum. Nie ma zmieniania nazw
+ * ani okna, w ktorym aplikacja czyta arkusz w polowie przerobiony.
+ *
+ * Mozna uruchomic wielokrotnie: zakladka docelowa jest czyszczona przed zapisem.
+ */
+function migrujKpi() {
+  const plik = SpreadsheetApp.getActiveSpreadsheet();
+  const stara = plik.getSheetByName('kpi');
+  if (!stara) throw new Error('Brak zakladki `kpi` — nie ma czego migrowac.');
+
+  const dane = stara.getDataRange().getValues();
+  if (dane.length < 2) throw new Error('Zakladka `kpi` nie ma wierszy danych.');
+
+  const naglowki = dane.shift();
+  const idx = {};
+  naglowki.forEach(function (h, i) { idx[String(h).trim()] = i; });
+
+  const wymagane = ['kategoria', 'nazwa', 'okres_poprzedni', 'wartosc_poprzednia', 'okres_biezacy', 'wartosc_biezaca'];
+  wymagane.forEach(function (kol) {
+    if (idx[kol] === undefined) throw new Error('Brak kolumny `' + kol + '` w zakladce kpi.');
+  });
+
+  // Na obiekty, zeby rozwijaniem zajela sie ta sama funkcja co przy `setup()`.
+  const obiekty = dane.map(function (w) {
+    return {
+      kategoria: w[idx.kategoria],
+      nazwa: w[idx.nazwa],
+      okres_poprzedni: w[idx.okres_poprzedni],
+      wartosc_poprzednia: w[idx.wartosc_poprzednia],
+      okres_biezacy: w[idx.okres_biezacy],
+      wartosc_biezaca: w[idx.wartosc_biezaca]
+    };
+  });
+  const punkty = punktyZPar_(obiekty);
+  if (!punkty.length) throw new Error('Nie udalo sie odczytac zadnego pomiaru — sprawdz zawartosc zakladki kpi.');
+
+  const tabela = SCHEMAT.kpi_punkty;
+  const klucze = Object.keys(tabela.kolumny);
+
+  let cel = plik.getSheetByName('kpi_punkty');
+  if (cel) cel.clear();
+  else cel = plik.insertSheet('kpi_punkty');
+
+  const wiersze = [klucze];
+  punkty.forEach(function (p) {
+    const pelny = uzupelnij(p, tabela);
+    wiersze.push(klucze.map(function (k) { return naKomorke(pelny[k], tabela.kolumny[k]); }));
+  });
+
+  cel.getRange(1, 1, wiersze.length, klucze.length).setValues(wiersze);
+  cel.getRange(1, 1, 1, klucze.length)
+     .setFontWeight('bold')
+     .setBackground('#10141B')
+     .setFontColor('#E6EDF3');
+  cel.setFrozenRows(1);
+  cel.autoResizeColumns(1, klucze.length);
+
+  const komunikat = 'Zapisano ' + punkty.length + ' pomiarow do `kpi_punkty` (z ' + dane.length + ' wierszy zakladki kpi).';
+  Logger.log(komunikat);
+  return komunikat;
+}
