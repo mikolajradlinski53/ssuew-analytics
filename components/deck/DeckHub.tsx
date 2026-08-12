@@ -107,13 +107,14 @@ export function DeckHub({ rola, email, dane }: Props) {
         </DeckTile>
 
         <DeckTile
-          stan="zablokowany"
+          stan="zywy"
           href="/planer"
           etykieta="moduł 02 · kalendarz"
           tytul="Planer semestru"
-          wkrotce="etap 3"
         >
-          <p className="text-[12px] leading-relaxed">Kalendarz semestru z wykrywaniem kolizji osób i sal.</p>
+          <p className="text-[12px] leading-relaxed text-deck-muted">
+            Kalendarz semestru z wykrywaniem kolizji osób i sal.
+          </p>
         </DeckTile>
 
         {rola === 'owner' && (
