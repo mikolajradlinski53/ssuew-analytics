@@ -85,6 +85,7 @@ Kolejność wdrożenia — trzy kroki, żadnego zmieniania nazw:
 ```ts
 /** Jeden pomiar — tak, jak leży w arkuszu. */
 export interface PunktKpi {
+  id: string         // identyfikator wiersza; potrzebny, by dało się go edytować
   okres: string      // '2025/2026'
   wartosc: number
 }
@@ -261,8 +262,8 @@ Matematyka pozostałych modułów — retencja, lejek, rekrutacje, kohorty — p
 | `WykresSerii` | Dwa punkty rysują dwa `<rect>`. Pięć punktów rysuje jedną `<polyline>`. Seria jednopunktowa nie wywala się i nie rysuje linii. `<title>` zawiera wszystkie okresy. |
 | `KpiClient` | Metryka z pięcioma latami pojawia się w **jednym** wierszu, nie w pięciu. Procent bierze się z dwóch ostatnich punktów. |
 | `buildAlerts` | Seria ze spadkiem daje **jeden** alert, nie po jednym na rok. Seria jednopunktowa nie daje alertu. |
-| `WpisClient` | „Rocznik" wysyła jeden punkt na metrykę z podanym okresem. Podpowiadany okres bierze się z najdłuższej serii. |
-| `migrujKpi` | Test jednostkowy czystej funkcji przekształcającej (sama logika, bez API Arkuszy): wiersze z nakładającymi się parami dają zbiór unikalnych punktów; wiersz z pustą wartością jest pomijany. |
+| `WpisClient` | Bez testu automatycznego. Formularz stoi za przełącznikiem zakładek i bramką roli, więc test sprawdzałby głównie własną nawigację po interfejsie. Kształt zapisu pilnuje kompilator: po zmianie typu `addKpiMetricsBulk` przyjmuje `Omit<KpiMetric, 'id' \| 'created_at'>[]`, w którym stare pola dwuokresowe po prostu nie istnieją. Weryfikacja jest naoczna, przy pierwszym wpisywaniu rocznika. |
+| `migrujKpi` | Bez własnego testu — świadomie. Cała logika, którą warto sprawdzać, to deduplikacja, a ta jest przetestowana raz w `serieZWierszy` i działa też przy odczycie. Migracja robi tylko spłaszczenie wiersza na dwa punkty i wstawienie ich do mapy; przepisywanie tego w TypeScripcie po to, żeby dało się to odpalić w vitest, dublowałoby kod bez zysku. Weryfikacja jest naoczna: 17 metryk ma dać 34 punkty. |
 
 ---
 
@@ -272,7 +273,7 @@ Matematyka pozostałych modułów — retencja, lejek, rekrutacje, kohorty — p
 |---|---|---|
 | Zmiana nazwy metryki rozrywa serię | średnia | Świadoma cena za brak sztucznych identyfikatorów; opisane w `Kod.gs` przy schemacie |
 | Dwukrotne uruchomienie `migrujKpi()` | średnia | Funkcja czyści zakładkę przed zapisem |
-| Aplikacja wypchnięta przed migracją | średnia | Czyta `kpi_punkty`, której jeszcze nie ma → moduł pokazuje pustkę, nie błąd. Stara zakładka nietknięta, więc cofnięcie to wypchnięcie poprzedniej wersji |
+| Aplikacja wypchnięta przed migracją | średnia | Zakładki `kpi_punkty` jeszcze nie ma, więc Apps Script zwróci błąd i moduł KPI pokaże komunikat. **Dlatego kolejność z §3 jest wiążąca: najpierw `migrujKpi()`, dopiero potem wypchnięcie.** Stara zakładka zostaje nietknięta, więc cofnięcie to wypchnięcie poprzedniej wersji |
 | Wykres nieczytelny przy wielu punktach | niska | Przy 8+ punktach kropki znikają, zostaje sama linia |
 | Lista wolniej się skanuje wzrokiem | niska | Procent w wyrównanej kolumnie po prawej; wykres bez osi i podpisów |
 
