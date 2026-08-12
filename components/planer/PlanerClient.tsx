@@ -168,6 +168,10 @@ export function PlanerClient({ semestr, mozeEdytowac, poczatkowe, naZywo }: Prop
 
         {panelOtwarty && (
           <PanelWydarzenia
+            // Zmiana wybranego wydarzenia przemontowuje formularz i resetuje
+            // jego pola — zalecany przez Reacta sposób zamiast synchronizacji
+            // stanu efektem.
+            key={wybrane?.id ?? 'nowe'}
             wydarzenie={wybrane}
             miesiac={miesiac}
             mozeEdytowac={mozeEdytowac}

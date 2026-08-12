@@ -1,5 +1,5 @@
 'use client'
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { Trash2, X } from 'lucide-react'
 import { KLUCZE_KATEGORII, KATEGORIE, type Kategoria, type Miesiac, type Wydarzenie } from '@/lib/planer/typy'
 import { dniWMiesiacu } from '@/lib/planer/daty'
@@ -22,14 +22,16 @@ function pusty(miesiac: Miesiac): NoweWydarzenie {
   }
 }
 
+/**
+ * Formularz nie synchronizuje się z `wydarzenie` przez efekt — rodzic
+ * przemontowuje go przez `key`, gdy zmienia się wybrane wydarzenie.
+ * To zalecany przez Reacta sposób resetowania stanu i o jeden render tańszy
+ * niż dopasowywanie po fakcie.
+ */
 export function PanelWydarzenia({ wydarzenie, miesiac, mozeEdytowac, onZapisz, onUsun, onZamknij }: Props) {
   const [dane, setDane] = useState<NoweWydarzenie>(() =>
     wydarzenie ? { ...wydarzenie } : pusty(miesiac),
   )
-
-  useEffect(() => {
-    setDane(wydarzenie ? { ...wydarzenie } : pusty(miesiac))
-  }, [wydarzenie, miesiac])
 
   function zmien<K extends keyof NoweWydarzenie>(pole: K, wartosc: NoweWydarzenie[K]) {
     setDane((d) => ({ ...d, [pole]: wartosc }))
