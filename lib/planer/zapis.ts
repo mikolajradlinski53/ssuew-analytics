@@ -6,6 +6,8 @@ import { baza } from '@/lib/firebase/firestore'
 import { naWydarzenie } from './mapowanie'
 import type { NoweWydarzenie, Wydarzenie } from './typy'
 import type { Propozycja } from './propozycje'
+import type { Komentarz } from './komentarze'
+import type { Znak } from './obecnosc'
 
 // Reeksport, zeby nie ruszac miejsc, ktore importuja ten typ stad.
 export type { NoweWydarzenie }
@@ -118,4 +120,50 @@ export async function przyjmijPropozycje(semestrId: string, p: Propozycja): Prom
 
 export async function odrzucPropozycje(semestrId: string, id: string): Promise<void> {
   await deleteDoc(doc(propozycje(semestrId), id))
+}
+
+/* ─── Komentarze i obecność ─────────────────────────────────── */
+
+function komentarze(semestrId: string) {
+  return collection(baza(), 'semestry', semestrId, 'komentarze')
+}
+
+function obecnosc(semestrId: string) {
+  return collection(baza(), 'semestry', semestrId, 'obecnosc')
+}
+
+export function subskrybujKomentarze(
+  semestrId: string,
+  gdyZmiana: (k: Komentarz[]) => void,
+): () => void {
+  return onSnapshot(komentarze(semestrId), (zrzut) =>
+    gdyZmiana(zrzut.docs.map((d) => ({ id: d.id, ...d.data() }) as Komentarz)),
+  )
+}
+
+export function subskrybujObecnosc(
+  semestrId: string,
+  gdyZmiana: (z: Znak[]) => void,
+): () => void {
+  return onSnapshot(obecnosc(semestrId), (zrzut) =>
+    gdyZmiana(zrzut.docs.map((d) => ({ uid: d.id, ...d.data() }) as Znak)),
+  )
+}
+
+export async function dodajKomentarz(
+  semestrId: string,
+  wydarzenieId: string,
+  tresc: string,
+  autor: string,
+): Promise<void> {
+  await addDoc(komentarze(semestrId), { wydarzenieId, tresc, autor, utworzone: Date.now() })
+}
+
+export async function zapiszObecnosc(
+  semestrId: string,
+  uid: string,
+  kto: string,
+  patrzyNa: string | null,
+): Promise<void> {
+  await setDoc(doc(obecnosc(semestrId), uid), { kto, ostatniZnak: Date.now(), patrzyNa })
 }

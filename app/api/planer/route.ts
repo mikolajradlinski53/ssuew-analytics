@@ -1,7 +1,9 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { ktoPyta } from '@/lib/auth/guard'
 import { naWydarzenie } from '@/lib/planer/mapowanie'
-import { propozycjeRef, semestrRef, wydarzeniaRef } from '@/lib/firebase/admin'
+import {
+  komentarzeRef, obecnoscRef, propozycjeRef, semestrRef, wydarzeniaRef,
+} from '@/lib/firebase/admin'
 
 export const runtime = 'nodejs'
 
@@ -79,6 +81,31 @@ export async function POST(req: NextRequest) {
       await wydarzeniaRef(semestr).doc(body.wydarzenieId).update({
         dzien: body.naDzien,
         zmienione: Date.now(),
+      })
+      return NextResponse.json({ ok: true })
+    }
+
+    if (akcja === 'komentarz') {
+      const tresc = typeof body.tresc === 'string' ? body.tresc.trim() : ''
+      if (!tresc || !body.wydarzenieId) {
+        return NextResponse.json({ error: 'Pusty komentarz' }, { status: 400 })
+      }
+      await komentarzeRef(semestr).add({
+        wydarzenieId: body.wydarzenieId,
+        tresc,
+        autor: kto.email,
+        utworzone: Date.now(),
+      })
+      return NextResponse.json({ ok: true }, { status: 201 })
+    }
+
+    if (akcja === 'obecnosc') {
+      // `uid` i `kto` biorą się WYŁĄCZNIE z biletu. Wzięte z treści żądania
+      // pozwoliłyby podszyć się pod dowolną osobę w pasku obecności.
+      await obecnoscRef(semestr).doc(kto.uid).set({
+        kto: kto.email,
+        ostatniZnak: Date.now(),
+        patrzyNa: typeof body.patrzyNa === 'string' ? body.patrzyNa : null,
       })
       return NextResponse.json({ ok: true })
     }

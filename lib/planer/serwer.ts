@@ -31,3 +31,12 @@ export function zglosNowe(semestr: string, wydarzenie: NoweWydarzenie): Promise<
 export function przeniesPrzezSerwer(semestr: string, wydarzenieId: string, naDzien: number): Promise<void> {
   return wyslij({ semestr, akcja: 'przenies', wydarzenieId, naDzien })
 }
+
+export function zglosKomentarz(semestr: string, wydarzenieId: string, tresc: string): Promise<void> {
+  return wyslij({ semestr, akcja: 'komentarz', wydarzenieId, tresc })
+}
+
+/** Znak życia. `uid` i etykietę serwer bierze z biletu — tu ich nie wysyłamy. */
+export function zglosObecnosc(semestr: string, patrzyNa: string | null): Promise<void> {
+  return wyslij({ semestr, akcja: 'obecnosc', patrzyNa })
+}

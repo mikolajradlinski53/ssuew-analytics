@@ -30,3 +30,11 @@ export function propozycjeRef(semestrId: string) {
 export function semestrRef(semestrId: string) {
   return bazaAdmin().collection('semestry').doc(semestrId)
 }
+
+export function komentarzeRef(semestrId: string) {
+  return bazaAdmin().collection('semestry').doc(semestrId).collection('komentarze')
+}
+
+export function obecnoscRef(semestrId: string) {
+  return bazaAdmin().collection('semestry').doc(semestrId).collection('obecnosc')
+}
