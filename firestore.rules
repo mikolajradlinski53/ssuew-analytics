@@ -37,6 +37,31 @@ service cloud.firestore {
         allow read: if maDostep();
         allow write: if jestWlascicielem();
       }
+
+      // Skrzynke widzi i oproznia wylacznie wlasciciel — dla zarzadu liczba
+      // nierozpatrzonych propozycji nic nie znaczy. Zarzad DOPISUJE propozycje
+      // przez /api/planer, ktore uzywa Admin SDK i reguly omija.
+      match /propozycje/{propozycjaId} {
+        allow read, write: if jestWlascicielem();
+      }
+
+      // Rozmowa jest wspolna: czytaja wszyscy z dostepem. Wlasciciel pisze
+      // wprost, zarzad przez serwer.
+      match /komentarze/{komentarzId} {
+        allow read: if maDostep();
+        allow write: if jestWlascicielem();
+      }
+
+      match /obecnosc/{uid} {
+        allow read: if maDostep();
+        allow write: if jestWlascicielem();
+      }
+    }
+
+    // Orbita: prywatna tablica zadan. Dostep ma wylacznie wlasciciel dokumentu,
+    // rozpoznawany po identyfikatorze konta Firebase.
+    match /users/{uid}/{dokument=**} {
+      allow read, write: if request.auth != null && request.auth.uid == uid;
     }
 
     // Wszystko, czego nie wymieniono wyzej, jest zamkniete. Regula musi byc

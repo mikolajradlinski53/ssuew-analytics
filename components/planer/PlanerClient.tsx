@@ -64,7 +64,9 @@ export function PlanerClient({ semestr, rola, kto, poczatkowe, naZywo }: Props) 
 
   useEffect(() => {
     if (!naZywo) return
-    return subskrybujWydarzenia(semestr.id, setWydarzenia, (e) => setBlad(e.message))
+    return subskrybujWydarzenia(semestr.id, setWydarzenia, (e) =>
+      setBlad(`Nie udało się pobrać kalendarza: ${e.message}`),
+    )
   }, [semestr.id, naZywo])
 
   useEffect(() => {
@@ -74,7 +76,9 @@ export function PlanerClient({ semestr, rola, kto, poczatkowe, naZywo }: Props) 
 
   useEffect(() => {
     if (!naZywo || !wlascicielem) return
-    return subskrybujPropozycje(semestr.id, setPropozycje, (e) => setBlad(e.message))
+    return subskrybujPropozycje(semestr.id, setPropozycje, (e) =>
+      setBlad(`Nie udało się pobrać skrzynki: ${e.message}`),
+    )
   }, [semestr.id, naZywo, wlascicielem])
 
   // Osoby na kodzie nie mają subskrypcji Firestore (Etap 3a). Poza sesją
@@ -95,12 +99,19 @@ export function PlanerClient({ semestr, rola, kto, poczatkowe, naZywo }: Props) 
 
   useEffect(() => {
     if (!naZywo) return
-    return subskrybujKomentarze(semestr.id, setKomentarze)
+    return subskrybujKomentarze(semestr.id, setKomentarze, (e) =>
+      setBlad(`Nie udało się pobrać rozmów: ${e.message}`),
+    )
   }, [semestr.id, naZywo])
 
   useEffect(() => {
     if (!naZywo) return
-    return subskrybujObecnosc(semestr.id, setZnaki)
+    // Obecność jest ozdobą — jej awaria nie może zasłaniać kalendarza banerem,
+    // ale nie może też przepaść bez śladu, bo właśnie takie ciche padanie
+    // utrudniło diagnozę braku reguł Firestore.
+    return subskrybujObecnosc(semestr.id, setZnaki, (e) =>
+      console.warn('Obecność niedostępna:', e.message),
+    )
   }, [semestr.id, naZywo])
 
   /** Zapis wprost albo propozycja — rozstrzyga rola i stan sesji. */

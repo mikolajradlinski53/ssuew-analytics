@@ -81,6 +81,8 @@ export function subskrybujTrybWspolny(
   semestrId: string,
   gdyZmiana: (s: StanSesjiWspolnej) => void,
 ): () => void {
+  // Brak dokumentu semestru to normalny stan przed pierwszym włączeniem sesji,
+  // więc błąd tu oznacza wyłącznie problem z uprawnieniami — logujemy i milczymy.
   return onSnapshot(semestrDoc(semestrId), (zrzut) => {
     const d = zrzut.data()
     gdyZmiana({
@@ -135,18 +137,24 @@ function obecnosc(semestrId: string) {
 export function subskrybujKomentarze(
   semestrId: string,
   gdyZmiana: (k: Komentarz[]) => void,
+  gdyBlad: (b: Error) => void,
 ): () => void {
-  return onSnapshot(komentarze(semestrId), (zrzut) =>
-    gdyZmiana(zrzut.docs.map((d) => ({ id: d.id, ...d.data() }) as Komentarz)),
+  return onSnapshot(
+    komentarze(semestrId),
+    (zrzut) => gdyZmiana(zrzut.docs.map((d) => ({ id: d.id, ...d.data() }) as Komentarz)),
+    gdyBlad,
   )
 }
 
 export function subskrybujObecnosc(
   semestrId: string,
   gdyZmiana: (z: Znak[]) => void,
+  gdyBlad: (b: Error) => void,
 ): () => void {
-  return onSnapshot(obecnosc(semestrId), (zrzut) =>
-    gdyZmiana(zrzut.docs.map((d) => ({ uid: d.id, ...d.data() }) as Znak)),
+  return onSnapshot(
+    obecnosc(semestrId),
+    (zrzut) => gdyZmiana(zrzut.docs.map((d) => ({ uid: d.id, ...d.data() }) as Znak)),
+    gdyBlad,
   )
 }
 
