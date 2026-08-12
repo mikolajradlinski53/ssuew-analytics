@@ -29,7 +29,7 @@ describe('gasList', () => {
     const f = vi.fn().mockResolvedValue(odpowiedz('[]'))
     vi.stubGlobal('fetch', f)
     const { gasList } = await import('@/lib/gas/client')
-    await gasList('kpi')
+    await gasList('kpi_punkty')
     expect(f.mock.calls[0][0]).toContain('token=tajne')
     expect(f.mock.calls[0][0]).toContain('t=kpi')
   })
@@ -41,7 +41,7 @@ describe('gasList', () => {
     const f = vi.fn().mockResolvedValue(odpowiedz('[]'))
     vi.stubGlobal('fetch', f)
     const { gasList } = await import('@/lib/gas/client')
-    await gasList('kpi')
+    await gasList('kpi_punkty')
     expect(f.mock.calls[0][0]).toContain('token=a%2Bb%26c%3Dd')
   })
 
@@ -61,8 +61,8 @@ describe('gasList', () => {
       odpowiedz('{"ok":false,"kod":403,"error":"Brak dostepu"}'),
     ))
     const { gasList, GasError } = await import('@/lib/gas/client')
-    await expect(gasList('kpi')).rejects.toBeInstanceOf(GasError)
-    await expect(gasList('kpi')).rejects.toMatchObject({ kod: 403 })
+    await expect(gasList('kpi_punkty')).rejects.toBeInstanceOf(GasError)
+    await expect(gasList('kpi_punkty')).rejects.toMatchObject({ kod: 403 })
   })
 
   it('zamienia odpowiedź w HTML na czytelny błąd', async () => {
@@ -70,7 +70,7 @@ describe('gasList', () => {
       odpowiedz('<!DOCTYPE html><html>Zaloguj się</html>'),
     ))
     const { gasList } = await import('@/lib/gas/client')
-    await expect(gasList('kpi')).rejects.toMatchObject({ kod: 502 })
+    await expect(gasList('kpi_punkty')).rejects.toMatchObject({ kod: 502 })
   })
 
   it('zamienia zerwane czytanie treści na GasError, a nie surowy wyjątek', async () => {
@@ -79,8 +79,8 @@ describe('gasList', () => {
       text: () => Promise.reject(new Error('socket hang up')),
     } as unknown as Response))
     const { gasList, GasError } = await import('@/lib/gas/client')
-    await expect(gasList('kpi')).rejects.toBeInstanceOf(GasError)
-    await expect(gasList('kpi')).rejects.toMatchObject({ kod: 504 })
+    await expect(gasList('kpi_punkty')).rejects.toBeInstanceOf(GasError)
+    await expect(gasList('kpi_punkty')).rejects.toMatchObject({ kod: 504 })
   })
 
   it('zwraca pustą listę, gdy skrypt nie jest skonfigurowany', async () => {
@@ -89,7 +89,7 @@ describe('gasList', () => {
     const f = vi.fn()
     vi.stubGlobal('fetch', f)
     const { gasList } = await import('@/lib/gas/client')
-    expect(await gasList('kpi')).toEqual([])
+    expect(await gasList('kpi_punkty')).toEqual([])
     expect(f).not.toHaveBeenCalled()
   })
 })

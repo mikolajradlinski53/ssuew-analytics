@@ -1,9 +1,11 @@
 'use client'
 import { useState } from 'react'
-import { ArrowRight, Plus, Sparkles, TrendingDown, TrendingUp } from 'lucide-react'
+import { Plus, Sparkles, TrendingDown, TrendingUp } from 'lucide-react'
 import { useAnalyticsData } from '@/lib/useAnalyticsData'
 import { useAuth } from '@/lib/auth/useAuth'
-import { buildStrategicKpis, kpiRatio, kpiByKategoria, kpiSummary } from '@/lib/stats'
+import { buildStrategicKpis, kpiSummary } from '@/lib/stats'
+import { ilorazSerii, ostatniPunkt, serieWgKategorii } from '@/lib/kpi/serie'
+import { WykresSerii } from '@/components/modules/WykresSerii'
 import { BentoCard } from '@/components/ui/BentoCard'
 import { KpiTile } from '@/components/ui/KpiTile'
 import { ModuleSkeleton } from '@/components/ui/ModuleSkeleton'
@@ -24,8 +26,8 @@ const inputClass = 'deck-input rounded-md px-2 py-1 text-[11px]'
 const KATEGORIE = ['SKS', 'Wydarzenia', 'Ankieta', 'Koordynatorzy', 'Retencja', 'Pipeline', 'Zaangażowanie', 'Parytet']
 
 export default function KpiClient() {
-  const { rekrutacje, kohorty, kpiMetrics, loading, addKpiMetric, updateKpiMetric } = useAnalyticsData()
-  const [nowa, setNowa] = useState({ kategoria: '', nazwa: '', poprz: '', biez: '' })
+  const { rekrutacje, kohorty, serie, loading, addKpiMetric, updateKpiMetric } = useAnalyticsData()
+  const [nowa, setNowa] = useState({ kategoria: '', nazwa: '', okres: '', wartosc: '' })
   const [err, setErr] = useState<string | null>(null)
 
   const { rola } = useAuth()
@@ -33,37 +35,42 @@ export default function KpiClient() {
   if (loading) return <ModuleSkeleton variant="kpi" />
 
   const editable = rola === 'owner'
-  const okresP = kpiMetrics[0]?.okres_poprzedni ?? '2024/2025'
-  const okresB = kpiMetrics[0]?.okres_biezacy ?? '2025/2026'
+  // Podpowiadamy okres z najdłuższej serii — bierze się z realnych danych,
+  // a nie z przypadkowego pierwszego wiersza arkusza.
+  const najdluzsza = serie.reduce<(typeof serie)[number] | null>(
+    (a, s) => (!a || s.punkty.length > a.punkty.length ? s : a), null,
+  )
+  const okresDomyslny = najdluzsza ? ostatniPunkt(najdluzsza)?.okres ?? '' : ''
+
+  const gotowa = Boolean(nowa.kategoria.trim() && nowa.nazwa.trim() && nowa.okres.trim() && nowa.wartosc)
 
   const addMetric = () => {
     setErr(null)
-    if (!nowa.kategoria.trim() || !nowa.nazwa.trim() || !nowa.poprz || !nowa.biez) return
+    if (!gotowa) return
     addKpiMetric({
       kategoria: nowa.kategoria.trim(),
       nazwa: nowa.nazwa.trim(),
-      okres_poprzedni: okresP,
-      wartosc_poprzednia: parseFloat(nowa.poprz),
-      okres_biezacy: okresB,
-      wartosc_biezaca: parseFloat(nowa.biez),
+      okres: nowa.okres.trim(),
+      wartosc: parseFloat(nowa.wartosc),
     })
-      .then(() => setNowa({ kategoria: '', nazwa: '', poprz: '', biez: '' }))
+      // Okres zostaje w polu: wpisując rocznik dodajesz wiele metryk pod rząd
+      // i przepisywanie go za każdym razem byłoby karą za korzystanie z formularza.
+      .then(() => setNowa({ kategoria: '', nazwa: '', okres: nowa.okres, wartosc: '' }))
       .catch((e) => setErr(String(e)))
   }
 
   const addForm = editable ? (
-    <BentoCard title="Dodaj metrykę / projekt" sub={`okres ${okresP} -> ${okresB}`} span={4}>
+    <BentoCard title="Dodaj pomiar" sub="jedna metryka w jednym okresie" span={4}>
       <div className="flex items-center gap-2 flex-wrap">
         <input list="kpi-kat" className={`w-36 ${inputClass}`} placeholder="kategoria" value={nowa.kategoria} onChange={(e) => setNowa((p) => ({ ...p, kategoria: e.target.value }))} />
         <datalist id="kpi-kat">{KATEGORIE.map((k) => <option key={k} value={k} />)}</datalist>
         <input className={`w-52 ${inputClass}`} placeholder="nazwa (np. Kwiecień / Gala)" value={nowa.nazwa} onChange={(e) => setNowa((p) => ({ ...p, nazwa: e.target.value }))} />
-        <input type="number" className={`w-24 ${inputClass}`} placeholder="zeszły rok" value={nowa.poprz} onChange={(e) => setNowa((p) => ({ ...p, poprz: e.target.value }))} />
-        <ArrowRight size={14} className="text-deck-muted" />
-        <input type="number" className={`w-24 ${inputClass}`} placeholder="ten rok" value={nowa.biez} onChange={(e) => setNowa((p) => ({ ...p, biez: e.target.value }))} />
+        <input className={`w-28 ${inputClass}`} placeholder={okresDomyslny || '2026/2027'} value={nowa.okres} onChange={(e) => setNowa((p) => ({ ...p, okres: e.target.value }))} />
+        <input type="number" className={`w-24 ${inputClass}`} placeholder="wartość" value={nowa.wartosc} onChange={(e) => setNowa((p) => ({ ...p, wartosc: e.target.value }))} />
         <button
           type="button"
           onClick={addMetric}
-          disabled={!nowa.kategoria.trim() || !nowa.nazwa.trim() || !nowa.poprz || !nowa.biez}
+          disabled={!gotowa}
           className="deck-button inline-flex items-center gap-2 rounded-md px-3 py-1 text-[11px] font-semibold disabled:opacity-40"
         >
           <Plus size={13} />
@@ -74,7 +81,7 @@ export default function KpiClient() {
     </BentoCard>
   ) : null
 
-  if (!kpiMetrics.length) {
+  if (!serie.length) {
     return (
       <div className="space-y-3">
         <BentoCard title="KPI">
@@ -85,9 +92,9 @@ export default function KpiClient() {
     )
   }
 
-  const summary = kpiSummary(kpiMetrics)
-  const grouped = kpiByKategoria(kpiMetrics)
-  const strategic = buildStrategicKpis(rekrutacje, kohorty, kpiMetrics)
+  const summary = kpiSummary(serie)
+  const grouped = serieWgKategorii(serie)
+  const strategic = buildStrategicKpis(rekrutacje, kohorty, serie)
   const total = summary.up + summary.down
   const growthPct = total ? Math.round((summary.up / total) * 100) : 0
 
@@ -102,7 +109,7 @@ export default function KpiClient() {
             </div>
             <h1 className="mt-4 text-3xl font-semibold text-deck-text">Metryki rok-do-roku, ale z pulsem.</h1>
             <p className="mt-2 max-w-xl text-sm leading-6 text-deck-muted">
-              Każdy wskaźnik pokazuje zmianę między okresami. {editable ? 'Kliknij liczbę, aby edytować.' : 'Tryb demo jest read-only.'}
+              Każdy wskaźnik pokazuje przebieg przez lata. {editable ? 'Kliknij ostatnią liczbę, aby ją poprawić.' : 'Tryb demo jest read-only.'}
             </p>
           </div>
           <div className="relative grid h-32 w-32 place-items-center rounded-full border border-deck-accent/25 bg-deck-accent/8">
@@ -146,35 +153,51 @@ export default function KpiClient() {
         </div>
       </BentoCard>
 
-      {[...grouped.entries()].map(([kat, metrics]) => (
-        <BentoCard key={kat} title={kat} sub={`${metrics.length} metryk · ${metrics[0].okres_poprzedni} -> ${metrics[0].okres_biezacy}`} span={4}>
-          <div className="space-y-2">
-            {metrics.map((m, index) => {
-              const ratio = kpiRatio(m)
-              return (
-                <div key={m.id} className="deck-row deck-pop grid grid-cols-[160px_130px_1fr_72px] items-center gap-3 rounded-lg px-3 py-2 text-[11px]" style={{ animationDelay: `${index * 35}ms` }}>
-                  <span className="truncate font-medium text-deck-text">{m.nazwa}</span>
-                  <span className="tabular text-deck-muted flex items-center justify-end gap-1">
-                    <EditableCell value={m.wartosc_poprzednia} editable={editable} onCommit={(v) => updateKpiMetric(m.id, { wartosc_poprzednia: v })} className="w-10" />
-                    <ArrowRight size={12} />
-                    <EditableCell value={m.wartosc_biezaca} editable={editable} onCommit={(v) => updateKpiMetric(m.id, { wartosc_biezaca: v })} className="w-10" />
-                  </span>
-                  <div className="h-2.5 rounded-full bg-deck-bg-deep/70 overflow-hidden border border-white/10">
-                    <div
-                      className={`deck-meter-fill h-full rounded-full ${ratio >= 1 ? 'bg-gradient-to-r from-deck-accent to-deck-warn' : 'bg-gradient-to-r from-deck-danger to-deck-warn'}`}
-                      style={{ width: `${Math.min(100, Math.max(8, ratio * 50))}%` }}
+      {[...grouped.entries()].map(([kat, metryki]) => {
+        // Punkty w seriach są już posortowane, więc zbiór zachowuje kolejność lat.
+        const okresy = [...new Set(metryki.flatMap((s) => s.punkty.map((p) => p.okres)))]
+        const zakres = okresy.length > 1 ? `${okresy[0]} → ${okresy[okresy.length - 1]}` : okresy[0] ?? ''
+        return (
+          <BentoCard key={kat} title={kat} sub={`${metryki.length} metryk · ${zakres}`} span={4}>
+            <div className="space-y-2">
+              {metryki.map((s, index) => {
+                const ratio = ilorazSerii(s)
+                const ost = ostatniPunkt(s)
+                return (
+                  <div
+                    key={`${s.kategoria}|${s.nazwa}`}
+                    className="deck-row deck-pop grid grid-cols-[160px_72px_1fr_72px] items-center gap-3 rounded-lg px-3 py-2 text-[11px]"
+                    style={{ animationDelay: `${index * 35}ms` }}
+                  >
+                    <span className="truncate font-medium text-deck-text">{s.nazwa}</span>
+                    <span className="tabular flex justify-end text-deck-text">
+                      {ost ? (
+                        <EditableCell
+                          value={ost.wartosc}
+                          editable={editable}
+                          onCommit={(v) => updateKpiMetric(ost.id, { wartosc: v })}
+                          className="w-12"
+                        />
+                      ) : (
+                        <span className="text-deck-muted">-</span>
+                      )}
+                    </span>
+                    <WykresSerii
+                      punkty={s.punkty}
+                      etykieta={s.nazwa}
+                      className={`h-7 w-full ${ratioColor(ratio)}`}
                     />
+                    <span className={`inline-flex items-center justify-end gap-1 tabular font-semibold ${ratioColor(ratio)}`}>
+                      {ratioIcon(ratio)}
+                      {ratio > 0 ? `${Math.round(ratio * 100)}%` : '-'}
+                    </span>
                   </div>
-                  <span className={`inline-flex items-center justify-end gap-1 tabular font-semibold ${ratioColor(ratio)}`}>
-                    {ratioIcon(ratio)}
-                    {ratio > 0 ? `${Math.round(ratio * 100)}%` : '-'}
-                  </span>
-                </div>
-              )
-            })}
-          </div>
-        </BentoCard>
-      ))}
+                )
+              })}
+            </div>
+          </BentoCard>
+        )
+      })}
 
       {addForm}
     </div>

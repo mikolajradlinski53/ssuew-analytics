@@ -19,12 +19,12 @@ describe('gasWrite', () => {
     const f = vi.fn().mockResolvedValue(odpowiedz('{"ok":true,"rows":[{"id":"a"}]}'))
     vi.stubGlobal('fetch', f)
     const { gasWrite } = await import('@/lib/gas/client')
-    await gasWrite('kpi', 'insert', [{ kategoria: 'SKS', nazwa: 'Maj' }])
+    await gasWrite('kpi_punkty', 'insert', [{ kategoria: 'SKS', nazwa: 'Maj' }])
 
     const [, init] = f.mock.calls[0]
     const body = JSON.parse(init.body)
     expect(init.method).toBe('POST')
-    expect(body).toMatchObject({ token: 'tajne', t: 'kpi', op: 'insert' })
+    expect(body).toMatchObject({ token: 'tajne', t: 'kpi_punkty', op: 'insert' })
     expect(body.rows).toHaveLength(1)
   })
 
@@ -46,7 +46,7 @@ describe('gasWrite', () => {
       odpowiedz('{"ok":true,"rows":[{"id":"a"},{"id":"b"}]}'),
     ))
     const { gasWrite } = await import('@/lib/gas/client')
-    const wynik = await gasWrite('kpi', 'insert', [{}, {}])
+    const wynik = await gasWrite('kpi_punkty', 'insert', [{}, {}])
     expect(wynik).toHaveLength(2)
   })
 
@@ -55,13 +55,13 @@ describe('gasWrite', () => {
       odpowiedz('{"ok":false,"kod":404,"error":"Nie ma wiersza"}'),
     ))
     const { gasWrite, GasError } = await import('@/lib/gas/client')
-    await expect(gasWrite('kpi', 'update', [{ id: 'x' }])).rejects.toBeInstanceOf(GasError)
+    await expect(gasWrite('kpi_punkty', 'update', [{ id: 'x' }])).rejects.toBeInstanceOf(GasError)
   })
 
   it('rzuca GasError 503, gdy skrypt nie jest skonfigurowany', async () => {
     vi.stubEnv('GAS_URL', '')
     vi.stubEnv('GAS_TOKEN', '')
     const { gasWrite } = await import('@/lib/gas/client')
-    await expect(gasWrite('kpi', 'insert', [{}])).rejects.toMatchObject({ kod: 503 })
+    await expect(gasWrite('kpi_punkty', 'insert', [{}])).rejects.toMatchObject({ kod: 503 })
   })
 })

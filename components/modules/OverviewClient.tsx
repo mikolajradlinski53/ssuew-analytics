@@ -5,7 +5,8 @@ import { useAnalyticsData } from '@/lib/useAnalyticsData'
 import { useFilters } from '@/lib/useFilters'
 import { applyFilters } from '@/lib/filters'
 import { computeOverview } from '@/lib/overview'
-import { buildExecutiveInsights, buildStrategicKpis, kpiSummary, kpiRatio } from '@/lib/stats'
+import { buildExecutiveInsights, buildStrategicKpis, kpiSummary } from '@/lib/stats'
+import { ilorazSerii } from '@/lib/kpi/serie'
 import { chartTheme, axisTick, tooltipStyle } from '@/lib/chartTheme'
 import { KpiTile } from '@/components/ui/KpiTile'
 import { BentoCard } from '@/components/ui/BentoCard'
@@ -14,7 +15,7 @@ import { AnimatedNumber } from '@/components/ui/AnimatedNumber'
 import { InsightCard } from '@/components/ui/InsightCard'
 
 export default function OverviewClient() {
-  const { rekrutacje, kohorty, kpiMetrics, loading, usingDemo } = useAnalyticsData()
+  const { rekrutacje, kohorty, serie, loading, usingDemo } = useAnalyticsData()
   const { filters } = useFilters()
 
   if (loading) return <ModuleSkeleton variant="overview" />
@@ -22,14 +23,16 @@ export default function OverviewClient() {
   const rekr = applyFilters(rekrutacje, filters)
   const koh = applyFilters(kohorty, filters)
   const m = computeOverview(rekr, koh, [])
-  const summary = kpiSummary(kpiMetrics)
-  const strategic = buildStrategicKpis(rekr, koh, kpiMetrics)
-  const insights = buildExecutiveInsights(rekr, koh, kpiMetrics)
+  const summary = kpiSummary(serie)
+  const strategic = buildStrategicKpis(rekr, koh, serie)
+  const insights = buildExecutiveInsights(rekr, koh, serie)
   const health = strategic[0]
 
-  const movers = [...kpiMetrics]
-    .filter((metric) => metric.wartosc_poprzednia > 0)
-    .sort((a, b) => kpiRatio(b) - kpiRatio(a))
+  // ilorazSerii daje 0 tam, gdzie zmiany nie da się policzyć — takie serie
+  // wypadają, zamiast lądować na dnie zestawienia jako fałszywe spadki.
+  const movers = serie
+    .filter((s) => ilorazSerii(s) > 0)
+    .sort((a, b) => ilorazSerii(b) - ilorazSerii(a))
   const top = movers.slice(0, 3)
   const bottom = movers.slice(-3).reverse()
 
@@ -150,23 +153,23 @@ export default function OverviewClient() {
           {movers.length ? (
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-2">
-                {top.map((metric) => (
-                  <div key={metric.id} className="flex items-center justify-between gap-3 rounded-lg bg-white/[0.04] px-3 py-2 text-[11px]">
-                    <span className="truncate text-deck-muted">{metric.kategoria}: {metric.nazwa}</span>
+                {top.map((s) => (
+                  <div key={`${s.kategoria}|${s.nazwa}`} className="flex items-center justify-between gap-3 rounded-lg bg-white/[0.04] px-3 py-2 text-[11px]">
+                    <span className="truncate text-deck-muted">{s.kategoria}: {s.nazwa}</span>
                     <span className="inline-flex items-center gap-1 tabular text-deck-accent">
                       <ArrowUpRight size={13} />
-                      {Math.round((kpiRatio(metric) - 1) * 100)}%
+                      {Math.round((ilorazSerii(s) - 1) * 100)}%
                     </span>
                   </div>
                 ))}
               </div>
               <div className="space-y-2">
-                {bottom.map((metric) => (
-                  <div key={metric.id} className="flex items-center justify-between gap-3 rounded-lg bg-white/[0.04] px-3 py-2 text-[11px]">
-                    <span className="truncate text-deck-muted">{metric.kategoria}: {metric.nazwa}</span>
+                {bottom.map((s) => (
+                  <div key={`${s.kategoria}|${s.nazwa}`} className="flex items-center justify-between gap-3 rounded-lg bg-white/[0.04] px-3 py-2 text-[11px]">
+                    <span className="truncate text-deck-muted">{s.kategoria}: {s.nazwa}</span>
                     <span className="inline-flex items-center gap-1 tabular text-deck-danger">
                       <ArrowDownRight size={13} />
-                      {Math.round((kpiRatio(metric) - 1) * 100)}%
+                      {Math.round((ilorazSerii(s) - 1) * 100)}%
                     </span>
                   </div>
                 ))}

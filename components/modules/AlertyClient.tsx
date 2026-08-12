@@ -24,11 +24,11 @@ const sevLabel: Record<Alert['severity'], string> = {
 }
 
 export default function AlertyClient() {
-  const { rekrutacje, kohorty, kpiMetrics, loading } = useAnalyticsData()
+  const { rekrutacje, kohorty, serie, loading } = useAnalyticsData()
   const { filters } = useFilters()
   if (loading) return <ModuleSkeleton />
 
-  const alerts = buildAlerts(applyFilters(rekrutacje, filters), applyFilters(kohorty, filters), kpiMetrics)
+  const alerts = buildAlerts(applyFilters(rekrutacje, filters), applyFilters(kohorty, filters), serie)
 
   if (!alerts.length) {
     return (

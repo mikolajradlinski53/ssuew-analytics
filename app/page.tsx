@@ -5,6 +5,7 @@ import { rolaDla } from '@/lib/auth/role'
 import { gasList } from '@/lib/gas/client'
 import { computeOverview } from '@/lib/overview'
 import { buildAlerts } from '@/lib/stats'
+import { serieZWierszy, ilorazSerii } from '@/lib/kpi/serie'
 import { DeckHub } from '@/components/deck/DeckHub'
 import { propozycjeRef } from '@/lib/firebase/admin'
 
@@ -16,11 +17,12 @@ export default async function KokpitPage() {
 
   // Awaria arkusza nie może zabrać całego kokpitu — kafelek pokaże zera,
   // a pozostałe moduły dalej działają.
-  const [rekrutacje, kohorty, kpi] = await Promise.all([
+  const [rekrutacje, kohorty, punkty] = await Promise.all([
     gasList('rekrutacje').catch(() => []),
     gasList('kohorty').catch(() => []),
-    gasList('kpi').catch(() => []),
+    gasList('kpi_punkty').catch(() => []),
   ])
+  const serie = serieZWierszy(punkty)
 
   // Trzeci argument to KpiPeriod[], którego aplikacja nie pobiera — tak samo
   // wywołuje to OverviewClient.
@@ -49,9 +51,9 @@ export default async function KokpitPage() {
       dane={{
         konwersja,
         retencja: m.histRetention ?? 0,
-        kpiWzrosty: kpi.filter((x) => x.wartosc_biezaca > x.wartosc_poprzednia).length,
-        kpiRazem: kpi.length,
-        alerty: buildAlerts(rekrutacje, kohorty, kpi).length,
+        kpiWzrosty: serie.filter((s) => ilorazSerii(s) > 1).length,
+        kpiRazem: serie.length,
+        alerty: buildAlerts(rekrutacje, kohorty, serie).length,
         propozycje,
       }}
     />
