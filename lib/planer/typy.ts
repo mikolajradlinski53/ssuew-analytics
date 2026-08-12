@@ -56,3 +56,6 @@ export const KLUCZE_KATEGORII = Object.keys(KATEGORIE) as Kategoria[]
 export function jestKategoria(nazwa: string): nazwa is Kategoria {
   return (KLUCZE_KATEGORII as string[]).includes(nazwa)
 }
+
+/** Wydarzenie bez identyfikatora — tyle, ile trzeba, żeby je utworzyć. */
+export type NoweWydarzenie = Omit<Wydarzenie, 'id'>

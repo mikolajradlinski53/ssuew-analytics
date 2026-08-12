@@ -4,7 +4,10 @@ import {
 } from 'firebase/firestore'
 import { baza } from '@/lib/firebase/firestore'
 import { naWydarzenie } from './mapowanie'
-import type { Wydarzenie } from './typy'
+import type { NoweWydarzenie, Wydarzenie } from './typy'
+
+// Reeksport, zeby nie ruszac miejsc, ktore importuja ten typ stad.
+export type { NoweWydarzenie }
 
 function sciezka(semestrId: string) {
   return collection(baza(), 'semestry', semestrId, 'wydarzenia')
@@ -26,8 +29,6 @@ export function subskrybujWydarzenia(
     gdyBlad,
   )
 }
-
-export type NoweWydarzenie = Omit<Wydarzenie, 'id'>
 
 export async function dodajWydarzenie(semestrId: string, dane: NoweWydarzenie): Promise<void> {
   await addDoc(sciezka(semestrId), { ...dane, zmienione: Date.now() })
