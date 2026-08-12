@@ -1,0 +1,33 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Rola siedzi we wlasnym oswiadczeniu tokenu (custom claim), bo Firestore
+    // nie widzi zmiennych srodowiskowych Vercela. Nadaje sie ja recznie, raz
+    // na kadencje, dla dwoch kont — patrz apps-script/README.md sekcja o rolach.
+    function jestWlascicielem() {
+      return request.auth != null && request.auth.token.rola == 'owner';
+    }
+
+    function zalogowany() {
+      return request.auth != null;
+    }
+
+    match /semestry/{semestrId} {
+      allow read: if zalogowany();
+      allow write: if jestWlascicielem();
+
+      match /wydarzenia/{wydarzenieId} {
+        allow read: if zalogowany();
+        allow write: if jestWlascicielem();
+      }
+    }
+
+    // Wszystko, czego nie wymieniono wyzej, jest zamkniete. Regula musi byc
+    // ostatnia, bo Firestore stosuje sume uprawnien, nie pierwsze dopasowanie.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
