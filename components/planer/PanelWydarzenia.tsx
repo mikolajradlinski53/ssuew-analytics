@@ -1,5 +1,5 @@
 'use client'
-import { useState } from 'react'
+import { useState, type ReactNode } from 'react'
 import { Trash2, X } from 'lucide-react'
 import { KLUCZE_KATEGORII, KATEGORIE, type Kategoria, type Miesiac, type Wydarzenie } from '@/lib/planer/typy'
 import { dniWMiesiacu } from '@/lib/planer/daty'
@@ -12,6 +12,8 @@ type Props = {
   /** Dzień wskazany kliknięciem w kratce; `null` przy dodawaniu z paska. */
   dzienStartowy?: number | null
   mozeEdytowac: boolean
+  /** Wątek pokazujemy tylko przy istniejącym wydarzeniu — nowe nie ma jeszcze o czym rozmawiać. */
+  watek?: ReactNode
   /** `powtorzenia` ma znaczenie tylko przy nowym wydarzeniu. */
   onZapisz: (dane: NoweWydarzenie, powtorzenia?: number) => void
   onUsun: (id: string) => void
@@ -32,7 +34,7 @@ function pusty(miesiac: Miesiac, dzien: number | null | undefined): NoweWydarzen
  * niż dopasowywanie po fakcie.
  */
 export function PanelWydarzenia({
-  wydarzenie, miesiac, dzienStartowy, mozeEdytowac, onZapisz, onUsun, onZamknij,
+  wydarzenie, miesiac, dzienStartowy, mozeEdytowac, watek, onZapisz, onUsun, onZamknij,
 }: Props) {
   const [dane, setDane] = useState<NoweWydarzenie>(() =>
     wydarzenie ? { ...wydarzenie } : pusty(miesiac, dzienStartowy),
@@ -173,6 +175,7 @@ export function PanelWydarzenia({
           )}
         </div>
       )}
+      {wydarzenie && watek}
     </aside>
   )
 }

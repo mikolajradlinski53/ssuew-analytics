@@ -4,12 +4,17 @@ import { ChevronLeft, ChevronRight, Inbox, Plus, Radio } from 'lucide-react'
 import { KLUCZE_KATEGORII, type Kategoria, type Semestr, type Wydarzenie } from '@/lib/planer/typy'
 import {
   dodajWydarzenie, odrzucPropozycje, przyjmijPropozycje, subskrybujPropozycje,
+  dodajKomentarz, subskrybujKomentarze, subskrybujObecnosc,
   subskrybujTrybWspolny, subskrybujWydarzenia, ustawTrybWspolny, usunWydarzenie,
-  zmienWydarzenie,
+  zapiszObecnosc, zmienWydarzenie,
   type NoweWydarzenie, type StanSesjiWspolnej,
 } from '@/lib/planer/zapis'
-import { przeniesPrzezSerwer, zglosNowe, zglosPrzeniesienie } from '@/lib/planer/serwer'
+import {
+  przeniesPrzezSerwer, zglosKomentarz, zglosNowe, zglosObecnosc, zglosPrzeniesienie,
+} from '@/lib/planer/serwer'
 import type { Propozycja } from '@/lib/planer/propozycje'
+import { poWydarzeniach, type Komentarz } from '@/lib/planer/komentarze'
+import type { Znak } from '@/lib/planer/obecnosc'
 import { PasekFiltrow, type Widok } from './PasekFiltrow'
 import { WidokMiesiaca } from './WidokMiesiaca'
 import { WidokSemestru } from './WidokSemestru'
@@ -17,6 +22,8 @@ import { PanelWydarzenia } from './PanelWydarzenia'
 import { PustySemestr } from './PustySemestr'
 import { BanerSesji } from './BanerSesji'
 import { Skrzynka } from './Skrzynka'
+import { Obecnosc } from './Obecnosc'
+import { Watek } from './Watek'
 import { dniWMiesiacu } from '@/lib/planer/daty'
 import { terminyCoTydzien } from '@/lib/planer/powtarzanie'
 
@@ -52,6 +59,8 @@ export function PlanerClient({ semestr, rola, kto, poczatkowe, naZywo }: Props) 
   const [sesja, setSesja] = useState<StanSesjiWspolnej>({ wlaczony: false, od: null, przez: null })
   const [propozycje, setPropozycje] = useState<Propozycja[]>([])
   const [skrzynkaOtwarta, setSkrzynkaOtwarta] = useState(false)
+  const [komentarze, setKomentarze] = useState<Komentarz[]>([])
+  const [znaki, setZnaki] = useState<Znak[]>([])
 
   useEffect(() => {
     if (!naZywo) return
@@ -84,6 +93,16 @@ export function PlanerClient({ semestr, rola, kto, poczatkowe, naZywo }: Props) 
     return () => clearInterval(id)
   }, [naZywo, sesja.wlaczony, semestr.id])
 
+  useEffect(() => {
+    if (!naZywo) return
+    return subskrybujKomentarze(semestr.id, setKomentarze)
+  }, [semestr.id, naZywo])
+
+  useEffect(() => {
+    if (!naZywo) return
+    return subskrybujObecnosc(semestr.id, setZnaki)
+  }, [semestr.id, naZywo])
+
   /** Zapis wprost albo propozycja — rozstrzyga rola i stan sesji. */
   const piszeWprost = wlascicielem || sesja.wlaczony
 
@@ -111,6 +130,9 @@ export function PlanerClient({ semestr, rola, kto, poczatkowe, naZywo }: Props) 
     [widoczne, miesiac],
   )
 
+  const rozmowy = useMemo(() => poWydarzeniach(komentarze), [komentarze])
+  const zRozmowa = useMemo(() => new Set(rozmowy.keys()), [rozmowy])
+
   const przelacz = useCallback((k: Kategoria) => {
     setAktywne((p) => {
       const n = new Set(p)
@@ -119,6 +141,34 @@ export function PlanerClient({ semestr, rola, kto, poczatkowe, naZywo }: Props) 
       return n
     })
   }, [])
+
+  // Karta w tle nie zapisuje nic: to najdroższy ruch w całym Planerze.
+  // `patrzyNa` zmienia się tylko przy otwartym panelu, nie przy najechaniu myszą.
+  useEffect(() => {
+    const patrzyNa = wybrane?.id ?? null
+
+    async function znak() {
+      if (document.hidden) return
+      try {
+        // Właściciel zapisuje wprost, więc sam nadaje sobie identyfikator.
+        // Prefiks odróżnia go od tych, które nadaje serwer.
+        if (wlascicielem) await zapiszObecnosc(semestr.id, `konto:${kto}`, kto, patrzyNa)
+        else await zglosObecnosc(semestr.id, patrzyNa)
+      } catch {
+        // Nieudany znak życia nie ma znaczenia — następny pójdzie za minutę.
+      }
+    }
+
+    void znak()
+    const id = setInterval(znak, 60_000)
+    return () => clearInterval(id)
+  }, [semestr.id, kto, wlascicielem, wybrane?.id])
+
+  async function skomentuj(tresc: string) {
+    if (!wybrane) return
+    if (wlascicielem) await dodajKomentarz(semestr.id, wybrane.id, tresc, kto)
+    else await zglosKomentarz(semestr.id, wybrane.id, tresc)
+  }
 
   async function zapisz(dane: NoweWydarzenie, powtorzenia = 1) {
     if (!piszeWprost) {
@@ -234,6 +284,8 @@ export function PlanerClient({ semestr, rola, kto, poczatkowe, naZywo }: Props) 
         onWylacz={() => ustawTrybWspolny(semestr.id, false, kto)}
       />
 
+      <Obecnosc znaki={znaki} />
+
       {wlascicielem && (
         <div className="flex flex-wrap items-center gap-2">
           <button
@@ -323,6 +375,7 @@ export function PlanerClient({ semestr, rola, kto, poczatkowe, naZywo }: Props) 
               onPrzenies={przenies}
               onPrzesun={przesun}
               onDodajWDniu={dodajWDniu}
+              zRozmowa={zRozmowa}
               // Zawsze wlaczone: u zarzadu przeciagniecie tworzy propozycje,
               // wiec musi dzialac takze przy wylaczonej sesji.
               mozeEdytowac
@@ -354,6 +407,11 @@ export function PlanerClient({ semestr, rola, kto, poczatkowe, naZywo }: Props) 
             onZapisz={zapisz}
             onUsun={usun}
             onZamknij={zamknijPanel}
+            watek={
+              wybrane ? (
+                <Watek komentarze={rozmowy.get(wybrane.id) ?? []} onDodaj={skomentuj} />
+              ) : null
+            }
           />
         )}
       </div>

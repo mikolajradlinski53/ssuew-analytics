@@ -20,6 +20,8 @@ type Props = {
   onPrzesun: (id: string, oDni: number) => void
   onDodajWDniu: (dzien: number) => void
   mozeEdytowac: boolean
+  /** Identyfikatory wydarzeń, przy których toczy się rozmowa. */
+  zRozmowa?: Set<string>
 }
 
 /** Opis kolizji do dymka — sam trójkąt mówi „coś jest nie tak", ale nie co. */
@@ -37,6 +39,7 @@ function opiszKolizje(k: KolizjeDnia): string {
 
 export function WidokMiesiaca({
   miesiac, wydarzenia, onOtworz, onPrzenies, onPrzesun, onDodajWDniu, mozeEdytowac,
+  zRozmowa,
 }: Props) {
   const [przeciagany, setPrzeciagany] = useState<string | null>(null)
   const [nadDniem, setNadDniem] = useState<number | null>(null)
@@ -108,6 +111,7 @@ export function WidokMiesiaca({
                     wydarzenie={w}
                     onOtworz={onOtworz}
                     przeciagalne={false}
+                    maRozmowe={zRozmowa?.has(w.id)}
                   />
                 ))}
               </div>
@@ -210,6 +214,7 @@ export function WidokMiesiaca({
                     przeciagalne={mozeEdytowac}
                     onPrzeciagnij={setPrzeciagany}
                     onPrzesun={onPrzesun}
+                    maRozmowe={zRozmowa?.has(w.id)}
                   />
                 ))}
               </div>
