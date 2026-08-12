@@ -1,4 +1,5 @@
-import type { Rekrutacja, Kohorta, KpiPeriod, KpiMetric, Czlonek, CzlonekStatus, StatResult, RegressionResult, Sezon, StrategicKpi, ExecutiveInsight } from '@/types'
+import type { Rekrutacja, Kohorta, KpiPeriod, Czlonek, CzlonekStatus, StatResult, RegressionResult, Sezon, SeriaKpi, StrategicKpi, ExecutiveInsight } from '@/types'
+import { ilorazSerii } from '@/lib/kpi/serie'
 
 // ─── Podstawowe funkcje ──────────────────────────────────────────────────────
 
@@ -542,20 +543,24 @@ const SEVERITY_ORDER: Record<Alert['severity'], number> = { critical: 0, warning
 export function buildAlerts(
   rekrutacje: Rekrutacja[],
   kohorty: Kohorta[],
-  kpiMetrics: KpiMetric[],
+  kpiSerie: SeriaKpi[],
 ): Alert[] {
   const alerts: Alert[] = []
 
-  // 1. KPI ze spadkiem rok-do-roku
-  for (const m of kpiMetrics) {
-    const ratio = kpiRatio(m)
-    if (m.wartosc_poprzednia > 0 && ratio > 0) {
-      if (ratio < 0.6) {
-        alerts.push({ id: `kpi-${m.id}`, severity: 'critical', title: `${m.kategoria}: ${m.nazwa} — duży spadek`, detail: `${m.wartosc_poprzednia} → ${m.wartosc_biezaca} (${Math.round(ratio * 100)}% r/r)`, recommendation: 'Sprawdź przyczyny — priorytet Zarządu.', href: '/analytics/kpi' })
-      } else if (ratio < 0.8) {
-        alerts.push({ id: `kpi-${m.id}`, severity: 'warning', title: `${m.kategoria}: ${m.nazwa} — spadek r/r`, detail: `${m.wartosc_poprzednia} → ${m.wartosc_biezaca} (${Math.round(ratio * 100)}%)`, recommendation: 'Monitorować trend.', href: '/analytics/kpi' })
-      }
-    }
+  // 1. Metryki ze spadkiem miedzy dwoma ostatnimi okresami.
+  // Jedna seria to jeden alert, niezaleznie od tego, ile lat obejmuje.
+  for (const s of kpiSerie) {
+    const ratio = ilorazSerii(s)
+    if (ratio <= 0 || ratio >= 0.8) continue
+    const przed = s.punkty[s.punkty.length - 2].wartosc
+    const teraz = s.punkty[s.punkty.length - 1].wartosc
+    const id = `kpi-${s.kategoria}-${s.nazwa}`
+    const detail = `${przed} → ${teraz} (${Math.round(ratio * 100)}% r/r)`
+    alerts.push(
+      ratio < 0.6
+        ? { id, severity: 'critical', title: `${s.kategoria}: ${s.nazwa} — duży spadek`, detail, recommendation: 'Sprawdź przyczyny — priorytet Zarządu.', href: '/analytics/kpi' }
+        : { id, severity: 'warning', title: `${s.kategoria}: ${s.nazwa} — spadek r/r`, detail, recommendation: 'Monitorować trend.', href: '/analytics/kpi' },
+    )
   }
 
   // 2. Spadek retencji
@@ -601,36 +606,24 @@ export function buildAlerts(
   return alerts.sort((a, b) => SEVERITY_ORDER[a.severity] - SEVERITY_ORDER[b.severity])
 }
 
-// ─── KPI rok-do-roku (realny model SSUEW) ────────────────────────────────────
+// ─── KPI rok-do-roku ─────────────────────────────────────────────────────────
+// Iloraz i grupowanie mieszkaja w lib/kpi/serie.ts — tu zostaje tylko to,
+// co skleja metryki w obraz calosci.
 
-export function kpiRatio(m: KpiMetric): number {
-  if (m.wartosc_poprzednia === 0) return 0
-  return m.wartosc_biezaca / m.wartosc_poprzednia
-}
-
-export function kpiByKategoria(metrics: KpiMetric[]): Map<string, KpiMetric[]> {
-  const out = new Map<string, KpiMetric[]>()
-  for (const m of metrics) {
-    const arr = out.get(m.kategoria) ?? []
-    arr.push(m)
-    out.set(m.kategoria, arr)
-  }
-  return out
-}
-
-export function kpiSummary(metrics: KpiMetric[]): { up: number; down: number; avgRatio: number } {
-  const valid = metrics.filter((m) => m.wartosc_poprzednia > 0)
-  if (valid.length === 0) return { up: 0, down: 0, avgRatio: 0 }
+export function kpiSummary(serie: SeriaKpi[]): { up: number; down: number; avgRatio: number } {
+  // ilorazSerii zwraca 0, gdy nie da sie policzyc: seria jednopunktowa
+  // albo zerowy mianownik. Takie serie nie moga ciagnac sredniej w dol.
+  const policzalne = serie.map(ilorazSerii).filter((r) => r > 0)
+  if (policzalne.length === 0) return { up: 0, down: 0, avgRatio: 0 }
   let up = 0
   let down = 0
   let sum = 0
-  for (const m of valid) {
-    const r = kpiRatio(m)
+  for (const r of policzalne) {
     sum += r
     if (r > 1) up++
     else if (r < 1) down++
   }
-  return { up, down, avgRatio: Math.round((sum / valid.length) * 100) / 100 }
+  return { up, down, avgRatio: Math.round((sum / policzalne.length) * 100) / 100 }
 }
 
 // ─── Członkowie (widok per-osoba) ────────────────────────────────────────────
@@ -648,7 +641,7 @@ function scoreTrend(score: number): StrategicKpi['trend'] {
 export function buildStrategicKpis(
   rekrutacje: Rekrutacja[],
   kohorty: Kohorta[],
-  metrics: KpiMetric[],
+  serie: SeriaKpi[],
 ): StrategicKpi[] {
   const crs = rekrutacje
     .filter((r) => r.zgloszenia > 0)
@@ -664,10 +657,12 @@ export function buildStrategicKpis(
     ? mean(kohorty.map((k) => (k.survival?.[2] ?? retentionFraction(k.avg_retention_sem, 2) * 100)))
     : 0
 
-  const summary = kpiSummary(metrics)
+  const summary = kpiSummary(serie)
   const kpiScore = clampScore(summary.avgRatio * 70)
-  const leaderRows = metrics.filter((m) => m.kategoria.toLowerCase().includes('koordynator'))
-  const leaderGrowth = leaderRows.filter((m) => m.wartosc_poprzednia > 0 && kpiRatio(m) >= 1).length
+  const leaderRows = serie.filter((s) => s.kategoria.toLowerCase().includes('koordynator'))
+  // ilorazSerii daje 0 dla serii jednopunktowych i zerowych mianownikow,
+  // wiec warunek `>= 1` sam je odsiewa.
+  const leaderGrowth = leaderRows.filter((s) => ilorazSerii(s) >= 1).length
   const leaderScore = leaderRows.length ? clampScore((leaderGrowth / leaderRows.length) * 100) : 0
 
   const healthScore = clampScore((totalCr / 65) * 25 + (avgRetention / 4.5) * 30 + (retentionAfter2 / 100) * 25 + kpiScore * 0.2)
@@ -730,10 +725,10 @@ export function buildStrategicKpis(
 export function buildExecutiveInsights(
   rekrutacje: Rekrutacja[],
   kohorty: Kohorta[],
-  metrics: KpiMetric[],
+  serie: SeriaKpi[],
 ): ExecutiveInsight[] {
   const insights: ExecutiveInsight[] = []
-  const strategic = buildStrategicKpis(rekrutacje, kohorty, metrics)
+  const strategic = buildStrategicKpis(rekrutacje, kohorty, serie)
   const health = strategic.find((k) => k.id === 'health')
   const retention2 = strategic.find((k) => k.id === 'retention-2')
   const leadership = strategic.find((k) => k.id === 'leadership')
@@ -787,7 +782,7 @@ export function buildExecutiveInsights(
     })
   }
 
-  const alerts = buildAlerts(rekrutacje, kohorty, metrics)
+  const alerts = buildAlerts(rekrutacje, kohorty, serie)
   for (const alert of alerts.slice(0, 3)) {
     insights.push({
       id: `alert-${alert.id}`,

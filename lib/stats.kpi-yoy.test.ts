@@ -1,42 +1,43 @@
 import { describe, it, expect } from 'vitest'
-import { kpiRatio, kpiByKategoria, kpiSummary } from '@/lib/stats'
-import type { KpiMetric } from '@/types'
+import { kpiSummary } from '@/lib/stats'
+import type { SeriaKpi } from '@/types'
 
-function km(id: string, kat: string, nazwa: string, poprz: number, biez: number): KpiMetric {
-  return { id, kategoria: kat, nazwa, okres_poprzedni: '2024/2025', wartosc_poprzednia: poprz, okres_biezacy: '2025/2026', wartosc_biezaca: biez, created_at: '' }
+function seria(nazwa: string, wartosci: number[], kategoria = 'SKS'): SeriaKpi {
+  return {
+    kategoria,
+    nazwa,
+    punkty: wartosci.map((v, i) => ({
+      id: `${nazwa}-${i}`, okres: `${2020 + i}/${2021 + i}`, wartosc: v,
+    })),
+  }
 }
 
-const metrics = [
-  km('1', 'SKS', 'Listopad', 57, 84),   // 1.47 up
-  km('2', 'SKS', 'Luty', 34, 44),       // 1.29 up
-  km('3', 'Ankieta', 'Zimowa', 47, 28), // 0.60 down
-]
-
-describe('kpiRatio', () => {
-  it('liczy stosunek r/r', () => {
-    expect(kpiRatio(km('x', 'k', 'n', 50, 75))).toBeCloseTo(1.5, 5)
-  })
-  it('zwraca 0 gdy poprzednia = 0', () => {
-    expect(kpiRatio(km('x', 'k', 'n', 0, 10))).toBe(0)
-  })
-})
-
-describe('kpiByKategoria', () => {
-  it('grupuje po kategorii', () => {
-    const m = kpiByKategoria(metrics)
-    expect(m.get('SKS')).toHaveLength(2)
-    expect(m.get('Ankieta')).toHaveLength(1)
-  })
-})
-
 describe('kpiSummary', () => {
-  it('liczy ile wzrosło/spadło i średni ratio', () => {
-    const s = kpiSummary(metrics)
-    expect(s.up).toBe(2)
+  it('liczy rosnące i spadające z dwóch ostatnich punktów', () => {
+    const s = kpiSummary([seria('a', [1, 2]), seria('b', [4, 2]), seria('c', [3, 3])])
+    expect(s.up).toBe(1)
     expect(s.down).toBe(1)
-    expect(s.avgRatio).toBeGreaterThan(1)
   })
-  it('puste → zera', () => {
+
+  it('pomija serie, których nie da się policzyć', () => {
+    const s = kpiSummary([seria('a', [5]), seria('b', [0, 9])])
+    expect(s.up).toBe(0)
+    expect(s.down).toBe(0)
+    expect(s.avgRatio).toBe(0)
+  })
+
+  it('bierze pod uwagę tylko koniec długiej serii', () => {
+    const s = kpiSummary([seria('a', [100, 50, 10, 20])])
+    expect(s.up).toBe(1)
+    expect(s.avgRatio).toBe(2)
+  })
+
+  it('średnia liczy się tylko z serii policzalnych', () => {
+    const s = kpiSummary([seria('a', [2, 4]), seria('b', [7])])
+    expect(s.avgRatio).toBe(2)
+  })
+
+  it('pusta lista nie wywala się', () => {
     expect(kpiSummary([])).toEqual({ up: 0, down: 0, avgRatio: 0 })
   })
 })
