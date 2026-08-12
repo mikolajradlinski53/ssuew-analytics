@@ -38,8 +38,14 @@ K=$(grep '^NEXT_PUBLIC_FIREBASE_API_KEY=' .env.local | cut -d= -f2- | tr -d '\r\
 curl -s "https://firestore.googleapis.com/v1/projects/$P/databases/(default)/documents/_sonda?key=$K"
 ```
 
-Oczekiwane po włączeniu: `{"error":{"code":404,...}}` (dokument nie istnieje — baza działa).
-Dopóki widzisz `403`, zadania od 5 w górę nie ruszą.
+Rozstrzyga **treść** błędu, nie sam kod — oba stany zwracają `403`:
+
+| Odpowiedź | Znaczenie |
+|---|---|
+| `Cloud Firestore API has not been used in project (...)` | Baza **nie istnieje**. Zatrzymaj się. |
+| `Missing or insufficient permissions` / `PERMISSION_DENIED` | Baza **działa**, a reguły trybu produkcyjnego odrzucają anonimowy odczyt. Tak ma być. |
+
+Sprawdzone 11 sierpnia 2026: baza odpowiada drugim komunikatem, czyli jest gotowa.
 
 ---
 
@@ -630,7 +636,8 @@ K=$(grep '^NEXT_PUBLIC_FIREBASE_API_KEY=' .env.local | cut -d= -f2- | tr -d '\r\
 curl -s "https://firestore.googleapis.com/v1/projects/$P/databases/(default)/documents/_sonda?key=$K"
 ```
 
-Oczekiwane: `{"error":{"code":404,...}}`. Gdy widzisz `403` — baza nie jest założona,
+Oczekiwane: `PERMISSION_DENIED` — baza działa, reguły odrzucają anonimowy odczyt.
+Gdy w treści widzisz `Cloud Firestore API has not been used in project`, baza nie istnieje:
 zatrzymaj się i zgłoś to jako BLOCKED.
 
 - [ ] **Krok 2: Napisz inicjalizację**

@@ -12,7 +12,7 @@ działającym modułem jest **SSUEW Analytics** — dashboard analityczny samorz
 |---|---|---|
 | **SSUEW Analytics** | Rekrutacje, retencja kohort, KPI rok-do-roku, lejek, korelacje, prognozy, alerty | działa |
 | **Orbita** | Prywatna tablica zadań jako radar: bliżej środka znaczy pilniej | etap 2 |
-| **Planer semestru** | Kalendarz semestru z wykrywaniem kolizji osób i sal | etap 3 |
+| **Planer semestru** | Kalendarz semestru z wykrywaniem kolizji osób i sal, widok miesiąca i całego semestru | działa |
 | **Strony** | Kliknięcia, wyświetlenia i pozycje nadzorowanych witryn z Search Console | etap 4 |
 
 Analytics liczy statystyki **bez zewnętrznych bibliotek matematycznych** — korelacja Pearsona,
@@ -64,6 +64,15 @@ aplikacja odmawia działania zamiast po cichu wpuszczać kogokolwiek.
 **Arkusz** — sześć kroków w [`apps-script/README.md`](apps-script/README.md). Skrypt sam zakłada
 zakładki i wgrywa dane historyczne.
 
+**Firestore** (dla Planera) — konsola Firebase → *Firestore Database* → *Create database*
+→ tryb **produkcyjny**, lokalizacja **eur3**. Lokalizacji nie da się później zmienić. Reguły
+wklej z [`firestore.rules`](firestore.rules). Rola zapisu wynika z oświadczenia `rola` w tokenie
+(custom claim) — nadaje się je raz, obu kontom, przez Firebase Admin SDK.
+
+**`FIREBASE_SERVICE_ACCOUNT`** jest potrzebny tylko po to, żeby osoby wchodzące kodem mogły
+czytać Planer: nie mają konta Firebase, więc reguły Firestore ich nie wpuszczą i dane idą
+przez `/api/planer`.
+
 ## Struktura
 
 ```
@@ -74,12 +83,16 @@ app/
   login/              logowanie Google
 components/
   deck/               kafelki kokpitu
+  planer/             kalendarz semestru
   modules/            widoki modułów analitycznych
   ui/                 wspólne komponenty i powłoka
 lib/
   stats.ts            ręcznie pisana statystyka
   gas/                klient Apps Script
   auth/               tożsamość, role, strażnik tras
+  planer/             daty, kolizje, semestry — czyste funkcje
+  firebase/           inicjalizacja Firestore
+firestore.rules       reguły bezpieczeństwa bazy (wersjonowane tutaj)
 apps-script/
   Kod.gs              backend na Arkuszach (wersjonowany tutaj)
 docs/
