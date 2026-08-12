@@ -48,7 +48,8 @@ export default async function PlanerPage() {
 
       <PlanerClient
         semestr={BIEZACY}
-        mozeEdytowac={rola === 'owner'}
+        rola={rola}
+        kto={tozsamosc?.email ?? sesjaKodu?.kod ?? ''}
         poczatkowe={[]}
         naZywo={rolaKonta !== null}
       />

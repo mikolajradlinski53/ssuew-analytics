@@ -1,16 +1,22 @@
 'use client'
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { ChevronLeft, ChevronRight, Plus } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Inbox, Plus, Radio } from 'lucide-react'
 import { KLUCZE_KATEGORII, type Kategoria, type Semestr, type Wydarzenie } from '@/lib/planer/typy'
 import {
-  dodajWydarzenie, subskrybujWydarzenia, usunWydarzenie, zmienWydarzenie,
-  type NoweWydarzenie,
+  dodajWydarzenie, odrzucPropozycje, przyjmijPropozycje, subskrybujPropozycje,
+  subskrybujTrybWspolny, subskrybujWydarzenia, ustawTrybWspolny, usunWydarzenie,
+  zmienWydarzenie,
+  type NoweWydarzenie, type StanSesjiWspolnej,
 } from '@/lib/planer/zapis'
+import { przeniesPrzezSerwer, zglosNowe, zglosPrzeniesienie } from '@/lib/planer/serwer'
+import type { Propozycja } from '@/lib/planer/propozycje'
 import { PasekFiltrow, type Widok } from './PasekFiltrow'
 import { WidokMiesiaca } from './WidokMiesiaca'
 import { WidokSemestru } from './WidokSemestru'
 import { PanelWydarzenia } from './PanelWydarzenia'
 import { PustySemestr } from './PustySemestr'
+import { BanerSesji } from './BanerSesji'
+import { Skrzynka } from './Skrzynka'
 import { dniWMiesiacu } from '@/lib/planer/daty'
 import { terminyCoTydzien } from '@/lib/planer/powtarzanie'
 
@@ -21,14 +27,18 @@ const NAZWY = [
 
 type Props = {
   semestr: Semestr
-  mozeEdytowac: boolean
+  /** `owner` pisze wprost do Firestore; `board` przez serwer. */
+  rola: 'owner' | 'board'
+  /** Adres e-mail albo etykieta kodu — trafia do propozycji jako autor. */
+  kto: string
   /** Dane wstępne dla osób na kodzie; konta z hasłem dostają je z subskrypcji. */
   poczatkowe: Wydarzenie[]
   /** Osoby na kodzie nie mają konta Firebase, więc nie subskrybują Firestore. */
   naZywo: boolean
 }
 
-export function PlanerClient({ semestr, mozeEdytowac, poczatkowe, naZywo }: Props) {
+export function PlanerClient({ semestr, rola, kto, poczatkowe, naZywo }: Props) {
+  const wlascicielem = rola === 'owner'
   const [wydarzenia, setWydarzenia] = useState<Wydarzenie[]>(poczatkowe)
   const [blad, setBlad] = useState<string | null>(null)
   const [widok, setWidok] = useState<Widok>('miesiac')
@@ -39,11 +49,27 @@ export function PlanerClient({ semestr, mozeEdytowac, poczatkowe, naZywo }: Prop
   const [dodaje, setDodaje] = useState(false)
   /** Dzień wskazany przy dodawaniu z kratki — panel startuje z tą datą. */
   const [dzienDodania, setDzienDodania] = useState<number | null>(null)
+  const [sesja, setSesja] = useState<StanSesjiWspolnej>({ wlaczony: false, od: null, przez: null })
+  const [propozycje, setPropozycje] = useState<Propozycja[]>([])
+  const [skrzynkaOtwarta, setSkrzynkaOtwarta] = useState(false)
 
   useEffect(() => {
     if (!naZywo) return
     return subskrybujWydarzenia(semestr.id, setWydarzenia, (e) => setBlad(e.message))
   }, [semestr.id, naZywo])
+
+  useEffect(() => {
+    if (!naZywo) return
+    return subskrybujTrybWspolny(semestr.id, setSesja)
+  }, [semestr.id, naZywo])
+
+  useEffect(() => {
+    if (!naZywo || !wlascicielem) return
+    return subskrybujPropozycje(semestr.id, setPropozycje, (e) => setBlad(e.message))
+  }, [semestr.id, naZywo, wlascicielem])
+
+  /** Zapis wprost albo propozycja — rozstrzyga rola i stan sesji. */
+  const piszeWprost = wlascicielem || sesja.wlaczony
 
   const miesiac = semestr.miesiace[indeksMiesiaca]
 
@@ -79,6 +105,16 @@ export function PlanerClient({ semestr, mozeEdytowac, poczatkowe, naZywo }: Prop
   }, [])
 
   async function zapisz(dane: NoweWydarzenie, powtorzenia = 1) {
+    if (!piszeWprost) {
+      // Zarzad poza sesja tylko proponuje NOWE wydarzenia; edycja istniejacego
+      // jest dla niego zablokowana w panelu, wiec tu tylko domykamy furtke.
+      if (wybrane) return
+      // Powtarzanie pomijamy celowo: kazda kopia bylaby osobna decyzja
+      // do rozpatrzenia, a to zasypaloby skrzynke.
+      await zglosNowe(semestr.id, dane)
+      zamknijPanel()
+      return
+    }
     if (wybrane) {
       await zmienWydarzenie(semestr.id, wybrane.id, dane)
     } else {
@@ -123,7 +159,20 @@ export function PlanerClient({ semestr, mozeEdytowac, poczatkowe, naZywo }: Prop
   }
 
   async function przenies(id: string, naDzien: number) {
-    await zmienWydarzenie(semestr.id, id, { dzien: naDzien })
+    const w = wydarzenia.find((x) => x.id === id)
+    if (!w) return
+    try {
+      if (wlascicielem) {
+        await zmienWydarzenie(semestr.id, id, { dzien: naDzien })
+      } else if (sesja.wlaczony) {
+        await przeniesPrzezSerwer(semestr.id, id, naDzien)
+      } else {
+        await zglosPrzeniesienie(semestr.id, id, w.dzien, naDzien, w.tytul)
+      }
+      setBlad(null)
+    } catch (e) {
+      setBlad((e as Error).message)
+    }
   }
 
   /** Przesunięcie strzałkami. Poza miesiąc nie wychodzimy — to zmieniłoby widok pod palcami. */
@@ -152,7 +201,7 @@ export function PlanerClient({ semestr, mozeEdytowac, poczatkowe, naZywo }: Prop
         {bladPaska}
         <PustySemestr
           nazwaSemestru={semestr.nazwa}
-          mozeEdytowac={mozeEdytowac}
+          mozeEdytowac={wlascicielem}
           onDodaj={dodajZPaska}
         />
       </div>
@@ -162,6 +211,48 @@ export function PlanerClient({ semestr, mozeEdytowac, poczatkowe, naZywo }: Prop
   return (
     <div className="space-y-3">
       {bladPaska}
+
+      <BanerSesji
+        stan={sesja}
+        mozeWylaczyc={wlascicielem}
+        onWylacz={() => ustawTrybWspolny(semestr.id, false, kto)}
+      />
+
+      {wlascicielem && (
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setSkrzynkaOtwarta((o) => !o)}
+            className="deck-chip flex items-center gap-2 rounded-lg px-3 py-1.5 text-[11.5px] text-deck-muted transition hover:text-deck-text"
+          >
+            <Inbox size={13} />
+            Skrzynka
+            {propozycje.length > 0 && (
+              <span className="rounded-full bg-deck-accent px-1.5 text-[10px] font-bold text-deck-bg-deep">
+                {propozycje.length}
+              </span>
+            )}
+          </button>
+          {!sesja.wlaczony && (
+            <button
+              type="button"
+              onClick={() => ustawTrybWspolny(semestr.id, true, kto)}
+              className="deck-chip flex items-center gap-2 rounded-lg px-3 py-1.5 text-[11.5px] text-deck-muted transition hover:text-deck-accent"
+            >
+              <Radio size={13} /> Włącz Sesję Operacyjną
+            </button>
+          )}
+        </div>
+      )}
+
+      {wlascicielem && skrzynkaOtwarta && (
+        <Skrzynka
+          propozycje={propozycje}
+          wydarzenia={wydarzenia}
+          onPrzyjmij={(p) => przyjmijPropozycje(semestr.id, p)}
+          onOdrzuc={(id) => odrzucPropozycje(semestr.id, id)}
+        />
+      )}
 
       <PasekFiltrow
         aktywne={aktywne}
@@ -196,15 +287,13 @@ export function PlanerClient({ semestr, mozeEdytowac, poczatkowe, naZywo }: Prop
           >
             <ChevronRight size={15} />
           </button>
-          {mozeEdytowac && (
-            <button
-              type="button"
-              onClick={dodajZPaska}
-              className="deck-button ml-auto flex items-center gap-2 rounded-lg px-3 py-2 text-[12px] font-semibold"
-            >
-              <Plus size={14} /> Dodaj wydarzenie
-            </button>
-          )}
+          <button
+            type="button"
+            onClick={dodajZPaska}
+            className="deck-button ml-auto flex items-center gap-2 rounded-lg px-3 py-2 text-[12px] font-semibold"
+          >
+            <Plus size={14} /> {piszeWprost ? 'Dodaj wydarzenie' : 'Zgłoś wydarzenie'}
+          </button>
         </div>
       )}
 
@@ -218,7 +307,9 @@ export function PlanerClient({ semestr, mozeEdytowac, poczatkowe, naZywo }: Prop
               onPrzenies={przenies}
               onPrzesun={przesun}
               onDodajWDniu={dodajWDniu}
-              mozeEdytowac={mozeEdytowac}
+              // Zawsze wlaczone: u zarzadu przeciagniecie tworzy propozycje,
+              // wiec musi dzialac takze przy wylaczonej sesji.
+              mozeEdytowac
             />
           ) : (
             <WidokSemestru
@@ -241,7 +332,9 @@ export function PlanerClient({ semestr, mozeEdytowac, poczatkowe, naZywo }: Prop
             wydarzenie={wybrane}
             miesiac={miesiac}
             dzienStartowy={dzienDodania}
-            mozeEdytowac={mozeEdytowac}
+            // Zarzad wypelnia tylko formularz nowego wydarzenia (zeby je zglosic);
+            // istniejacego nie edytuje — moze jedynie proponowac przeniesienie.
+            mozeEdytowac={piszeWprost || wybrane === null}
             onZapisz={zapisz}
             onUsun={usun}
             onZamknij={zamknijPanel}
