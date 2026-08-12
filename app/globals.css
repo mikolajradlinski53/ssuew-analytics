@@ -184,20 +184,12 @@ body::before {
    nieczytelny i rozmywal liczby, ktore sa trescia kart. Sprzezenie zwrotne
    daja teraz obwodka i narozniki celownika. */
 
-.deck-card::after {
-  content: "";
-  position: absolute;
-  inset: -70%;
-  pointer-events: none;
-  background: conic-gradient(from 0deg, transparent 0 65%, rgba(46, 230, 166, 0.18), rgba(217, 176, 106, 0.14), transparent 82% 100%);
-  opacity: 0;
-  animation: deck-border-flow 9s linear infinite;
-  transition: opacity 180ms ease;
-}
+/* Obracajacy sie klin swietlny (conic-gradient na inset -70% z animacja
+   deck-border-flow) tez zostal usuniety — to byl TEN promien. Zapalal sie
+   przy najechaniu na kazda karte, nie tylko na kafelki kokpitu, wiec
+   wylaczenie go na .deck-tile nic nie dawalo w Analytics.
 
-.deck-card:hover::after {
-  opacity: 1;
-}
+   Przy najechaniu zostaje: wyrazniejsza obwodka, uniesienie i cien. */
 
 
 
@@ -320,11 +312,6 @@ body::before {
 /* Rozmyta poświata pod kursorem wyleciala: zabierala czytelnosc liczbom,
    a to one sa tu trescia. W jej miejsce ostra linia skanu, ktora przejezdza
    raz przy najechaniu — i narozniki celownika nizej. */
-/* Obracajaca sie obwodka z .deck-card::after tez znika na kafelkach —
-   ruch w tle odciagal wzrok od liczb. */
-.deck-tile::after {
-  display: none;
-}
 
 /* Przechylenie w strone kursora: 3 stopnie, bo wiecej rozmazuje tekst. */
 .deck-tile {
