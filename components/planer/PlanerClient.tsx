@@ -11,6 +11,8 @@ import { WidokMiesiaca } from './WidokMiesiaca'
 import { WidokSemestru } from './WidokSemestru'
 import { PanelWydarzenia } from './PanelWydarzenia'
 import { PustySemestr } from './PustySemestr'
+import { dniWMiesiacu } from '@/lib/planer/daty'
+import { terminyCoTydzien } from '@/lib/planer/powtarzanie'
 
 const NAZWY = [
   'Styczeń', 'Luty', 'Marzec', 'Kwiecień', 'Maj', 'Czerwiec',
@@ -76,11 +78,23 @@ export function PlanerClient({ semestr, mozeEdytowac, poczatkowe, naZywo }: Prop
     })
   }, [])
 
-  async function zapisz(dane: NoweWydarzenie) {
-    if (wybrane) await zmienWydarzenie(semestr.id, wybrane.id, dane)
-    else await dodajWydarzenie(semestr.id, dane)
-    setWybrane(null)
-    setDodaje(false)
+  async function zapisz(dane: NoweWydarzenie, powtorzenia = 1) {
+    if (wybrane) {
+      await zmienWydarzenie(semestr.id, wybrane.id, dane)
+    } else {
+      // Powtarzanie tworzy osobne wpisy, a nie powiazana serie — dzieki temu
+      // nie ma pytania "edytujesz to jedno czy wszystkie", a wpisanie
+      // pietnastu zebran zajmuje jeden ruch.
+      const terminy = terminyCoTydzien(
+        { rok: dane.rok, miesiac: dane.miesiac, dzien: dane.dzien },
+        semestr.miesiace,
+        powtorzenia,
+      )
+      for (const t of terminy) {
+        await dodajWydarzenie(semestr.id, { ...dane, ...t })
+      }
+    }
+    zamknijPanel()
   }
 
   async function usun(id: string) {
@@ -110,6 +124,15 @@ export function PlanerClient({ semestr, mozeEdytowac, poczatkowe, naZywo }: Prop
 
   async function przenies(id: string, naDzien: number) {
     await zmienWydarzenie(semestr.id, id, { dzien: naDzien })
+  }
+
+  /** Przesunięcie strzałkami. Poza miesiąc nie wychodzimy — to zmieniłoby widok pod palcami. */
+  async function przesun(id: string, oDni: number) {
+    const w = wydarzenia.find((x) => x.id === id)
+    if (!w) return
+    const nowy = w.dzien + oDni
+    if (nowy < 1 || nowy > dniWMiesiacu(w.rok, w.miesiac)) return
+    await zmienWydarzenie(semestr.id, id, { dzien: nowy })
   }
 
   const panelOtwarty = wybrane !== null || dodaje
@@ -193,6 +216,7 @@ export function PlanerClient({ semestr, mozeEdytowac, poczatkowe, naZywo }: Prop
               wydarzenia={wMiesiacu}
               onOtworz={(w) => { setDodaje(false); setDzienDodania(null); setWybrane(w) }}
               onPrzenies={przenies}
+              onPrzesun={przesun}
               onDodajWDniu={dodajWDniu}
               mozeEdytowac={mozeEdytowac}
             />

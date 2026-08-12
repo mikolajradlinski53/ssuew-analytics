@@ -12,7 +12,8 @@ type Props = {
   /** Dzień wskazany kliknięciem w kratce; `null` przy dodawaniu z paska. */
   dzienStartowy?: number | null
   mozeEdytowac: boolean
-  onZapisz: (dane: NoweWydarzenie) => void
+  /** `powtorzenia` ma znaczenie tylko przy nowym wydarzeniu. */
+  onZapisz: (dane: NoweWydarzenie, powtorzenia?: number) => void
   onUsun: (id: string) => void
   onZamknij: () => void
 }
@@ -36,6 +37,7 @@ export function PanelWydarzenia({
   const [dane, setDane] = useState<NoweWydarzenie>(() =>
     wydarzenie ? { ...wydarzenie } : pusty(miesiac, dzienStartowy),
   )
+  const [powtorzenia, setPowtorzenia] = useState(1)
 
   function zmien<K extends keyof NoweWydarzenie>(pole: K, wartosc: NoweWydarzenie[K]) {
     setDane((d) => ({ ...d, [pole]: wartosc }))
@@ -129,11 +131,32 @@ export function PanelWydarzenia({
         </label>
       </div>
 
+      {mozeEdytowac && !wydarzenie && (
+        <label className="mt-3 block">
+          <span className={etykieta}>Powtórz co tydzień</span>
+          <select
+            value={powtorzenia}
+            onChange={(e) => setPowtorzenia(Number(e.target.value))}
+            className={pole}
+          >
+            <option value={1}>tylko raz</option>
+            {[2, 3, 4, 6, 8, 10, 12, 15, 20].map((n) => (
+              <option key={n} value={n}>{n} razy, co tydzień</option>
+            ))}
+          </select>
+          {powtorzenia > 1 && (
+            <span className="mt-1 block text-[10.5px] leading-relaxed text-deck-muted/70">
+              Powstanie {powtorzenia} osobnych wpisów. Ciąg urwie się na końcu semestru.
+            </span>
+          )}
+        </label>
+      )}
+
       {mozeEdytowac && (
         <div className="mt-5 flex items-center gap-2">
           <button
             type="button"
-            onClick={() => onZapisz(dane)}
+            onClick={() => onZapisz(dane, powtorzenia)}
             className="deck-button flex-1 rounded-lg px-4 py-2.5 text-sm font-semibold"
           >
             Zapisz

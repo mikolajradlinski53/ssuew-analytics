@@ -1,18 +1,23 @@
 'use client'
 import { useMemo, useState } from 'react'
 import { AlertTriangle, Plus } from 'lucide-react'
-import { dniWMiesiacu, pierwszyDzienTygodnia } from '@/lib/planer/daty'
+import { dniWMiesiacu, dzienTygodnia, pierwszyDzienTygodnia } from '@/lib/planer/daty'
 import { kolizjeWMiesiacu, type KolizjeDnia } from '@/lib/planer/kolizje'
 import type { Miesiac, Wydarzenie } from '@/lib/planer/typy'
 import { KartaWydarzenia } from './KartaWydarzenia'
 
 const NAGLOWKI = ['Pon', 'Wt', 'Śr', 'Czw', 'Pt', 'Sob', 'Nie']
+const NAZWA_MIESIACA = [
+  'stycznia', 'lutego', 'marca', 'kwietnia', 'maja', 'czerwca',
+  'lipca', 'sierpnia', 'września', 'października', 'listopada', 'grudnia',
+]
 
 type Props = {
   miesiac: Miesiac
   wydarzenia: Wydarzenie[]
   onOtworz: (w: Wydarzenie) => void
   onPrzenies: (id: string, naDzien: number) => void
+  onPrzesun: (id: string, oDni: number) => void
   onDodajWDniu: (dzien: number) => void
   mozeEdytowac: boolean
 }
@@ -31,7 +36,7 @@ function opiszKolizje(k: KolizjeDnia): string {
 }
 
 export function WidokMiesiaca({
-  miesiac, wydarzenia, onOtworz, onPrzenies, onDodajWDniu, mozeEdytowac,
+  miesiac, wydarzenia, onOtworz, onPrzenies, onPrzesun, onDodajWDniu, mozeEdytowac,
 }: Props) {
   const [przeciagany, setPrzeciagany] = useState<string | null>(null)
   const [nadDniem, setNadDniem] = useState<number | null>(null)
@@ -65,8 +70,62 @@ export function WidokMiesiaca({
     if (id) onPrzenies(id, dzien)
   }
 
+  const dniZWydarzeniami = Array.from({ length: ile }, (_, i) => i + 1).filter(
+    (d) => (poDniach.get(d) ?? []).length > 0,
+  )
+
   return (
     <div className="deck-card rounded-lg p-3">
+      {/* Siedem kolumn po ~92 px nie miesci sie na telefonie. Zamiast sciskac
+          siatke, ponizej 640 px pokazujemy liste dni, ktore cos maja. */}
+      <div data-widok="lista" className="space-y-2 sm:hidden">
+        {dniZWydarzeniami.length === 0 && (
+          <p className="py-6 text-center text-[12px] text-deck-muted">
+            W tym miesiącu nic nie zaplanowano.
+          </p>
+        )}
+        {dniZWydarzeniami.map((dzien) => {
+          const kol = kolizje.get(dzien)
+          return (
+            <div key={dzien} className="rounded-md border border-white/8 bg-white/[0.02] p-2">
+              <div className="mb-1.5 flex items-center gap-2">
+                <span className="font-mono text-[11px] text-deck-text">
+                  {dzien} {NAZWA_MIESIACA[miesiac.m - 1]}
+                </span>
+                <span className="font-mono text-[10px] text-deck-muted/70">
+                  {dzienTygodnia(miesiac.y, miesiac.m, dzien)}
+                </span>
+                {kol && (
+                  <span className="ml-auto flex items-center gap-1 text-[10px] text-deck-warn">
+                    <AlertTriangle size={10} /> kolizja
+                  </span>
+                )}
+              </div>
+              <div className="space-y-1">
+                {(poDniach.get(dzien) ?? []).map((w) => (
+                  <KartaWydarzenia
+                    key={w.id}
+                    wydarzenie={w}
+                    onOtworz={onOtworz}
+                    przeciagalne={false}
+                  />
+                ))}
+              </div>
+              {mozeEdytowac && (
+                <button
+                  type="button"
+                  onClick={() => onDodajWDniu(dzien)}
+                  className="mt-1.5 text-[10.5px] text-deck-accent"
+                >
+                  + dodaj w tym dniu
+                </button>
+              )}
+            </div>
+          )
+        })}
+      </div>
+
+      <div data-widok="siatka" className="hidden sm:block">
       <div className="mb-2 grid grid-cols-7 gap-1.5">
         {NAGLOWKI.map((n, i) => (
           <div
@@ -150,12 +209,14 @@ export function WidokMiesiaca({
                     onOtworz={onOtworz}
                     przeciagalne={mozeEdytowac}
                     onPrzeciagnij={setPrzeciagany}
+                    onPrzesun={onPrzesun}
                   />
                 ))}
               </div>
             </div>
           )
         })}
+      </div>
       </div>
     </div>
   )

@@ -1,4 +1,4 @@
-import { render, screen, fireEvent } from '@testing-library/react'
+import { render, screen, fireEvent, within } from '@testing-library/react'
 import { describe, it, expect, vi } from 'vitest'
 import { WidokMiesiaca } from '@/components/planer/WidokMiesiaca'
 import type { Wydarzenie } from '@/lib/planer/typy'
@@ -12,8 +12,17 @@ const wspolne = {
   miesiac: { m: 10, y: 2026 },
   onOtworz: vi.fn(),
   onPrzenies: vi.fn(),
+  onPrzesun: vi.fn(),
   onDodajWDniu: vi.fn(),
   mozeEdytowac: false,
+}
+
+/**
+ * Siatka i lista na telefon sa w DOM naraz — o tym, ktora widac, decyduje CSS.
+ * Testy pytaja w obrebie siatki, zeby nie trafic w karte z listy.
+ */
+function siatka(container: HTMLElement) {
+  return within(container.querySelector('[data-widok="siatka"]') as HTMLElement)
 }
 
 describe('WidokMiesiaca', () => {
@@ -25,8 +34,8 @@ describe('WidokMiesiaca', () => {
   })
 
   it('umieszcza wydarzenie w jego dniu', () => {
-    render(<WidokMiesiaca {...wspolne} wydarzenia={wydarzenia} />)
-    expect(screen.getByText(/ZEBRANIE/)).toBeInTheDocument()
+    const { container } = render(<WidokMiesiaca {...wspolne} wydarzenia={wydarzenia} />)
+    expect(siatka(container).getByText(/ZEBRANIE/)).toBeInTheDocument()
   })
 
   it('oznacza dzień z twardą kolizją', () => {
@@ -47,8 +56,24 @@ describe('WidokMiesiaca', () => {
 
   it('z uprawnieniami kliknięcie plusa w kratce oddaje jej dzień', () => {
     const onDodajWDniu = vi.fn()
-    render(<WidokMiesiaca {...wspolne} onDodajWDniu={onDodajWDniu} mozeEdytowac wydarzenia={[]} />)
-    fireEvent.click(screen.getByRole('button', { name: 'Dodaj wydarzenie 12' }))
+    const { container } = render(
+      <WidokMiesiaca {...wspolne} onDodajWDniu={onDodajWDniu} mozeEdytowac wydarzenia={[]} />,
+    )
+    fireEvent.click(siatka(container).getByRole('button', { name: 'Dodaj wydarzenie 12' }))
     expect(onDodajWDniu).toHaveBeenCalledWith(12)
+  })
+
+  it('strzałka w prawo przesuwa wydarzenie o dzień, w dół o tydzień', () => {
+    // Przeciaganie dziala tylko mysza — bez klawiatury kalendarza nie da sie
+    // ulozyc bez niej.
+    const onPrzesun = vi.fn()
+    const { container } = render(
+      <WidokMiesiaca {...wspolne} onPrzesun={onPrzesun} mozeEdytowac wydarzenia={[wydarzenia[0]]} />,
+    )
+    const karta = siatka(container).getByRole('button', { name: /ZEBRANIE/ })
+    fireEvent.keyDown(karta, { key: 'ArrowRight' })
+    expect(onPrzesun).toHaveBeenCalledWith('1', 1)
+    fireEvent.keyDown(karta, { key: 'ArrowDown' })
+    expect(onPrzesun).toHaveBeenCalledWith('1', 7)
   })
 })

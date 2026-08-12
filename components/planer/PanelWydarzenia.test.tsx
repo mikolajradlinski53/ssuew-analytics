@@ -28,7 +28,7 @@ describe('PanelWydarzenia', () => {
     render(<PanelWydarzenia {...wspolne} onZapisz={onZapisz} wydarzenie={w} mozeEdytowac />)
     fireEvent.change(screen.getByDisplayValue('ZEBRANIE ZARZĄDU'), { target: { value: 'ZEBRANIE SKS' } })
     fireEvent.click(screen.getByRole('button', { name: /zapisz/i }))
-    expect(onZapisz).toHaveBeenCalledWith(expect.objectContaining({ tytul: 'ZEBRANIE SKS' }))
+    expect(onZapisz).toHaveBeenCalledWith(expect.objectContaining({ tytul: 'ZEBRANIE SKS' }), 1)
   })
 
   it('w trybie nowego wydarzenia startuje z pustymi polami', () => {
@@ -41,6 +41,21 @@ describe('PanelWydarzenia', () => {
     render(<PanelWydarzenia {...wspolne} onZapisz={onZapisz} wydarzenie={w} mozeEdytowac />)
     fireEvent.change(screen.getByDisplayValue('Jula, Kuba'), { target: { value: ' Jula ,Daria, ' } })
     fireEvent.click(screen.getByRole('button', { name: /zapisz/i }))
-    expect(onZapisz).toHaveBeenCalledWith(expect.objectContaining({ osoby: ['Jula', 'Daria'] }))
+    expect(onZapisz).toHaveBeenCalledWith(expect.objectContaining({ osoby: ['Jula', 'Daria'] }), 1)
+  })
+
+  it('powtarzanie widać tylko przy nowym wydarzeniu', () => {
+    const { rerender } = render(<PanelWydarzenia {...wspolne} wydarzenie={w} mozeEdytowac />)
+    expect(screen.queryByLabelText(/powtórz co tydzień/i)).toBeNull()
+    rerender(<PanelWydarzenia {...wspolne} wydarzenie={null} mozeEdytowac />)
+    expect(screen.getByLabelText(/powtórz co tydzień/i)).toBeInTheDocument()
+  })
+
+  it('wybrana liczba powtórzeń jedzie do zapisu', () => {
+    const onZapisz = vi.fn()
+    render(<PanelWydarzenia {...wspolne} onZapisz={onZapisz} wydarzenie={null} mozeEdytowac />)
+    fireEvent.change(screen.getByLabelText(/powtórz co tydzień/i), { target: { value: '4' } })
+    fireEvent.click(screen.getByRole('button', { name: /zapisz/i }))
+    expect(onZapisz).toHaveBeenCalledWith(expect.anything(), 4)
   })
 })
