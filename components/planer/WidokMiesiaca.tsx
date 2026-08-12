@@ -1,8 +1,8 @@
 'use client'
 import { useMemo, useState } from 'react'
-import { AlertTriangle } from 'lucide-react'
+import { AlertTriangle, Plus } from 'lucide-react'
 import { dniWMiesiacu, pierwszyDzienTygodnia } from '@/lib/planer/daty'
-import { kolizjeWMiesiacu } from '@/lib/planer/kolizje'
+import { kolizjeWMiesiacu, type KolizjeDnia } from '@/lib/planer/kolizje'
 import type { Miesiac, Wydarzenie } from '@/lib/planer/typy'
 import { KartaWydarzenia } from './KartaWydarzenia'
 
@@ -13,11 +13,28 @@ type Props = {
   wydarzenia: Wydarzenie[]
   onOtworz: (w: Wydarzenie) => void
   onPrzenies: (id: string, naDzien: number) => void
+  onDodajWDniu: (dzien: number) => void
   mozeEdytowac: boolean
 }
 
-export function WidokMiesiaca({ miesiac, wydarzenia, onOtworz, onPrzenies, mozeEdytowac }: Props) {
+/** Opis kolizji do dymka — sam trójkąt mówi „coś jest nie tak", ale nie co. */
+function opiszKolizje(k: KolizjeDnia): string {
+  const czesci = [
+    ...k.osoby.map((o) =>
+      o.twarda
+        ? `${o.osoba}: ${o.ile} wydarzenia w odstępie krótszym niż 90 minut`
+        : `${o.osoba}: ${o.ile} wydarzenia tego dnia`,
+    ),
+    ...k.sale.map((s) => `sala ${s.sala}: ${s.godziny.join(', ')}`),
+  ]
+  return czesci.join('\n')
+}
+
+export function WidokMiesiaca({
+  miesiac, wydarzenia, onOtworz, onPrzenies, onDodajWDniu, mozeEdytowac,
+}: Props) {
   const [przeciagany, setPrzeciagany] = useState<string | null>(null)
+  const [nadDniem, setNadDniem] = useState<number | null>(null)
 
   const ile = dniWMiesiacu(miesiac.y, miesiac.m)
   const przesuniecie = pierwszyDzienTygodnia(miesiac.y, miesiac.m)
@@ -30,20 +47,34 @@ export function WidokMiesiaca({ miesiac, wydarzenia, onOtworz, onPrzenies, mozeE
       lista.push(w)
       mapa.set(w.dzien, lista)
     }
+    // Wydarzenia z godziną najpierw, w kolejności zegara — tak czyta się dzień.
+    for (const lista of mapa.values()) {
+      lista.sort((a, b) => (a.godzina ?? '99:99').localeCompare(b.godzina ?? '99:99'))
+    }
     return mapa
   }, [wydarzenia])
+
+  const dzis = new Date()
+  const dzisiajWTymMiesiacu =
+    dzis.getFullYear() === miesiac.y && dzis.getMonth() + 1 === miesiac.m ? dzis.getDate() : null
 
   function upusc(dzien: number) {
     const id = przeciagany
     setPrzeciagany(null)
+    setNadDniem(null)
     if (id) onPrzenies(id, dzien)
   }
 
   return (
     <div className="deck-card rounded-lg p-3">
       <div className="mb-2 grid grid-cols-7 gap-1.5">
-        {NAGLOWKI.map((n) => (
-          <div key={n} className="text-center font-mono text-[10px] uppercase tracking-[0.14em] text-deck-muted/70">
+        {NAGLOWKI.map((n, i) => (
+          <div
+            key={n}
+            className={`text-center font-mono text-[10px] uppercase tracking-[0.14em] ${
+              i >= 5 ? 'text-deck-muted/40' : 'text-deck-muted/70'
+            }`}
+          >
             {n}
           </div>
         ))}
@@ -57,25 +88,62 @@ export function WidokMiesiaca({ miesiac, wydarzenia, onOtworz, onPrzenies, mozeE
         {Array.from({ length: ile }, (_, i) => i + 1).map((dzien) => {
           const kol = kolizje.get(dzien)
           const twarda = kol?.osoby.some((o) => o.twarda) || (kol?.sale.length ?? 0) > 0
+          const wDniu = poDniach.get(dzien) ?? []
+          const weekend = (przesuniecie + dzien - 1) % 7 >= 5
+          const dzisiaj = dzien === dzisiajWTymMiesiacu
+          const cel = nadDniem === dzien
+
           return (
             <div
               key={dzien}
-              onDragOver={mozeEdytowac ? (e) => e.preventDefault() : undefined}
+              onDragOver={mozeEdytowac ? (e) => { e.preventDefault(); setNadDniem(dzien) } : undefined}
+              onDragLeave={mozeEdytowac ? () => setNadDniem((d) => (d === dzien ? null : d)) : undefined}
               onDrop={mozeEdytowac ? () => upusc(dzien) : undefined}
-              className="min-h-[92px] rounded-md border border-white/8 bg-white/[0.02] p-1.5"
+              className={`group relative min-h-[92px] rounded-md border p-1.5 transition ${
+                cel
+                  ? 'border-deck-accent bg-deck-accent/10'
+                  : dzisiaj
+                    ? 'border-deck-accent/45 bg-deck-accent/[0.06]'
+                    : weekend
+                      ? 'border-white/5 bg-white/[0.008]'
+                      : 'border-white/8 bg-white/[0.02]'
+              }`}
             >
               <div className="mb-1 flex items-center justify-between">
-                <span className="font-mono text-[10px] text-deck-muted">{dzien}</span>
-                {kol && (
-                  <AlertTriangle
-                    size={11}
-                    aria-label={twarda ? 'kolizja twarda' : 'kolizja miękka'}
-                    className={twarda ? 'text-deck-danger' : 'text-deck-warn'}
-                  />
-                )}
+                <span
+                  className={`font-mono text-[10px] ${
+                    dzisiaj ? 'font-bold text-deck-accent' : weekend ? 'text-deck-muted/45' : 'text-deck-muted'
+                  }`}
+                >
+                  {dzien}
+                </span>
+                <div className="flex items-center gap-1">
+                  {kol && (
+                    // Dymek na opakowaniu, nie na ikonie — Lucide nie przyjmuje `title`.
+                    <span
+                      title={opiszKolizje(kol)}
+                      aria-label={twarda ? 'kolizja twarda' : 'kolizja miękka'}
+                      className={`flex ${twarda ? 'text-deck-danger' : 'text-deck-warn'}`}
+                    >
+                      <AlertTriangle size={11} />
+                    </span>
+                  )}
+                  {mozeEdytowac && (
+                    <button
+                      type="button"
+                      onClick={() => onDodajWDniu(dzien)}
+                      aria-label={`Dodaj wydarzenie ${dzien}`}
+                      title="Dodaj wydarzenie w tym dniu"
+                      className="grid h-4 w-4 place-items-center rounded text-deck-muted/0 transition group-hover:text-deck-muted hover:!text-deck-accent"
+                    >
+                      <Plus size={11} />
+                    </button>
+                  )}
+                </div>
               </div>
+
               <div className="space-y-1">
-                {(poDniach.get(dzien) ?? []).map((w) => (
+                {wDniu.map((w) => (
                   <KartaWydarzenia
                     key={w.id}
                     wydarzenie={w}

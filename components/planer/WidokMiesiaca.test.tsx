@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { render, screen, fireEvent } from '@testing-library/react'
 import { describe, it, expect, vi } from 'vitest'
 import { WidokMiesiaca } from '@/components/planer/WidokMiesiaca'
 import type { Wydarzenie } from '@/lib/planer/typy'
@@ -12,6 +12,7 @@ const wspolne = {
   miesiac: { m: 10, y: 2026 },
   onOtworz: vi.fn(),
   onPrzenies: vi.fn(),
+  onDodajWDniu: vi.fn(),
   mozeEdytowac: false,
 }
 
@@ -37,5 +38,17 @@ describe('WidokMiesiaca', () => {
   it('nie oznacza dnia bez kolizji', () => {
     render(<WidokMiesiaca {...wspolne} wydarzenia={[wydarzenia[0]]} />)
     expect(screen.queryByLabelText(/kolizja/i)).toBeNull()
+  })
+
+  it('bez uprawnień nie ma przycisków dodawania w kratkach', () => {
+    render(<WidokMiesiaca {...wspolne} wydarzenia={[]} />)
+    expect(screen.queryByRole('button', { name: /Dodaj wydarzenie/ })).toBeNull()
+  })
+
+  it('z uprawnieniami kliknięcie plusa w kratce oddaje jej dzień', () => {
+    const onDodajWDniu = vi.fn()
+    render(<WidokMiesiaca {...wspolne} onDodajWDniu={onDodajWDniu} mozeEdytowac wydarzenia={[]} />)
+    fireEvent.click(screen.getByRole('button', { name: 'Dodaj wydarzenie 12' }))
+    expect(onDodajWDniu).toHaveBeenCalledWith(12)
   })
 })

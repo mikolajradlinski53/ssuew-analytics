@@ -9,16 +9,18 @@ type Props = {
   /** `null` znaczy: formularz nowego wydarzenia. */
   wydarzenie: Wydarzenie | null
   miesiac: Miesiac
+  /** Dzień wskazany kliknięciem w kratce; `null` przy dodawaniu z paska. */
+  dzienStartowy?: number | null
   mozeEdytowac: boolean
   onZapisz: (dane: NoweWydarzenie) => void
   onUsun: (id: string) => void
   onZamknij: () => void
 }
 
-function pusty(miesiac: Miesiac): NoweWydarzenie {
+function pusty(miesiac: Miesiac, dzien: number | null | undefined): NoweWydarzenie {
   return {
     tytul: '', kategoria: 'ZEBRANIA', rok: miesiac.y, miesiac: miesiac.m,
-    dzien: 1, godzina: null, sala: null, osoby: [],
+    dzien: dzien ?? 1, godzina: null, sala: null, osoby: [],
   }
 }
 
@@ -28,9 +30,11 @@ function pusty(miesiac: Miesiac): NoweWydarzenie {
  * To zalecany przez Reacta sposób resetowania stanu i o jeden render tańszy
  * niż dopasowywanie po fakcie.
  */
-export function PanelWydarzenia({ wydarzenie, miesiac, mozeEdytowac, onZapisz, onUsun, onZamknij }: Props) {
+export function PanelWydarzenia({
+  wydarzenie, miesiac, dzienStartowy, mozeEdytowac, onZapisz, onUsun, onZamknij,
+}: Props) {
   const [dane, setDane] = useState<NoweWydarzenie>(() =>
-    wydarzenie ? { ...wydarzenie } : pusty(miesiac),
+    wydarzenie ? { ...wydarzenie } : pusty(miesiac, dzienStartowy),
   )
 
   function zmien<K extends keyof NoweWydarzenie>(pole: K, wartosc: NoweWydarzenie[K]) {

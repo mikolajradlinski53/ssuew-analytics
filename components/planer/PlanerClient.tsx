@@ -10,6 +10,7 @@ import { PasekFiltrow, type Widok } from './PasekFiltrow'
 import { WidokMiesiaca } from './WidokMiesiaca'
 import { WidokSemestru } from './WidokSemestru'
 import { PanelWydarzenia } from './PanelWydarzenia'
+import { PustySemestr } from './PustySemestr'
 
 const NAZWY = [
   'Styczeń', 'Luty', 'Marzec', 'Kwiecień', 'Maj', 'Czerwiec',
@@ -34,6 +35,8 @@ export function PlanerClient({ semestr, mozeEdytowac, poczatkowe, naZywo }: Prop
   const [osoba, setOsoba] = useState('')
   const [wybrane, setWybrane] = useState<Wydarzenie | null>(null)
   const [dodaje, setDodaje] = useState(false)
+  /** Dzień wskazany przy dodawaniu z kratki — panel startuje z tą datą. */
+  const [dzienDodania, setDzienDodania] = useState<number | null>(null)
 
   useEffect(() => {
     if (!naZywo) return
@@ -81,8 +84,28 @@ export function PlanerClient({ semestr, mozeEdytowac, poczatkowe, naZywo }: Prop
   }
 
   async function usun(id: string) {
+    // Usunięcia nie da się cofnąć, a kliknięcie kosza jest o milimetr od zapisu.
+    if (!window.confirm('Usunąć to wydarzenie? Tego nie da się cofnąć.')) return
     await usunWydarzenie(semestr.id, id)
     setWybrane(null)
+  }
+
+  function dodajWDniu(dzien: number) {
+    setWybrane(null)
+    setDzienDodania(dzien)
+    setDodaje(true)
+  }
+
+  function dodajZPaska() {
+    setWybrane(null)
+    setDzienDodania(null)
+    setDodaje(true)
+  }
+
+  function zamknijPanel() {
+    setWybrane(null)
+    setDodaje(false)
+    setDzienDodania(null)
   }
 
   async function przenies(id: string, naDzien: number) {
@@ -90,14 +113,32 @@ export function PlanerClient({ semestr, mozeEdytowac, poczatkowe, naZywo }: Prop
   }
 
   const panelOtwarty = wybrane !== null || dodaje
+  // Pusty jest CAŁY semestr, nie bieżący miesiąc — filtry i przełącznik widoku
+  // nie mają wtedy czego filtrować, więc znikają razem z siatką.
+  const semestrPusty = wydarzenia.length === 0
+
+  const bladPaska = blad && (
+    <div className="rounded-lg border border-deck-danger-border bg-deck-danger-bg/70 px-3 py-2 text-[11px] text-deck-danger">
+      Nie udało się pobrać kalendarza: {blad}
+    </div>
+  )
+
+  if (semestrPusty && !panelOtwarty) {
+    return (
+      <div className="space-y-3">
+        {bladPaska}
+        <PustySemestr
+          nazwaSemestru={semestr.nazwa}
+          mozeEdytowac={mozeEdytowac}
+          onDodaj={dodajZPaska}
+        />
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-3">
-      {blad && (
-        <div className="rounded-lg border border-deck-danger-border bg-deck-danger-bg/70 px-3 py-2 text-[11px] text-deck-danger">
-          Nie udało się pobrać kalendarza: {blad}
-        </div>
-      )}
+      {bladPaska}
 
       <PasekFiltrow
         aktywne={aktywne}
@@ -135,7 +176,7 @@ export function PlanerClient({ semestr, mozeEdytowac, poczatkowe, naZywo }: Prop
           {mozeEdytowac && (
             <button
               type="button"
-              onClick={() => { setWybrane(null); setDodaje(true) }}
+              onClick={dodajZPaska}
               className="deck-button ml-auto flex items-center gap-2 rounded-lg px-3 py-2 text-[12px] font-semibold"
             >
               <Plus size={14} /> Dodaj wydarzenie
@@ -150,8 +191,9 @@ export function PlanerClient({ semestr, mozeEdytowac, poczatkowe, naZywo }: Prop
             <WidokMiesiaca
               miesiac={miesiac}
               wydarzenia={wMiesiacu}
-              onOtworz={(w) => { setDodaje(false); setWybrane(w) }}
+              onOtworz={(w) => { setDodaje(false); setDzienDodania(null); setWybrane(w) }}
               onPrzenies={przenies}
+              onDodajWDniu={dodajWDniu}
               mozeEdytowac={mozeEdytowac}
             />
           ) : (
@@ -171,13 +213,14 @@ export function PlanerClient({ semestr, mozeEdytowac, poczatkowe, naZywo }: Prop
             // Zmiana wybranego wydarzenia przemontowuje formularz i resetuje
             // jego pola — zalecany przez Reacta sposób zamiast synchronizacji
             // stanu efektem.
-            key={wybrane?.id ?? 'nowe'}
+            key={wybrane?.id ?? `nowe-${dzienDodania ?? 0}`}
             wydarzenie={wybrane}
             miesiac={miesiac}
+            dzienStartowy={dzienDodania}
             mozeEdytowac={mozeEdytowac}
             onZapisz={zapisz}
             onUsun={usun}
-            onZamknij={() => { setWybrane(null); setDodaje(false) }}
+            onZamknij={zamknijPanel}
           />
         )}
       </div>
