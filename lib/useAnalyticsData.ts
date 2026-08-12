@@ -1,6 +1,7 @@
 'use client'
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import type { Rekrutacja, Kohorta, KpiMetric } from '@/types'
+import { serieZWierszy } from '@/lib/kpi/serie'
 
 export function useAnalyticsData() {
   const [rekrutacje, setRekrutacje] = useState<Rekrutacja[]>([])
@@ -100,7 +101,11 @@ export function useAnalyticsData() {
     await fetchAll()
   }
 
-  return { rekrutacje, kohorty, kpiMetrics, loading, error, usingDemo, addRekrutacja, addKpiMetric, addKohorta, addKpiMetricsBulk, updateKpiMetric, refresh: fetchAll }
+  // Serie liczymy raz na komplet wierszy — cały interfejs KPI patrzy na nie,
+  // a nie na surowe wiersze, więc sklejanie nie może się dziać przy każdym renderze.
+  const serie = useMemo(() => serieZWierszy(kpiMetrics), [kpiMetrics])
+
+  return { rekrutacje, kohorty, kpiMetrics, serie, loading, error, usingDemo, addRekrutacja, addKpiMetric, addKohorta, addKpiMetricsBulk, updateKpiMetric, refresh: fetchAll }
 }
 
 // ─── Dane demo (realne dane SSUEW, używane gdy Supabase nie jest skonfigurowane) ─
@@ -128,37 +133,66 @@ export const DEMO_KOHORTY: Kohorta[] = [
 ]
 
 // Z dane_zrodlowe/KPI SSUEW.xlsx (arkusz 20252026): porównanie 2024/2025 → 2025/2026.
+const DEMO_OKRESY = ['2024/2025', '2025/2026']
+
+/**
+ * Dane demo trzymamy zwarto — nazwa i wartości rok po roku — a rozwijamy do
+ * wierszy dopiero tutaj. Wypisanie sześćdziesięciu wierszy wprost byłoby
+ * nieczytelne i przy każdej poprawce prosiłoby się o przekręconą liczbę.
+ *
+ * Kolejność wartości odpowiada DEMO_OKRESY. Dopisanie kolejnego rocznika to
+ * dopisanie okresu wyżej i jednej liczby w każdym wierszu.
+ */
+function demoKpi(kategoria: string, wpisy: [string, number[]][]): KpiMetric[] {
+  return wpisy.flatMap(([nazwa, wartosci]) =>
+    wartosci.map((wartosc, i) => ({
+      id: `${kategoria}-${nazwa}-${DEMO_OKRESY[i]}`,
+      kategoria,
+      nazwa,
+      okres: DEMO_OKRESY[i],
+      wartosc,
+      created_at: '',
+    })),
+  )
+}
+
 export const DEMO_KPI_METRICS: KpiMetric[] = [
   // Obecność na SKS (miesięcznie)
-  { id:'sks-10', kategoria:'SKS', nazwa:'Październik', okres_poprzedni:'2024/2025', wartosc_poprzednia:48, okres_biezacy:'2025/2026', wartosc_biezaca:45, created_at:'' },
-  { id:'sks-11', kategoria:'SKS', nazwa:'Listopad',   okres_poprzedni:'2024/2025', wartosc_poprzednia:57, okres_biezacy:'2025/2026', wartosc_biezaca:84, created_at:'' },
-  { id:'sks-12', kategoria:'SKS', nazwa:'Grudzień',   okres_poprzedni:'2024/2025', wartosc_poprzednia:43, okres_biezacy:'2025/2026', wartosc_biezaca:56, created_at:'' },
-  { id:'sks-01', kategoria:'SKS', nazwa:'Styczeń',    okres_poprzedni:'2024/2025', wartosc_poprzednia:41, okres_biezacy:'2025/2026', wartosc_biezaca:56, created_at:'' },
-  { id:'sks-02', kategoria:'SKS', nazwa:'Luty',       okres_poprzedni:'2024/2025', wartosc_poprzednia:34, okres_biezacy:'2025/2026', wartosc_biezaca:44, created_at:'' },
-  { id:'sks-03', kategoria:'SKS', nazwa:'Marzec',     okres_poprzedni:'2024/2025', wartosc_poprzednia:42, okres_biezacy:'2025/2026', wartosc_biezaca:47, created_at:'' },
+  ...demoKpi('SKS', [
+    ['Październik', [48, 45]],
+    ['Listopad', [57, 84]],
+    ['Grudzień', [43, 56]],
+    ['Styczeń', [41, 56]],
+    ['Luty', [34, 44]],
+    ['Marzec', [42, 47]],
+  ]),
   // Zapisy na wydarzenia wewnętrzne
-  { id:'wyd-jwk', kategoria:'Wydarzenia', nazwa:'JWK',        okres_poprzedni:'2024/2025', wartosc_poprzednia:43, okres_biezacy:'2025/2026', wartosc_biezaca:52, created_at:'' },
-  { id:'wyd-wig', kategoria:'Wydarzenia', nazwa:'Wigilia',    okres_poprzedni:'2024/2025', wartosc_poprzednia:83, okres_biezacy:'2025/2026', wartosc_biezaca:77, created_at:'' },
-  { id:'wyd-prz', kategoria:'Wydarzenia', nazwa:'Przydziałki',okres_poprzedni:'2024/2025', wartosc_poprzednia:56, okres_biezacy:'2025/2026', wartosc_biezaca:64, created_at:'' },
-  { id:'wyd-wwk', kategoria:'Wydarzenia', nazwa:'WWK',        okres_poprzedni:'2024/2025', wartosc_poprzednia:45, okres_biezacy:'2025/2026', wartosc_biezaca:40, created_at:'' },
+  ...demoKpi('Wydarzenia', [
+    ['JWK', [43, 52]],
+    ['Wigilia', [83, 77]],
+    ['Przydziałki', [56, 64]],
+    ['WWK', [45, 40]],
+  ]),
   // Zwrotność ankiety zarządu
-  { id:'ank-zim', kategoria:'Ankieta', nazwa:'Zimowa Zarządu', okres_poprzedni:'2024/2025', wartosc_poprzednia:47, okres_biezacy:'2025/2026', wartosc_biezaca:28, created_at:'' },
+  ...demoKpi('Ankieta', [['Zimowa Zarządu', [47, 28]]]),
   // Aplikacje na koordynatorów (pipeline liderów) — wszystkie projekty
-  { id:'koo-da',   kategoria:'Koordynatorzy', nazwa:'DA',         okres_poprzedni:'2024/2025', wartosc_poprzednia:1, okres_biezacy:'2025/2026', wartosc_biezaca:1,  created_at:'' },
-  { id:'koo-rj',   kategoria:'Koordynatorzy', nazwa:'RJ',         okres_poprzedni:'2024/2025', wartosc_poprzednia:2, okres_biezacy:'2025/2026', wartosc_biezaca:1,  created_at:'' },
-  { id:'koo-jwk',  kategoria:'Koordynatorzy', nazwa:'JWK',        okres_poprzedni:'2024/2025', wartosc_poprzednia:1, okres_biezacy:'2025/2026', wartosc_biezaca:2,  created_at:'' },
-  { id:'koo-twe',  kategoria:'Koordynatorzy', nazwa:'TWE',        okres_poprzedni:'2024/2025', wartosc_poprzednia:1, okres_biezacy:'2025/2026', wartosc_biezaca:2,  created_at:'' },
-  { id:'koo-zfue', kategoria:'Koordynatorzy', nazwa:'ZFUE',       okres_poprzedni:'2024/2025', wartosc_poprzednia:1, okres_biezacy:'2025/2026', wartosc_biezaca:1,  created_at:'' },
-  { id:'koo-bal',  kategoria:'Koordynatorzy', nazwa:'Bal',        okres_poprzedni:'2024/2025', wartosc_poprzednia:1, okres_biezacy:'2025/2026', wartosc_biezaca:1,  created_at:'' },
-  { id:'koo-me',   kategoria:'Koordynatorzy', nazwa:'ME',         okres_poprzedni:'2024/2025', wartosc_poprzednia:2, okres_biezacy:'2025/2026', wartosc_biezaca:1,  created_at:'' },
-  { id:'koo-wig',  kategoria:'Koordynatorzy', nazwa:'Wigilia',    okres_poprzedni:'2024/2025', wartosc_poprzednia:9, okres_biezacy:'2025/2026', wartosc_biezaca:12, created_at:'' },
-  { id:'koo-tedx', kategoria:'Koordynatorzy', nazwa:'TEDx',       okres_poprzedni:'2024/2025', wartosc_poprzednia:1, okres_biezacy:'2025/2026', wartosc_biezaca:1,  created_at:'' },
-  { id:'koo-prz',  kategoria:'Koordynatorzy', nazwa:'Przydziałki',okres_poprzedni:'2024/2025', wartosc_poprzednia:2, okres_biezacy:'2025/2026', wartosc_biezaca:2,  created_at:'' },
-  { id:'koo-wwk',  kategoria:'Koordynatorzy', nazwa:'WWK',        okres_poprzedni:'2024/2025', wartosc_poprzednia:1, okres_biezacy:'2025/2026', wartosc_biezaca:1,  created_at:'' },
-  { id:'koo-rw',   kategoria:'Koordynatorzy', nazwa:'RW',         okres_poprzedni:'2024/2025', wartosc_poprzednia:1, okres_biezacy:'2025/2026', wartosc_biezaca:1,  created_at:'' },
-  { id:'koo-ada',  kategoria:'Koordynatorzy', nazwa:'Adapciak',   okres_poprzedni:'2024/2025', wartosc_poprzednia:2, okres_biezacy:'2025/2026', wartosc_biezaca:1,  created_at:'' },
-  { id:'koo-ani',  kategoria:'Koordynatorzy', nazwa:'Animalia',   okres_poprzedni:'2024/2025', wartosc_poprzednia:1, okres_biezacy:'2025/2026', wartosc_biezaca:2,  created_at:'' },
-  { id:'koo-lwk',  kategoria:'Koordynatorzy', nazwa:'LWK',        okres_poprzedni:'2024/2025', wartosc_poprzednia:1, okres_biezacy:'2025/2026', wartosc_biezaca:1,  created_at:'' },
-  { id:'koo-gal',  kategoria:'Koordynatorzy', nazwa:'Gala',       okres_poprzedni:'2024/2025', wartosc_poprzednia:1, okres_biezacy:'2025/2026', wartosc_biezaca:5,  created_at:'' },
-  { id:'koo-grad', kategoria:'Koordynatorzy', nazwa:'Graduation', okres_poprzedni:'2024/2025', wartosc_poprzednia:1, okres_biezacy:'2025/2026', wartosc_biezaca:2,  created_at:'' },
+  ...demoKpi('Koordynatorzy', [
+    ['DA', [1, 1]],
+    ['RJ', [2, 1]],
+    ['JWK', [1, 2]],
+    ['TWE', [1, 2]],
+    ['ZFUE', [1, 1]],
+    ['Bal', [1, 1]],
+    ['ME', [2, 1]],
+    ['Wigilia', [9, 12]],
+    ['TEDx', [1, 1]],
+    ['Przydziałki', [2, 2]],
+    ['WWK', [1, 1]],
+    ['RW', [1, 1]],
+    ['Adapciak', [2, 1]],
+    ['Animalia', [1, 2]],
+    ['LWK', [1, 1]],
+    ['Gala', [1, 5]],
+    ['Graduation', [1, 2]],
+  ]),
 ]

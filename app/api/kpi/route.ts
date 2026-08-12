@@ -2,14 +2,7 @@ import { NextResponse, type NextRequest } from 'next/server'
 import { gasList, gasWrite, GasError, odswiezAnalytics } from '@/lib/gas/client'
 import { ktoPyta } from '@/lib/auth/guard'
 
-const POLA = [
-  'kategoria',
-  'nazwa',
-  'okres_poprzedni',
-  'wartosc_poprzednia',
-  'okres_biezacy',
-  'wartosc_biezaca',
-] as const
+const POLA = ['kategoria', 'nazwa', 'okres', 'wartosc'] as const
 
 function kompletny(w: Record<string, unknown>): boolean {
   return POLA.every((p) => w?.[p] !== undefined && w?.[p] !== null && w?.[p] !== '')
@@ -33,7 +26,7 @@ function blad(e: unknown) {
 
 export async function GET() {
   try {
-    return NextResponse.json(await gasList('kpi'))
+    return NextResponse.json(await gasList('kpi_punkty'))
   } catch (e) {
     return blad(e)
   }
@@ -55,7 +48,7 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const wiersze = await gasWrite('kpi', 'insert', poprawne)
+    const wiersze = await gasWrite('kpi_punkty', 'insert', poprawne)
     odswiezAnalytics()
     return NextResponse.json(Array.isArray(body) ? wiersze : wiersze[0], { status: 201 })
   } catch (e) {
@@ -76,7 +69,7 @@ export async function PATCH(req: NextRequest) {
   })
 
   try {
-    const [wiersz] = await gasWrite('kpi', 'update', [zmiany])
+    const [wiersz] = await gasWrite('kpi_punkty', 'update', [zmiany])
     odswiezAnalytics()
     return NextResponse.json(wiersz)
   } catch (e) {
