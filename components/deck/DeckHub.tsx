@@ -15,6 +15,8 @@ export interface DaneKokpitu {
   kpiWzrosty: number
   kpiRazem: number
   alerty: number
+  /** Propozycje zarządu czekające na decyzję. Liczone tylko dla właściciela. */
+  propozycje: number
 }
 
 type Props = { rola: Rola; email: string; dane: DaneKokpitu }
@@ -111,6 +113,7 @@ export function DeckHub({ rola, email, dane }: Props) {
           href="/planer"
           etykieta="moduł 02 · kalendarz"
           tytul="Planer semestru"
+          odznaka={dane.propozycje > 0 ? `${dane.propozycje} do decyzji` : undefined}
         >
           <p className="text-[12px] leading-relaxed text-deck-muted">
             Kalendarz semestru z wykrywaniem kolizji osób i sal.

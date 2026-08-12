@@ -68,6 +68,22 @@ export function PlanerClient({ semestr, rola, kto, poczatkowe, naZywo }: Props) 
     return subskrybujPropozycje(semestr.id, setPropozycje, (e) => setBlad(e.message))
   }, [semestr.id, naZywo, wlascicielem])
 
+  // Osoby na kodzie nie mają subskrypcji Firestore (Etap 3a). Poza sesją
+  // odświeżenie strony wystarcza, ale gdy wszyscy siedzą razem i przesuwają
+  // terminy, brak aktualizacji jest nie do zniesienia — wtedy odpytujemy co
+  // 15 sekund i tylko przy widocznej karcie.
+  useEffect(() => {
+    if (naZywo || !sesja.wlaczony) return
+    const id = setInterval(() => {
+      if (document.hidden) return
+      void fetch(`/api/planer?semestr=${semestr.id}`)
+        .then((r) => (r.ok ? r.json() : null))
+        .then((d) => { if (Array.isArray(d)) setWydarzenia(d) })
+        .catch(() => {})
+    }, 15000)
+    return () => clearInterval(id)
+  }, [naZywo, sesja.wlaczony, semestr.id])
+
   /** Zapis wprost albo propozycja — rozstrzyga rola i stan sesji. */
   const piszeWprost = wlascicielem || sesja.wlaczony
 

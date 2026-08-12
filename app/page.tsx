@@ -6,6 +6,7 @@ import { gasList } from '@/lib/gas/client'
 import { computeOverview } from '@/lib/overview'
 import { buildAlerts } from '@/lib/stats'
 import { DeckHub } from '@/components/deck/DeckHub'
+import { propozycjeRef } from '@/lib/firebase/admin'
 
 export default async function KokpitPage() {
   const token = (await cookies()).get('deck_session')?.value ?? ''
@@ -29,6 +30,18 @@ export default async function KokpitPage() {
       ? (m.lastAccepted / m.lastApplications) * 100
       : 0
 
+  // Odznakę widzi wyłącznie właściciel — dla zarządu liczba nierozpatrzonych
+  // propozycji nic nie znaczy, bo i tak ich nie rozpatrzy.
+  // Awaria Firestore nie może zabrać kokpitu, stąd zero zamiast wyjątku.
+  const propozycje =
+    rola === 'owner'
+      ? await propozycjeRef('2026Z')
+          .count()
+          .get()
+          .then((s) => s.data().count)
+          .catch(() => 0)
+      : 0
+
   return (
     <DeckHub
       rola={rola}
@@ -39,6 +52,7 @@ export default async function KokpitPage() {
         kpiWzrosty: kpi.filter((x) => x.wartosc_biezaca > x.wartosc_poprzednia).length,
         kpiRazem: kpi.length,
         alerty: buildAlerts(rekrutacje, kohorty, kpi).length,
+        propozycje,
       }}
     />
   )

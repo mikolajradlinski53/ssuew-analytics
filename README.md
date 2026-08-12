@@ -12,7 +12,7 @@ działającym modułem jest **SSUEW Analytics** — dashboard analityczny samorz
 |---|---|---|
 | **SSUEW Analytics** | Rekrutacje, retencja kohort, KPI rok-do-roku, lejek, korelacje, prognozy, alerty | działa |
 | **Orbita** | Prywatna tablica zadań jako radar: bliżej środka znaczy pilniej | etap 2 |
-| **Planer semestru** | Kalendarz semestru z wykrywaniem kolizji osób i sal, widok miesiąca i całego semestru | działa |
+| **Planer semestru** | Kalendarz semestru, kolizje osób i sal, propozycje zmian od zarządu, tryb wspólnej sesji | działa |
 | **Strony** | Kliknięcia, wyświetlenia i pozycje nadzorowanych witryn z Search Console | etap 4 |
 
 Analytics liczy statystyki **bez zewnętrznych bibliotek matematycznych** — korelacja Pearsona,
@@ -70,9 +70,10 @@ wklej z [`firestore.rules`](firestore.rules). Reguły sprawdzają adres e-mail w
 więc nie trzeba żadnych własnych oświadczeń ani Admin SDK — ale **te same dwa adresy muszą być
 w `firestore.rules` i w zmiennych Vercela**. Zmieniasz w jednym miejscu, zmień i w drugim.
 
-**`FIREBASE_SERVICE_ACCOUNT`** jest potrzebny tylko po to, żeby osoby wchodzące kodem mogły
-czytać Planer: nie mają konta Firebase, więc reguły Firestore ich nie wpuszczą i dane idą
-przez `/api/planer`.
+**`FIREBASE_SERVICE_ACCOUNT`** jest **wymagany**. Bez niego zarząd nie zobaczy Planera ani nie
+zgłosi żadnej propozycji: osoby wchodzące kodem nie mają konta Firebase, więc reguły Firestore
+ich nie wpuszczą i cały ich ruch idzie przez `/api/planer`. Konto właściciela działa bez tego,
+bo pisze do Firestore wprost.
 
 ## Struktura
 

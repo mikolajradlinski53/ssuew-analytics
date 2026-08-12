@@ -16,7 +16,7 @@ const push = vi.fn()
 vi.mock('next/navigation', () => ({ useRouter: () => ({ push, refresh: vi.fn() }) }))
 vi.mock('@/lib/auth/useAuth', () => ({ useAuth: () => ({ wyloguj }) }))
 
-const dane = { konwersja: 61.1, retencja: 3.81, kpiWzrosty: 20, kpiRazem: 28, alerty: 2 }
+const dane = { konwersja: 61.1, retencja: 3.81, kpiWzrosty: 20, kpiRazem: 28, alerty: 2, propozycje: 0 }
 
 describe('DeckHub', () => {
   it('pokazuje kafelek Analytics jako odnośnik', () => {
@@ -60,5 +60,10 @@ describe('DeckHub', () => {
     const przycisk = screen.getByRole('button', { name: /wyloguj/i })
     fireEvent.click(przycisk)
     expect(wyloguj).toHaveBeenCalled()
+  })
+
+  it('pokazuje odznakę z liczbą propozycji do decyzji', () => {
+    render(<DeckHub rola="owner" email="ja@e.com" dane={{ ...dane, propozycje: 3 }} />)
+    expect(screen.getByText('3 do decyzji')).toBeInTheDocument()
   })
 })
