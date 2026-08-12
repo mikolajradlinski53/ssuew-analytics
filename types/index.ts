@@ -72,16 +72,30 @@ export interface Czlonek {
   created_at: string
 }
 
-// Realny model KPI SSUEW: metryka rok-do-roku (wartość zeszłoroczna vs tegoroczna)
+// Jeden pomiar metryki w jednym okresie — dokładnie jeden wiersz zakładki `kpi_punkty`.
+// Format długi: dodanie kolejnego roku to dopisanie wierszy, nie zmiana kodu.
 export interface KpiMetric {
   id: string
-  kategoria: string          // np. 'SKS', 'Wydarzenia', 'Ankieta', 'Koordynatorzy'
-  nazwa: string              // np. 'Październik', 'Wigilia'
-  okres_poprzedni: string    // np. '2024/2025'
-  wartosc_poprzednia: number
-  okres_biezacy: string      // np. '2025/2026'
-  wartosc_biezaca: number
+  kategoria: string          // np. 'SKS', 'Koordynatorzy', 'Frekwencja P.KA.'
+  nazwa: string              // np. 'Październik', 'Wigilia', 'Gala'
+  okres: string              // np. '2025/2026'
+  wartosc: number
   created_at: string
+}
+
+// Punkt serii. Niesie `id` wiersza, żeby dało się edytować wartość w miejscu.
+export interface PunktKpi {
+  id: string
+  okres: string
+  wartosc: number
+}
+
+// Metryka w czasie — jednostka, którą widzi interfejs.
+// Rozpoznawana po parze (kategoria, nazwa); zmiana nazwy rozrywa serię na dwie.
+export interface SeriaKpi {
+  kategoria: string
+  nazwa: string
+  punkty: PunktKpi[]         // rosnąco po okresie, bez powtórzeń
 }
 
 // Kod dostępu dla osób bez konta z hasłem. Wiąże się z przeglądarką przy
