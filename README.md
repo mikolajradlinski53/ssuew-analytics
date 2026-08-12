@@ -66,8 +66,9 @@ zakładki i wgrywa dane historyczne.
 
 **Firestore** (dla Planera) — konsola Firebase → *Firestore Database* → *Create database*
 → tryb **produkcyjny**, lokalizacja **eur3**. Lokalizacji nie da się później zmienić. Reguły
-wklej z [`firestore.rules`](firestore.rules). Rola zapisu wynika z oświadczenia `rola` w tokenie
-(custom claim) — nadaje się je raz, obu kontom, przez Firebase Admin SDK.
+wklej z [`firestore.rules`](firestore.rules). Reguły sprawdzają adres e-mail wprost z tokenu,
+więc nie trzeba żadnych własnych oświadczeń ani Admin SDK — ale **te same dwa adresy muszą być
+w `firestore.rules` i w zmiennych Vercela**. Zmieniasz w jednym miejscu, zmień i w drugim.
 
 **`FIREBASE_SERVICE_ACCOUNT`** jest potrzebny tylko po to, żeby osoby wchodzące kodem mogły
 czytać Planer: nie mają konta Firebase, więc reguły Firestore ich nie wpuszczą i dane idą

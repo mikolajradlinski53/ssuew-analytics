@@ -3,23 +3,38 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Rola siedzi we wlasnym oswiadczeniu tokenu (custom claim), bo Firestore
-    // nie widzi zmiennych srodowiskowych Vercela. Nadaje sie ja recznie, raz
-    // na kadencje, dla dwoch kont — patrz apps-script/README.md sekcja o rolach.
-    function jestWlascicielem() {
-      return request.auth != null && request.auth.token.rola == 'owner';
+    // Firestore nie widzi zmiennych srodowiskowych Vercela, wiec liste dostepu
+    // trzeba powtorzyc tutaj. Sprawdzamy adres e-mail wprost z tokenu — Firebase
+    // wklada go tam przy logowaniu, wiec nie potrzeba zadnych wlasnych oswiadczen
+    // (custom claims) ani Admin SDK.
+    //
+    // UWAGA: te dwa adresy musza byc takie same jak DECK_OWNER_EMAIL
+    // i DECK_BOARD_EMAILS w konfiguracji Vercela. Zmieniasz w jednym miejscu —
+    // zmien i w drugim, bo inaczej ktos bedzie widzial przyciski edycji, ktore
+    // baza i tak odrzuci.
+    function wlasciciel() {
+      return 'kontakt@samorzad.ue.wroc.pl';
     }
 
-    function zalogowany() {
-      return request.auth != null;
+    function zarzad() {
+      return ['mikolaj.radlinski@samorzad.ue.wroc.pl'];
+    }
+
+    function jestWlascicielem() {
+      return request.auth != null && request.auth.token.email == wlasciciel();
+    }
+
+    function maDostep() {
+      return request.auth != null
+        && (request.auth.token.email == wlasciciel() || request.auth.token.email in zarzad());
     }
 
     match /semestry/{semestrId} {
-      allow read: if zalogowany();
+      allow read: if maDostep();
       allow write: if jestWlascicielem();
 
       match /wydarzenia/{wydarzenieId} {
-        allow read: if zalogowany();
+        allow read: if maDostep();
         allow write: if jestWlascicielem();
       }
     }
