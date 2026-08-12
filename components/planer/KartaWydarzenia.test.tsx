@@ -28,4 +28,13 @@ describe('KartaWydarzenia', () => {
     rerender(<KartaWydarzenia wydarzenie={w} onOtworz={vi.fn()} przeciagalne />)
     expect(container.querySelector('[draggable="true"]')).not.toBeNull()
   })
+
+  it('pokazuje kropkę, gdy wydarzenie ma rozmowę', () => {
+    const { container, rerender } = render(
+      <KartaWydarzenia wydarzenie={w} onOtworz={vi.fn()} przeciagalne={false} />,
+    )
+    expect(container.querySelector('[data-rozmowa]')).toBeNull()
+    rerender(<KartaWydarzenia wydarzenie={w} onOtworz={vi.fn()} przeciagalne={false} maRozmowe />)
+    expect(container.querySelector('[data-rozmowa]')).not.toBeNull()
+  })
 })

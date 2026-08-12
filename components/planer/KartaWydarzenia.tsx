@@ -9,13 +9,17 @@ type Props = {
   onPrzeciagnij?: (id: string) => void
   /** Przesunięcie o podaną liczbę dni — obsługa klawiatury. */
   onPrzesun?: (id: string, oDni: number) => void
+  /** Czy przy wydarzeniu toczy się rozmowa. Kropka bez liczby — liczbę widać po otwarciu. */
+  maRozmowe?: boolean
 }
 
 /**
  * W kratce dnia mieści się bardzo mało, więc karta pokazuje wyłącznie kolor
  * kategorii, godzinę i skrócony tytuł. Reszta jest w panelu bocznym.
  */
-export function KartaWydarzenia({ wydarzenie, onOtworz, przeciagalne, onPrzeciagnij, onPrzesun }: Props) {
+export function KartaWydarzenia({
+  wydarzenie, onOtworz, przeciagalne, onPrzeciagnij, onPrzesun, maRozmowe,
+}: Props) {
   const styl = KATEGORIE[wydarzenie.kategoria]
 
   /**
@@ -46,6 +50,13 @@ export function KartaWydarzenia({ wydarzenie, onOtworz, przeciagalne, onPrzeciag
           : wydarzenie.tytul
       }
     >
+      {maRozmowe && (
+        <span
+          data-rozmowa
+          aria-label="ma komentarze"
+          className="mr-1 inline-block h-1.5 w-1.5 rounded-full align-middle bg-deck-accent"
+        />
+      )}
       {wydarzenie.godzina && (
         <span className="mr-1 font-mono text-[9.5px] text-deck-muted">{wydarzenie.godzina}</span>
       )}
