@@ -87,6 +87,28 @@ const SCHEMAT = {
     sort: ['kategoria', 'nazwa', 'okres'],
     kluczNaturalny: null
   },
+  // Kondycja projektow: jeden wiersz to jeden projekt w jednej edycji.
+  // Projekt jest rozpoznawany po parze (projekt, edycja) — zmiana nazwy
+  // rozrywa jego historie, tak samo jak w kpi_punkty.
+  projekty: {
+    kolumny: {
+      id: 'text',
+      projekt: 'text',
+      edycja: 'text',
+      obszar: 'text',
+      budzet_plan: 'number',
+      budzet_wydany: 'number',
+      przedluzenia: 'number',
+      aplikujacy: 'number',
+      uczestnicy: 'number',
+      partnerzy_fin: 'number',
+      partnerzy_barter: 'number',
+      problemy: 'text',
+      created_at: 'text'
+    },
+    sort: ['projekt', 'edycja'],
+    kluczNaturalny: null
+  },
   czlonkowie: {
     kolumny: {
       id: 'text',
@@ -585,6 +607,10 @@ const SEED = {
     { kategoria: 'Koordynatorzy', nazwa: 'Gala',        okres_poprzedni: '2024/2025', wartosc_poprzednia: 1, okres_biezacy: '2025/2026', wartosc_biezaca: 5 },
     { kategoria: 'Koordynatorzy', nazwa: 'Graduation',  okres_poprzedni: '2024/2025', wartosc_poprzednia: 1, okres_biezacy: '2025/2026', wartosc_biezaca: 2 }
   ],
+
+  // Kondycji projektow nie ma skad wziac — te liczby wpisuje sie z aplikacji
+  // albo prosto w arkuszu. `setup()` tworzy sama zakladke z naglowkami.
+  projekty: [],
 
   czlonkowie: [],
 
