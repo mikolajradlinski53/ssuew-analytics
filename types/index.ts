@@ -131,3 +131,39 @@ export interface ExecutiveInsight {
   action: string
   href: string
 }
+
+// ─── Kondycja projektów ──────────────────────────────────────────────────────
+
+/** Jeden projekt w jednej edycji — dokładnie jeden wiersz zakładki `projekty`. */
+export interface Projekt {
+  id: string
+  projekt: string            // 'Gala', 'Adapciak'
+  edycja: string             // '2025/2026' — ten sam format co w KPI
+  obszar: string             // 'Kultura', 'Sport'
+  budzet_plan: number        // złotówki przyznane
+  budzet_wydany: number      // złotówki wydane
+  przedluzenia: number       // ile razy przedłużano nabór
+  aplikujacy: number
+  uczestnicy: number
+  partnerzy_fin: number
+  partnerzy_barter: number
+  problemy: string           // wolny opis, co poszło nie tak
+  created_at: string
+}
+
+export type WagaFlagi = 'alarm' | 'uwaga' | 'info'
+
+/** Zastrzeżenie wobec projektu. `detal` zawsze niesie liczby, nie samą etykietę. */
+export interface Flaga {
+  id: string
+  waga: WagaFlagi
+  tytul: string
+  detal: string
+}
+
+export interface KondycjaProjektu {
+  projekt: Projekt
+  /** Ten sam projekt w poprzedniej edycji; `null` przy pierwszej. */
+  poprzednia: Projekt | null
+  flagi: Flaga[]
+}
