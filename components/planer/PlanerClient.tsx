@@ -1,6 +1,6 @@
 'use client'
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { ChevronLeft, ChevronRight, Inbox, Plus, Radio, Users } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Inbox, ListChecks, Plus, Radio, Users } from 'lucide-react'
 import { KLUCZE_KATEGORII, type Kategoria, type Semestr, type Wydarzenie } from '@/lib/planer/typy'
 import {
   dodajWydarzenie, odrzucPropozycje, przyjmijPropozycje, subskrybujPropozycje,
@@ -32,6 +32,7 @@ import { SESJA_WYLACZONA } from '@/lib/planer/stan'
 import { subskrybujSklad, zapiszSklad } from '@/lib/planer/sklad'
 import { Sklad } from './Sklad'
 import { PobierzMiesiac } from './PobierzMiesiac'
+import { PasekEksportuCra } from './PasekEksportuCra'
 import type { ObrazPlanera } from '@/lib/planer/obraz'
 
 const NAZWY = [
@@ -70,6 +71,8 @@ export function PlanerClient({ semestr, rola, kto, poczatkowy, naZywo }: Props) 
   const [znaki, setZnaki] = useState<Znak[]>([])
   const [sklad, setSklad] = useState<string[]>(poczatkowy?.sklad ?? [])
   const [skladOtwarty, setSkladOtwarty] = useState(false)
+  /** Tryb zaznaczania do eksportu CRA; `null` = wyłączony. */
+  const [doCra, setDoCra] = useState<Set<string> | null>(null)
 
   useEffect(() => {
     if (!naZywo) return
@@ -426,7 +429,15 @@ export function PlanerClient({ semestr, rola, kto, poczatkowy, naZywo }: Props) 
           >
             <ChevronRight size={15} />
           </button>
-          <div className="ml-auto">
+          <div className="ml-auto flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setDoCra((z) => (z ? null : new Set()))}
+              aria-pressed={doCra !== null}
+              className="deck-chip flex items-center gap-2 rounded-lg px-3 py-2 text-[12px] text-deck-muted transition hover:text-deck-text aria-pressed:text-deck-accent"
+            >
+              <ListChecks size={14} /> Eksport do CRA
+            </button>
             <PobierzMiesiac wydarzenia={wydarzenia} miesiac={miesiac} />
           </div>
           <button
@@ -439,17 +450,39 @@ export function PlanerClient({ semestr, rola, kto, poczatkowy, naZywo }: Props) 
         </div>
       )}
 
+      {widok === 'miesiac' && doCra && (
+        <PasekEksportuCra
+          wMiesiacu={wMiesiacu}
+          wszystkie={wydarzenia}
+          zaznaczone={doCra}
+          miesiac={miesiac}
+          onZmien={setDoCra}
+          onZakoncz={() => setDoCra(null)}
+        />
+      )}
+
       <div className={panelOtwarty ? 'grid gap-3 lg:grid-cols-[1fr_320px]' : ''}>
         <div>
           {widok === 'miesiac' ? (
             <WidokMiesiaca
               miesiac={miesiac}
               wydarzenia={wMiesiacu}
-              onOtworz={(w) => { setDodaje(false); setDzienDodania(null); setWybrane(w) }}
+              onOtworz={(w) => {
+                // W trybie eksportu kliknięcie zaznacza, a nie otwiera panelu.
+                if (doCra) {
+                  const nowe = new Set(doCra)
+                  if (nowe.has(w.id)) nowe.delete(w.id)
+                  else nowe.add(w.id)
+                  setDoCra(nowe)
+                  return
+                }
+                setDodaje(false); setDzienDodania(null); setWybrane(w)
+              }}
               onPrzenies={przenies}
               onPrzesun={przesun}
               onDodajWDniu={dodajWDniu}
               zRozmowa={zRozmowa}
+              zaznaczone={doCra ?? undefined}
               // Zawsze wlaczone: u zarzadu przeciagniecie tworzy propozycje,
               // wiec musi dzialac takze przy wylaczonej sesji.
               mozeEdytowac

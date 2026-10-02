@@ -27,6 +27,11 @@ type Props = {
   mozeEdytowac: boolean
   /** Identyfikatory wydarzeń, przy których toczy się rozmowa. */
   zRozmowa?: Set<string>
+  /**
+   * Tryb zaznaczania do eksportu CRA — identyfikatory wybranych. Gdy podane,
+   * edycja jest wyłączona: kliknięcie zaznacza, a nic nie da się przeciągnąć.
+   */
+  zaznaczone?: Set<string>
 }
 
 /** Opis kolizji do dymka — sam trójkąt mówi „coś jest nie tak", ale nie co. */
@@ -61,8 +66,11 @@ function Legenda() {
 
 export function WidokMiesiaca({
   miesiac, wydarzenia, onOtworz, onPrzenies, onPrzesun, onDodajWDniu, mozeEdytowac,
-  zRozmowa,
+  zRozmowa, zaznaczone,
 }: Props) {
+  const wybor = zaznaczone !== undefined
+  const edytowalne = mozeEdytowac && !wybor
+  const stanWyboru = (id: string) => (wybor ? (zaznaczone?.has(id) ?? false) : undefined)
   const [przeciagany, setPrzeciagany] = useState<string | null>(null)
   const [nadDniem, setNadDniem] = useState<number | null>(null)
 
@@ -134,9 +142,9 @@ export function WidokMiesiaca({
     return (
       <div
         key={dzien}
-        onDragOver={mozeEdytowac ? (e) => { e.preventDefault(); setNadDniem(dzien) } : undefined}
-        onDragLeave={mozeEdytowac ? () => setNadDniem((d) => (d === dzien ? null : d)) : undefined}
-        onDrop={mozeEdytowac ? () => upusc(dzien) : undefined}
+        onDragOver={edytowalne ? (e) => { e.preventDefault(); setNadDniem(dzien) } : undefined}
+        onDragLeave={edytowalne ? () => setNadDniem((d) => (d === dzien ? null : d)) : undefined}
+        onDrop={edytowalne ? () => upusc(dzien) : undefined}
         className={`group relative min-h-[92px] rounded-md border p-1.5 transition ${
           cel
             ? 'border-deck-accent bg-deck-accent/10'
@@ -166,7 +174,7 @@ export function WidokMiesiaca({
                 <AlertTriangle size={11} />
               </span>
             )}
-            {mozeEdytowac && (
+            {edytowalne && (
               <button
                 type="button"
                 onClick={() => onDodajWDniu(dzien)}
@@ -186,10 +194,11 @@ export function WidokMiesiaca({
               key={w.id}
               wydarzenie={w}
               onOtworz={onOtworz}
-              przeciagalne={mozeEdytowac}
+              przeciagalne={edytowalne}
               onPrzeciagnij={setPrzeciagany}
               onPrzesun={onPrzesun}
               maRozmowe={zRozmowa?.has(w.id)}
+              zaznaczone={stanWyboru(w.id)}
             />
           ))}
         </div>
@@ -235,10 +244,11 @@ export function WidokMiesiaca({
                     przeciagalne={false}
                     maRozmowe={zRozmowa?.has(w.id)}
                     dopisek={dopisek}
+                    zaznaczone={stanWyboru(w.id)}
                   />
                 ))}
               </div>
-              {mozeEdytowac && (
+              {edytowalne && (
                 <button
                   type="button"
                   onClick={() => onDodajWDniu(dzien)}
@@ -281,9 +291,10 @@ export function WidokMiesiaca({
                           key={o.wydarzenie.id}
                           odcinek={o}
                           onOtworz={onOtworz}
-                          przeciagalne={mozeEdytowac && startujeTutaj(o.wydarzenie)}
+                          przeciagalne={edytowalne && startujeTutaj(o.wydarzenie)}
                           onPrzeciagnij={setPrzeciagany}
                           onPrzesun={onPrzesun}
+                          zaznaczone={stanWyboru(o.wydarzenie.id)}
                         />
                       ))}
                   </div>

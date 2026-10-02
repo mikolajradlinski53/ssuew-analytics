@@ -14,6 +14,8 @@ type Props = {
   maRozmowe?: boolean
   /** Który to dzień wydarzenia wielodniowego, np. „2/4” — na liście dni na telefonie. */
   dopisek?: string
+  /** Tryb zaznaczania (eksport do CRA): `undefined` = tryb wyłączony. */
+  zaznaczone?: boolean
 }
 
 /**
@@ -38,7 +40,7 @@ function wyglad(w: Wydarzenie): { klasa: string; styl: CSSProperties } {
 }
 
 export function KartaWydarzenia({
-  wydarzenie, onOtworz, przeciagalne, onPrzeciagnij, onPrzesun, maRozmowe, dopisek,
+  wydarzenie, onOtworz, przeciagalne, onPrzeciagnij, onPrzesun, maRozmowe, dopisek, zaznaczone,
 }: Props) {
   const s = KATEGORIE[wydarzenie.kategoria]
   const { klasa, styl } = wyglad(wydarzenie)
@@ -63,12 +65,15 @@ export function KartaWydarzenia({
     <button
       type="button"
       data-ranga={s.ranga}
+      aria-pressed={zaznaczone}
       draggable={przeciagalne || undefined}
       onDragStart={przeciagalne ? () => onPrzeciagnij?.(wydarzenie.id) : undefined}
       onClick={() => onOtworz(wydarzenie)}
       onKeyDown={naKlawisz}
       style={styl}
-      className={`block w-full text-left text-[10.5px] leading-tight transition hover:brightness-125 focus-visible:outline focus-visible:outline-2 focus-visible:outline-deck-accent ${klasa}`}
+      className={`block w-full text-left text-[10.5px] leading-tight transition hover:brightness-125 focus-visible:outline focus-visible:outline-2 focus-visible:outline-deck-accent ${klasa} ${
+        zaznaczone ? 'ring-2 ring-deck-accent ring-offset-1 ring-offset-deck-bg-deep' : zaznaczone === false ? 'opacity-60' : ''
+      }`}
       title={
         przeciagalne
           ? `${wydarzenie.tytul}\nStrzałki przesuwają: w bok o dzień, w pionie o tydzień.`

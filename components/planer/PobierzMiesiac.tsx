@@ -4,6 +4,7 @@ import { Download } from 'lucide-react'
 import type { Workbook } from 'exceljs'
 import { budujEksport, NAGLOWKI_KALENDARZA, type Eksport } from '@/lib/planer/eksport'
 import type { Miesiac, Wydarzenie } from '@/lib/planer/typy'
+import { pobierzPlik } from '@/lib/pobierz'
 
 const SZEROKOSCI_LISTY = [12, 15, 12, 10, 8, 7, 15, 36, 12, 18, 28]
 const argb = (hex: string) => `FF${hex.slice(1).toUpperCase()}`
@@ -70,15 +71,10 @@ export function PobierzMiesiac({ wydarzenia, miesiac }: Props) {
       const e = budujEksport(wydarzenia, miesiac)
       const plik = await zbudujSkoroszyt(e)
       const bufor = await plik.xlsx.writeBuffer()
-      const url = URL.createObjectURL(
+      pobierzPlik(
         new Blob([bufor], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }),
+        e.nazwaPliku,
       )
-      const a = document.createElement('a')
-      a.href = url
-      a.download = e.nazwaPliku
-      a.click()
-      // Natychmiastowe zwolnienie potrafi przerwać pobieranie w części przeglądarek.
-      setTimeout(() => URL.revokeObjectURL(url), 1000)
       setStan('gotowy')
     } catch {
       setStan('blad')

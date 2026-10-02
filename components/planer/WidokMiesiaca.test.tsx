@@ -120,6 +120,17 @@ describe('WidokMiesiaca', () => {
     expect(pasek?.getAttribute('draggable')).toBeNull()
   })
 
+  it('w trybie zaznaczania karty i paski pokazują wybór, a nic nie da się przeciągnąć', () => {
+    const { container } = render(
+      <WidokMiesiaca {...wspolne} mozeEdytowac wydarzenia={[wydarzenia[0], wyjazd]} zaznaczone={new Set(['1'])} />,
+    )
+    const karta = siatka(container).getByRole('button', { name: /ZEBRANIE/ })
+    expect(karta).toHaveAttribute('aria-pressed', 'true')
+    expect(siatka(container).getByRole('button', { name: /WYJAZD/ })).toHaveAttribute('aria-pressed', 'false')
+    expect(container.querySelector('[data-widok="siatka"] [draggable="true"]')).toBeNull()
+    expect(siatka(container).queryByRole('button', { name: /Dodaj wydarzenie/ })).toBeNull()
+  })
+
   it('pokazuje legendę rang', () => {
     const { container } = render(<WidokMiesiaca {...wspolne} wydarzenia={[]} />)
     expect(container.querySelector('[data-legenda]')?.textContent).toMatch(/1Zebrania/)
