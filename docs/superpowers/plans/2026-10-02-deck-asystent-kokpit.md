@@ -12,7 +12,7 @@
 
 **Konwencje:** po polsku; **w tekstach widocznych dla użytkownika tylko „-”, nigdy długie myślniki**; commit dopiero po zerowym kodzie wyjścia `npx vitest run …` (nie przez `| grep`, który maskuje błąd); stopka commitów `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>`.
 
-**Pułapka narzędzi:** Write/Edit zamieniają zapis `—` na sam znak. Pliki, które celowo zawierają długi myślnik w danych testowych albo w wyrażeniu regularnym (`lib/asystent/gemini.ts`, `lib/asystent/gemini.test.ts`), po zapisaniu przepuść przez `node scratchpad/escape.mjs <plik>` - zamienia znak z powrotem na zapis `—`/`–`. Na Windows Git Bash: `MSYS_NO_PATHCONV=1` przy ścieżkach zaczynających się od „/”.
+**Pułapka narzędzi:** Write/Edit zamieniają zapis `\u2014` na sam znak. Pliki, które celowo zawierają długi myślnik w danych testowych albo w wyrażeniu regularnym (`lib/asystent/gemini.ts`, `lib/asystent/gemini.test.ts`), po zapisaniu przepuść przez `node scratchpad/escape.mjs <plik>` - zamienia znak z powrotem na zapis `\u2014`/`\u2013`. Na Windows Git Bash: `MSYS_NO_PATHCONV=1` przy ścieżkach zaczynających się od „/”.
 
 ---
 
