@@ -129,6 +129,62 @@ describe('POST /api/planer', () => {
       expect.objectContaining({ kto: 'Jula', patrzyNa: 'w1' }),
     )
   })
+
+  const NOWE = {
+    tytul: 'SKS', kategoria: 'SSUEW', rok: 2026, miesiac: 10, dzien: 8,
+    godzina: '19:00', sala: null, osoby: ['Jula'],
+  }
+
+  it('zarząd bez sesji nie dodaje wprost', async () => {
+    ktoPyta.mockResolvedValue({ uid: 'kod:482913', email: 'Jula', rola: 'board' })
+    const { POST } = await import('@/app/api/planer/route')
+    const res = await POST(zada({ semestr: '2026Z', akcja: 'dodaj', wydarzenie: NOWE }))
+    expect(res.status).toBe(403)
+    expect(dodajWydarzenie).not.toHaveBeenCalled()
+  })
+
+  it('zarząd w sesji dodaje — zapisane są tylko znane pola', async () => {
+    ktoPyta.mockResolvedValue({ uid: 'kod:482913', email: 'Jula', rola: 'board' })
+    trybWspolny.mockReturnValue(true)
+    const { POST } = await import('@/app/api/planer/route')
+    const res = await POST(zada({ semestr: '2026Z', akcja: 'dodaj', wydarzenie: { ...NOWE, admin: true } }))
+    expect(res.status).toBe(201)
+    const zapisane = dodajWydarzenie.mock.calls[0][0]
+    expect(zapisane).toMatchObject({ tytul: 'SKS', dni: 1, budynek: null })
+    expect(zapisane).not.toHaveProperty('admin')
+  })
+
+  it('zarząd w sesji zmienia istniejące wydarzenie', async () => {
+    ktoPyta.mockResolvedValue({ uid: 'kod:482913', email: 'Jula', rola: 'board' })
+    trybWspolny.mockReturnValue(true)
+    const { POST } = await import('@/app/api/planer/route')
+    const res = await POST(zada({ semestr: '2026Z', akcja: 'zmien', wydarzenieId: 'w1', wydarzenie: NOWE }))
+    expect(res.status).toBe(200)
+    expect(zmienDzien).toHaveBeenCalledWith('w1', expect.objectContaining({ tytul: 'SKS' }))
+  })
+
+  it('błędne dane to 400 z opisem', async () => {
+    ktoPyta.mockResolvedValue({ uid: 'u1', email: 'ja@example.com', rola: 'owner' })
+    const { POST } = await import('@/app/api/planer/route')
+    const res = await POST(zada({ semestr: '2026Z', akcja: 'dodaj', wydarzenie: { ...NOWE, godzina: '99:99' } }))
+    expect(res.status).toBe(400)
+    expect((await res.json()).error).toMatch(/GG:MM/)
+  })
+
+  it('propozycja nowego wydarzenia też przechodzi walidację', async () => {
+    ktoPyta.mockResolvedValue({ uid: 'kod:482913', email: 'Jula', rola: 'board' })
+    const { POST } = await import('@/app/api/planer/route')
+    const res = await POST(zada({ semestr: '2026Z', akcja: 'propozycja-nowego', wydarzenie: { ...NOWE, tytul: '' } }))
+    expect(res.status).toBe(400)
+    expect(dodajPropozycje).not.toHaveBeenCalled()
+  })
+
+  it('serwer nie ma akcji usuwania — usuwa wyłącznie właściciel, wprost', async () => {
+    ktoPyta.mockResolvedValue({ uid: 'kod:482913', email: 'Jula', rola: 'board' })
+    trybWspolny.mockReturnValue(true)
+    const { POST } = await import('@/app/api/planer/route')
+    expect((await POST(zada({ semestr: '2026Z', akcja: 'usun', wydarzenieId: 'w1' }))).status).toBe(400)
+  })
 })
 
 function pyta(adres: string) {

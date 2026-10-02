@@ -32,6 +32,15 @@ export function przeniesPrzezSerwer(semestr: string, wydarzenieId: string, naDzi
   return wyslij({ semestr, akcja: 'przenies', wydarzenieId, naDzien })
 }
 
+/** Zapis wprost przez serwer. Zarządowi serwer pozwoli wyłącznie w trakcie Sesji Operacyjnej. */
+export function dodajPrzezSerwer(semestr: string, wydarzenie: NoweWydarzenie): Promise<void> {
+  return wyslij({ semestr, akcja: 'dodaj', wydarzenie })
+}
+
+export function zmienPrzezSerwer(semestr: string, wydarzenieId: string, wydarzenie: NoweWydarzenie): Promise<void> {
+  return wyslij({ semestr, akcja: 'zmien', wydarzenieId, wydarzenie })
+}
+
 export function zglosKomentarz(semestr: string, wydarzenieId: string, tresc: string): Promise<void> {
   return wyslij({ semestr, akcja: 'komentarz', wydarzenieId, tresc })
 }

@@ -1,6 +1,8 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { ktoPyta } from '@/lib/auth/guard'
 import { obrazPlanera, stanSesji } from '@/lib/planer/obraz'
+import { sprawdzWydarzenie } from '@/lib/planer/walidacja'
+import type { Pytajacy } from '@/lib/auth/guard'
 import {
   komentarzeRef, obecnoscRef, propozycjeRef, wydarzeniaRef,
 } from '@/lib/firebase/admin'
@@ -29,9 +31,9 @@ export async function GET(req: NextRequest) {
   }
 }
 
-/** Czy zarząd może w tej chwili zapisywać wprost. Rozstrzyga serwer, nie klient. */
-async function trybWspolnyWlaczony(semestrId: string): Promise<boolean> {
-  return (await stanSesji(semestrId)).wlaczony
+/** Właściciel pisze zawsze; zarząd wyłącznie przy włączonej Sesji Operacyjnej. Rozstrzyga serwer. */
+async function wolnoPisacWprost(kto: Pytajacy, semestrId: string): Promise<boolean> {
+  return kto.rola === 'owner' || (await stanSesji(semestrId)).wlaczony
 }
 
 /**
@@ -64,18 +66,38 @@ export async function POST(req: NextRequest) {
     }
 
     if (akcja === 'propozycja-nowego') {
+      const s = sprawdzWydarzenie(body.wydarzenie)
+      if (!s.ok) return NextResponse.json({ error: s.blad }, { status: 400 })
       await propozycjeRef(semestr).add({
         rodzaj: 'nowe',
         autor: kto.email,
         utworzone: Date.now(),
-        wydarzenie: body.wydarzenie,
+        wydarzenie: s.wydarzenie,
       })
       return NextResponse.json({ ok: true }, { status: 201 })
     }
 
+    if (akcja === 'dodaj' || akcja === 'zmien') {
+      if (!(await wolnoPisacWprost(kto, semestr))) {
+        return NextResponse.json({ error: 'Sesja Operacyjna nie jest włączona' }, { status: 403 })
+      }
+      const s = sprawdzWydarzenie(body.wydarzenie)
+      if (!s.ok) return NextResponse.json({ error: s.blad }, { status: 400 })
+
+      if (akcja === 'dodaj') {
+        await wydarzeniaRef(semestr).add({ ...s.wydarzenie, zmienione: Date.now() })
+        return NextResponse.json({ ok: true }, { status: 201 })
+      }
+      if (typeof body.wydarzenieId !== 'string' || !body.wydarzenieId) {
+        return NextResponse.json({ error: 'Brak wydarzenia do zmiany' }, { status: 400 })
+      }
+      await wydarzeniaRef(semestr).doc(body.wydarzenieId).update({ ...s.wydarzenie, zmienione: Date.now() })
+      return NextResponse.json({ ok: true })
+    }
+
     if (akcja === 'przenies') {
       // Właściciel pisze zawsze; zarząd tylko przy włączonej Sesji Operacyjnej.
-      const wolno = kto.rola === 'owner' || (await trybWspolnyWlaczony(semestr))
+      const wolno = await wolnoPisacWprost(kto, semestr)
       if (!wolno) {
         return NextResponse.json({ error: 'Sesja Operacyjna nie jest włączona' }, { status: 403 })
       }
