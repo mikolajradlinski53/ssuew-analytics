@@ -177,8 +177,9 @@ Lista dni: wydarzenie wielodniowe pojawia się w każdym swoim dniu jako jedna l
 - Prosta lista: dodaj osobę, usuń osobę. Duplikaty (bez względu na wielkość liter) odrzucane.
 - Usunięcie ze Składu nie zmienia istniejących wydarzeń.
 - Zmiany nazwy nie robimy: wymagałaby przepisania wszystkich wydarzeń osoby, a to rzadka potrzeba.
-- `owner` czyta i pisze dokument wprost (reguły Firestore, §9). Zarząd dostaje Skład przez
-  `GET /api/planer?semestr=…&zasob=sklad` — osoby na kodzie nie mają dostępu do Firestore.
+- `owner` czyta i pisze dokument wprost (reguły Firestore, §9); konto `board` z hasłem czyta
+  wprost. Osoby na kodzie dostają Skład w obrazie Planera z `GET /api/planer` (§8, błąd 0b) —
+  nie mają dostępu do Firestore.
   Pusty lub nieistniejący dokument = pusta lista (formularz pokazuje wtedy podpowiedź „dodaj
   osoby w Składzie”, a „Wszyscy” działa zawsze).
 
@@ -309,8 +310,8 @@ Musi stać przed regułą zamykającą wszystko. Wdrożenie reguł: wklejenie w 
 | `lib/planer/walidacja.ts` | NOWY — `sprawdzWydarzenie` |
 | `lib/planer/eksport.ts` | NOWY — struktura arkuszy |
 | `lib/planer/sklad.ts` | NOWY — subskrypcja / zapis Składu (owner) |
-| `lib/planer/serwer.ts` | `dodaj`, `zmien`, `przesun`, `pobierzSklad` |
-| `app/api/planer/route.ts` | akcje `dodaj`, `zmien`, przesunięcie o N dni, `zasob=sklad`, walidacja |
+| `lib/planer/serwer.ts` | `dodajPrzezSerwer`, `zmienPrzezSerwer` |
+| `app/api/planer/route.ts` | GET z obrazem i `zasob=sesja`, akcje `dodaj`, `zmien`, walidacja |
 | `components/planer/KartaWydarzenia.tsx` | styl rangi, druga linijka |
 | `components/planer/PasekWielodniowy.tsx` | NOWY |
 | `components/planer/WidokMiesiaca.tsx` | rzędy tygodni, pasy, sortowanie po randze, legenda |
