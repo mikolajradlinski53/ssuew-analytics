@@ -42,3 +42,11 @@ export function obecnoscRef(semestrId: string) {
 export function ustawieniaRef(nazwa: string) {
   return bazaAdmin().collection('ustawienia').doc(nazwa)
 }
+
+/**
+ * Odprawa asystenta. Kolekcja nie ma reguły klienta, więc jest zamknięta regułą
+ * końcową - czyta i pisze wyłącznie serwer. Zarząd jej nie zobaczy.
+ */
+export function odprawaRef() {
+  return bazaAdmin().collection('asystent').doc('odprawa')
+}
