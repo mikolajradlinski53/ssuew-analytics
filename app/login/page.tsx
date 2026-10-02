@@ -60,8 +60,12 @@ export default function LoginPage() {
           <div className="flex items-center gap-3">
             <LogoMark />
             <div>
-              <div className="text-sm font-semibold text-deck-text">SSUEW Analytics</div>
-              <div className="text-[10px] uppercase tracking-[0.22em] text-deck-muted">Private strategy command</div>
+              <div className="deck-glitch text-sm font-extrabold tracking-[0.26em] text-deck-text" data-tekst="D.E.C.K.">
+                D.E.C.K.
+              </div>
+              <div className="mt-0.5 text-[10px] uppercase tracking-[0.22em] text-deck-muted">
+                {'Diagnostic Evaluation of Change & KPIs'}
+              </div>
             </div>
           </div>
 
@@ -80,10 +84,11 @@ export default function LoginPage() {
               Wejdź do prywatnego kokpitu strategii SSUEW. W tle już pulsują rekrutacje, retencja i KPI rok-do-roku.
             </p>
 
+            {/* Ozdoba, nie dane: prawdziwe liczby są za logowaniem. */}
             <div className="mt-8 grid max-w-3xl grid-cols-1 gap-3 sm:grid-cols-3">
-              <LiveDigits label="conversion" value="61.1%" />
-              <LiveDigits label="retention" value="3.81 sem" speed={110} />
-              <LiveDigits label="kpi growth" value="20/28" speed={125} />
+              <LiveDigits label="sygnał" value="-42 dBm" />
+              <LiveDigits label="szyfrowanie" value="256 bit" speed={110} />
+              <LiveDigits label="węzły" value="12/12" speed={125} />
             </div>
           </div>
 
