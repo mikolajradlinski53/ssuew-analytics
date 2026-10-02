@@ -26,6 +26,8 @@ import { Obecnosc } from './Obecnosc'
 import { Watek } from './Watek'
 import { dniWMiesiacu } from '@/lib/planer/daty'
 import { terminyCoTydzien } from '@/lib/planer/powtarzanie'
+import { SESJA_WYLACZONA } from '@/lib/planer/stan'
+import type { ObrazPlanera } from '@/lib/planer/obraz'
 
 const NAZWY = [
   'Styczeń', 'Luty', 'Marzec', 'Kwiecień', 'Maj', 'Czerwiec',
@@ -38,15 +40,15 @@ type Props = {
   rola: 'owner' | 'board'
   /** Adres e-mail albo etykieta kodu — trafia do propozycji jako autor. */
   kto: string
-  /** Dane wstępne dla osób na kodzie; konta z hasłem dostają je z subskrypcji. */
-  poczatkowe: Wydarzenie[]
+  /** Obraz z serwera dla osób na kodzie; konta z hasłem dostają dane z subskrypcji (`null`). */
+  poczatkowy: ObrazPlanera | null
   /** Osoby na kodzie nie mają konta Firebase, więc nie subskrybują Firestore. */
   naZywo: boolean
 }
 
-export function PlanerClient({ semestr, rola, kto, poczatkowe, naZywo }: Props) {
+export function PlanerClient({ semestr, rola, kto, poczatkowy, naZywo }: Props) {
   const wlascicielem = rola === 'owner'
-  const [wydarzenia, setWydarzenia] = useState<Wydarzenie[]>(poczatkowe)
+  const [wydarzenia, setWydarzenia] = useState<Wydarzenie[]>(poczatkowy?.wydarzenia ?? [])
   const [blad, setBlad] = useState<string | null>(null)
   const [widok, setWidok] = useState<Widok>('miesiac')
   const [indeksMiesiaca, setIndeksMiesiaca] = useState(0)
@@ -56,7 +58,7 @@ export function PlanerClient({ semestr, rola, kto, poczatkowe, naZywo }: Props) 
   const [dodaje, setDodaje] = useState(false)
   /** Dzień wskazany przy dodawaniu z kratki — panel startuje z tą datą. */
   const [dzienDodania, setDzienDodania] = useState<number | null>(null)
-  const [sesja, setSesja] = useState<StanSesjiWspolnej>({ wlaczony: false, od: null, przez: null })
+  const [sesja, setSesja] = useState<StanSesjiWspolnej>(poczatkowy?.sesja ?? SESJA_WYLACZONA)
   const [propozycje, setPropozycje] = useState<Propozycja[]>([])
   const [skrzynkaOtwarta, setSkrzynkaOtwarta] = useState(false)
   const [komentarze, setKomentarze] = useState<Komentarz[]>([])
@@ -81,21 +83,33 @@ export function PlanerClient({ semestr, rola, kto, poczatkowe, naZywo }: Props) 
     )
   }, [semestr.id, naZywo, wlascicielem])
 
-  // Osoby na kodzie nie mają subskrypcji Firestore (Etap 3a). Poza sesją
-  // odświeżenie strony wystarcza, ale gdy wszyscy siedzą razem i przesuwają
-  // terminy, brak aktualizacji jest nie do zniesienia — wtedy odpytujemy co
-  // 15 sekund i tylko przy widocznej karcie.
+  /**
+   * Pobranie stanu przez serwer — dla osób na kodzie, które nie mają
+   * subskrypcji Firestore. `tylkoSesja` czyta jeden dokument zamiast całego
+   * kalendarza.
+   */
+  const odswiez = useCallback(async (tylkoSesja = false) => {
+    const r = await fetch(`/api/planer?semestr=${semestr.id}${tylkoSesja ? '&zasob=sesja' : ''}`)
+    if (!r.ok) return
+    const d = await r.json()
+    if (d.sesja) setSesja(d.sesja)
+    if (Array.isArray(d.wydarzenia)) setWydarzenia(d.wydarzenia)
+  }, [semestr.id])
+
+  // Poza sesją co minutę sprawdzamy wyłącznie, czy się zaczęła; w trakcie
+  // sesji co 15 sekund pobieramy cały obraz — wtedy opóźnienie naprawdę
+  // przeszkadza. Tylko przy widocznej karcie.
   useEffect(() => {
-    if (naZywo || !sesja.wlaczony) return
-    const id = setInterval(() => {
-      if (document.hidden) return
-      void fetch(`/api/planer?semestr=${semestr.id}`)
-        .then((r) => (r.ok ? r.json() : null))
-        .then((d) => { if (Array.isArray(d)) setWydarzenia(d) })
-        .catch(() => {})
-    }, 15000)
+    if (naZywo) return
+    const wSesji = sesja.wlaczony
+    const krok = () => {
+      if (!document.hidden) void odswiez(!wSesji).catch(() => {})
+    }
+    // Po wykryciu startu sesji nie czekamy 15 sekund na pierwszy pełny obraz.
+    if (wSesji) krok()
+    const id = setInterval(krok, wSesji ? 15_000 : 60_000)
     return () => clearInterval(id)
-  }, [naZywo, sesja.wlaczony, semestr.id])
+  }, [naZywo, sesja.wlaczony, odswiez])
 
   useEffect(() => {
     if (!naZywo) return
@@ -248,7 +262,7 @@ export function PlanerClient({ semestr, rola, kto, poczatkowe, naZywo }: Props) 
       }
       setBlad(null)
     } catch (e) {
-      setBlad((e as Error).message)
+      setBlad(`Nie udało się zapisać: ${(e as Error).message}`)
     }
   }
 
@@ -268,7 +282,7 @@ export function PlanerClient({ semestr, rola, kto, poczatkowe, naZywo }: Props) 
 
   const bladPaska = blad && (
     <div className="rounded-lg border border-deck-danger-border bg-deck-danger-bg/70 px-3 py-2 text-[11px] text-deck-danger">
-      Nie udało się pobrać kalendarza: {blad}
+      {blad}
     </div>
   )
 

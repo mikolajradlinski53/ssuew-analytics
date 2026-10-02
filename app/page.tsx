@@ -1,19 +1,20 @@
 import { redirect } from 'next/navigation'
-import { cookies } from 'next/headers'
-import { zweryfikujToken } from '@/lib/auth/verify'
-import { rolaDla } from '@/lib/auth/role'
+import { ktoNaStronie } from '@/lib/auth/naStronie'
 import { gasList } from '@/lib/gas/client'
 import { computeOverview } from '@/lib/overview'
 import { buildAlerts } from '@/lib/stats'
 import { serieZWierszy, ilorazSerii } from '@/lib/kpi/serie'
 import { DeckHub } from '@/components/deck/DeckHub'
 import { propozycjeRef } from '@/lib/firebase/admin'
+import { biezacySemestr } from '@/lib/planer/semestry'
 
 export default async function KokpitPage() {
-  const token = (await cookies()).get('deck_session')?.value ?? ''
-  const tozsamosc = await zweryfikujToken(token)
-  const rola = rolaDla(tozsamosc?.email)
-  if (!tozsamosc || !rola) redirect('/login')
+  // Obie drogi wejścia. Sprawdzanie samego hasła odsyłało osoby na kodzie
+  // na /login, a stamtąd useAuth odsyłał je z powrotem — pętla.
+  const kto = await ktoNaStronie()
+  if (!kto) redirect('/login')
+
+  const semestr = biezacySemestr(new Date())
 
   // Awaria arkusza nie może zabrać całego kokpitu — kafelek pokaże zera,
   // a pozostałe moduły dalej działają.
@@ -36,8 +37,8 @@ export default async function KokpitPage() {
   // propozycji nic nie znaczy, bo i tak ich nie rozpatrzy.
   // Awaria Firestore nie może zabrać kokpitu, stąd zero zamiast wyjątku.
   const propozycje =
-    rola === 'owner'
-      ? await propozycjeRef('2026Z')
+    kto.rola === 'owner'
+      ? await propozycjeRef(semestr.id)
           .count()
           .get()
           .then((s) => s.data().count)
@@ -46,8 +47,8 @@ export default async function KokpitPage() {
 
   return (
     <DeckHub
-      rola={rola}
-      email={tozsamosc.email}
+      rola={kto.rola}
+      email={kto.email}
       dane={{
         konwersja,
         retencja: m.histRetention ?? 0,

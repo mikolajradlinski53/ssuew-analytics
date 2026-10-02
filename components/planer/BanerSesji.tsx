@@ -2,6 +2,7 @@
 import { Radio } from 'lucide-react'
 import type { StanSesjiWspolnej } from '@/lib/planer/zapis'
 import { opiszTrwanie } from '@/lib/planer/stan'
+import { useTeraz } from '@/lib/useTeraz'
 
 type Props = {
   stan: StanSesjiWspolnej
@@ -15,6 +16,7 @@ type Props = {
  * zapisu dla całego zarządu.
  */
 export function BanerSesji({ stan, mozeWylaczyc, onWylacz }: Props) {
+  const teraz = useTeraz()
   if (!stan.wlaczony) return null
 
   return (
@@ -23,7 +25,7 @@ export function BanerSesji({ stan, mozeWylaczyc, onWylacz }: Props) {
       <span className="text-[12px] font-semibold text-deck-text">Sesja Operacyjna trwa</span>
       <span className="text-[11.5px] text-deck-muted">
         wszyscy zapisują na żywo
-        {stan.od !== null && ` · ${opiszTrwanie(stan.od, Date.now())}`}
+        {stan.od !== null && ` · ${opiszTrwanie(stan.od, teraz)}`}
       </span>
       {mozeWylaczyc && (
         <button
