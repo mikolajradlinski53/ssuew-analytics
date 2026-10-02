@@ -37,3 +37,16 @@ export function opisSemestru(rokAkademicki: number, typ: TypSemestru): Semestr {
     archiwalny: false,
   }
 }
+
+/**
+ * Semestr na dany dzień. Wrzesień liczymy już do zimy — to miesiąc układania
+ * jej kalendarza. Styczeń i luty należą do zimy z poprzedniego roku
+ * kalendarzowego (rok akademicki 2026/2027 to zima `2026Z`).
+ */
+export function biezacySemestr(data: Date): Semestr {
+  const m = data.getMonth() + 1
+  const y = data.getFullYear()
+  if (m >= 9) return opisSemestru(y, 'Z')
+  if (m <= 2) return opisSemestru(y - 1, 'Z')
+  return opisSemestru(y - 1, 'L')
+}

@@ -1,5 +1,23 @@
 import { describe, it, expect } from 'vitest'
-import { idSemestru, nazwaSemestru, miesiaceSemestru, opisSemestru } from '@/lib/planer/semestry'
+import { biezacySemestr, idSemestru, nazwaSemestru, miesiaceSemestru, opisSemestru } from '@/lib/planer/semestry'
+
+describe('biezacySemestr', () => {
+  it('październik to zima bieżącego roku akademickiego', () => {
+    expect(biezacySemestr(new Date(2026, 9, 2)).id).toBe('2026Z')
+  })
+
+  it('luty należy jeszcze do zimy z poprzedniego roku kalendarzowego', () => {
+    expect(biezacySemestr(new Date(2027, 1, 15)).id).toBe('2026Z')
+  })
+
+  it('od marca lato', () => {
+    expect(biezacySemestr(new Date(2027, 2, 1)).id).toBe('2026L')
+  })
+
+  it('wrzesień to już planowanie kolejnej zimy', () => {
+    expect(biezacySemestr(new Date(2027, 8, 1)).id).toBe('2027Z')
+  })
+})
 
 describe('semestry', () => {
   it('składa identyfikator z roku akademickiego i typu', () => {
