@@ -1,5 +1,5 @@
 'use client'
-import { Suspense, use } from 'react'
+import { Suspense, use, useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { LogOut, Radio } from 'lucide-react'
@@ -8,10 +8,14 @@ import { LogoMark } from '@/components/ui/LogoMark'
 import { useAuth } from '@/lib/auth/useAuth'
 import { opiszTrwanie, type StanSesjiWspolnej } from '@/lib/planer/stan'
 import { useTeraz } from '@/lib/useTeraz'
+import type { Fakt, NajblizszeWydarzenie } from '@/lib/asystent/fakty'
+import type { ZapisanaOdprawa } from '@/lib/asystent/odprawa'
+import type { Rola } from '@/lib/auth/role'
 import { DeckTile } from './DeckTile'
 import { MatrixRain } from './MatrixRain'
-import { SekwencjaStartowa } from './SekwencjaStartowa'
-import type { Rola } from '@/lib/auth/role'
+import { PanelFaktow } from './PanelFaktow'
+import { PanelOdprawy, SzkieletOdprawy } from './PanelOdprawy'
+import { PasekStatusu, type DanePaska } from './PasekStatusu'
 
 /** Liczby z arkusza - wolne: Apps Script odpowiada 1-3 s przy pustym cache. */
 export interface DaneAnalityki {
@@ -20,6 +24,8 @@ export interface DaneAnalityki {
   kpiWzrosty: number
   kpiRazem: number
   alerty: number
+  /** Czas odpowiedzi arkusza; `null`, gdy żadna zakładka nie odpowiedziała. */
+  czasArkuszaMs: number | null
 }
 
 /** Stan z Firestore - szybszy, więc nie może czekać na arkusz. */
@@ -28,22 +34,32 @@ export interface DanePlanera {
   propozycje: number
   /** Stan Sesji Operacyjnej bieżącego semestru. */
   sesja: StanSesjiWspolnej
+  /** Kilka najbliższych wydarzeń na kafelek. */
+  najblizsze: NajblizszeWydarzenie[]
+  /** Firestore odpowiedział - do paska statusu. */
+  ok: boolean
 }
 
 /**
- * Dane przychodzą jako dwa niezależne strumienie. Wcześniej strona czekała
- * z wysłaniem czegokolwiek na arkusz i Firestore po kolei - przy pustym cache
- * i zimnej funkcji dawało to kilka sekund pustego ekranu. Teraz nagłówek
- * i kafelki są od razu, a liczby dopływają, gdy są gotowe.
+ * Każdy kawałek danych to osobny strumień: nagłówek, kafelki i miejsca na
+ * odprawę są od razu, liczby dopływają, gdy są gotowe. Odprawa przychodzi
+ * z Firestore - Gemini nigdy nie opóźnia wejścia.
  */
 type Props = {
   rola: Rola
   email: string
+  /** Wejście kodem - do paska statusu. */
+  kodem: boolean
+  /** Godzina zebrania danych, czas Warszawy, liczona na serwerze. */
+  godzina: string
   analityka: Promise<DaneAnalityki>
   planer: Promise<DanePlanera>
+  fakty: Promise<Fakt[]>
+  /** Zapisana odprawa asystenta. Zarząd dostaje `null` - asystent jest tylko dla właściciela. */
+  odprawa: Promise<ZapisanaOdprawa | null> | null
 }
 
-export function DeckHub({ rola, email, analityka, planer }: Props) {
+export function DeckHub({ rola, email, kodem, godzina, analityka, planer, fakty, odprawa }: Props) {
   const router = useRouter()
   const { wyloguj } = useAuth()
 
@@ -63,84 +79,91 @@ export function DeckHub({ rola, email, analityka, planer }: Props) {
   return (
     <>
       <MatrixRain moc={0.2} />
-      <div className="relative z-10 mx-auto flex min-h-screen max-w-[1360px] flex-col gap-7 p-[clamp(16px,2.4vw,34px)]">
-      <header className="flex flex-wrap items-end justify-between gap-6 border-b border-white/8 pb-[18px]">
-        <div className="flex items-center gap-3.5">
-          <LogoMark />
-          <div>
-            <h1
-              className="deck-glitch text-[27px] font-extrabold leading-none tracking-[0.26em] text-deck-text"
-              data-tekst="DECK"
-            >
-              DECK
-            </h1>
-            <p className="mt-1.5 font-mono text-[10px] uppercase tracking-[0.2em] text-deck-muted/70">
-              prywatne centrum dowodzenia
-            </p>
+      <div className="relative z-10 mx-auto flex min-h-screen max-w-[1360px] flex-col gap-6 p-[clamp(16px,2.4vw,34px)]">
+        <header className="flex flex-wrap items-end justify-between gap-6 border-b border-white/8 pb-[18px]">
+          <div className="flex items-center gap-3.5">
+            <LogoMark />
+            <div>
+              <h1
+                className="deck-glitch text-[27px] font-extrabold leading-none tracking-[0.26em] text-deck-text"
+                data-tekst="D.E.C.K."
+              >
+                D.E.C.K.
+              </h1>
+              <p className="mt-1.5 font-mono text-[10px] uppercase tracking-[0.2em] text-deck-muted/70">
+                {'Diagnostic Evaluation of Change & KPIs'}
+              </p>
+            </div>
           </div>
-        </div>
-        <div className="text-right font-mono text-[11.5px] text-deck-muted">
-          <div className="flex items-center justify-end gap-2">
-            <span className="text-deck-text">{email}</span>
-            <span className="rounded-full border border-deck-accent/34 bg-deck-accent/10 px-2 py-0.5 text-[9.5px] uppercase tracking-[0.16em] text-deck-accent">
-              {rola}
-            </span>
-            <button
-              type="button"
-              onClick={wyjdz}
-              title="Wyloguj"
-              aria-label="Wyloguj"
-              className="grid h-7 w-7 place-items-center rounded-md border border-white/10 text-deck-muted transition hover:border-deck-danger/40 hover:bg-white/[0.06] hover:text-deck-danger"
-            >
-              <LogOut size={13} />
-            </button>
+          <div className="text-right font-mono text-[11.5px] text-deck-muted">
+            <div className="flex items-center justify-end gap-2">
+              <span className="text-deck-text">{email}</span>
+              <span className="rounded-full border border-deck-accent/34 bg-deck-accent/10 px-2 py-0.5 text-[9.5px] uppercase tracking-[0.16em] text-deck-accent">
+                {rola}
+              </span>
+              <button
+                type="button"
+                onClick={wyjdz}
+                title="Wyloguj"
+                aria-label="Wyloguj"
+                className="grid h-7 w-7 place-items-center rounded-md border border-white/10 text-deck-muted transition hover:border-deck-danger/40 hover:bg-white/[0.06] hover:text-deck-danger"
+              >
+                <LogOut size={13} />
+              </button>
+            </div>
+            <div className="mt-1.5 text-[10.5px] uppercase tracking-[0.12em] text-deck-muted/70">{dzis}</div>
           </div>
-          <div className="mt-1.5 text-[10.5px] uppercase tracking-[0.12em] text-deck-muted/70">{dzis}</div>
-        </div>
-      </header>
+        </header>
 
-      <Suspense fallback={null}>
-        <BanerSesji planer={planer} />
-      </Suspense>
-
-      <main className="grid flex-1 auto-rows-[minmax(168px,auto)] grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        {/* Zanim arkusz odpowie, kafelek jest ten sam, tylko bez liczb -             da się w niego kliknąć od pierwszej chwili. */}
-        <Suspense fallback={<KafelekAnalytics dane={null} />}>
-          <KafelekAnalyticsZDanymi analityka={analityka} />
+        <Suspense fallback={null}>
+          <BanerSesji planer={planer} />
         </Suspense>
 
-        <Suspense fallback={<KafelekPlanera propozycje={null} />}>
-          <KafelekPlaneraZDanymi planer={planer} />
-        </Suspense>
-
-        {rola === 'owner' && (
-          <DeckTile
-            stan="zablokowany"
-            href="/orbita"
-            etykieta="moduł 03 · zadania"
-            tytul="Orbita"
-            wkrotce="etap 2"
-          >
-            <p className="text-[12px] leading-relaxed">Radar zadań - bliżej środka znaczy pilniej.</p>
-          </DeckTile>
+        {odprawa ? (
+          <Suspense fallback={<SzkieletOdprawy />}>
+            <PanelOdprawy odprawa={odprawa} fakty={fakty} />
+          </Suspense>
+        ) : (
+          <PanelFaktow fakty={fakty} />
         )}
 
-        <DeckTile
-          stan="zablokowany"
-          href="/strony"
-          etykieta="moduł 04 · search console"
-          tytul="Strony"
-          wkrotce="etap 4"
-        >
-          <p className="text-[12px] leading-relaxed">Kliknięcia, wyświetlenia i pozycje nadzorowanych witryn.</p>
-        </DeckTile>
-      </main>
+        <main className="grid flex-1 auto-rows-[minmax(168px,auto)] grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          {/* Zanim dane odpowiedzą, kafelki są te same, tylko bez liczb -
+              da się w nie kliknąć od pierwszej chwili. */}
+          <Suspense fallback={<KafelekAnalytics dane={null} />}>
+            <KafelekAnalyticsZDanymi analityka={analityka} />
+          </Suspense>
 
-      <footer className="border-t border-white/8 pt-3.5 font-mono text-[10.5px] tracking-[0.06em] text-deck-muted/70">
-        <Suspense fallback={<Stopka rola={rola} kpiRazem={null} />}>
-          <StopkaZDanymi rola={rola} analityka={analityka} />
-        </Suspense>
-      </footer>
+          <Suspense fallback={<KafelekSesji propozycje={null} najblizsze={null} />}>
+            <KafelekSesjiZDanymi planer={planer} />
+          </Suspense>
+
+          {rola === 'owner' && (
+            <DeckTile
+              stan="zablokowany"
+              href="/orbita"
+              etykieta="moduł 03 · zadania"
+              tytul="Orbita"
+              wkrotce="etap 2"
+            >
+              <p className="text-[12px] leading-relaxed">Radar zadań - bliżej środka znaczy pilniej.</p>
+            </DeckTile>
+          )}
+
+          <DeckTile
+            stan="zablokowany"
+            href="/strony"
+            etykieta="moduł 04 · search console"
+            tytul="Strony"
+            wkrotce="etap 4"
+          >
+            <p className="text-[12px] leading-relaxed">Kliknięcia, wyświetlenia i pozycje nadzorowanych witryn.</p>
+          </DeckTile>
+        </main>
+
+        <footer>
+          <PasekZDanymi kodem={kodem} godzina={godzina} analityka={analityka} planer={planer} />
+        </footer>
       </div>
     </>
   )
@@ -208,41 +231,64 @@ function KafelekAnalytics({ dane }: { dane: DaneAnalityki | null }) {
   )
 }
 
-function KafelekPlaneraZDanymi({ planer }: { planer: Promise<DanePlanera> }) {
-  return <KafelekPlanera propozycje={use(planer).propozycje} />
+function KafelekSesjiZDanymi({ planer }: { planer: Promise<DanePlanera> }) {
+  const p = use(planer)
+  return <KafelekSesji propozycje={p.propozycje} najblizsze={p.najblizsze} />
 }
 
-function KafelekPlanera({ propozycje }: { propozycje: number | null }) {
+function KafelekSesji({ propozycje, najblizsze }: { propozycje: number | null; najblizsze: NajblizszeWydarzenie[] | null }) {
   return (
     <DeckTile
       stan="zywy"
       href="/planer"
-      etykieta="moduł 02 · kalendarz"
-      tytul="Planer semestru"
+      etykieta="moduł 02 · kalendarz semestru"
+      tytul="Sesja Operacyjna"
       odznaka={propozycje ? `${propozycje} do decyzji` : undefined}
     >
       <p className="text-[12px] leading-relaxed text-deck-muted">
-        Kalendarz semestru z wykrywaniem kolizji osób i sal.
+        Kalendarz semestru układany razem z zarządem. Ranga kategorii, kolizje osób i sal, propozycje zmian
+        oraz eksport do Excela i CRA.
       </p>
+      <ul className="mt-3 font-mono text-[11px] text-deck-text">
+        {najblizsze === null ? (
+          <li className="py-1"><Brak /></li>
+        ) : najblizsze.length === 0 ? (
+          <li className="py-1 text-deck-muted">Brak zaplanowanych wydarzeń</li>
+        ) : (
+          najblizsze.map((w) => (
+            <li key={w.id} className="border-t border-white/[0.06] py-1.5 first:border-t-0">
+              <span className="mr-2 text-[10px] text-deck-muted">{w.kiedy}</span>
+              {w.tytul}
+            </li>
+          ))
+        )}
+      </ul>
     </DeckTile>
   )
 }
 
-function StopkaZDanymi({ rola, analityka }: { rola: Rola; analityka: Promise<DaneAnalityki> }) {
-  return <Stopka rola={rola} kpiRazem={use(analityka).kpiRazem} />
-}
-
-function Stopka({ rola, kpiRazem }: { rola: Rola; kpiRazem: number | null }) {
-  return (
-    <SekwencjaStartowa
-      linie={[
-        kpiRazem === null ? 'arkusz: łączę…' : 'arkusz podłączony',
-        `sesja ${rola === 'owner' ? 'hasło' : 'kod'}, aktywna`,
-        ...(kpiRazem === null ? [] : [`${kpiRazem} metryk w pamięci`]),
-        'kokpit gotowy',
-      ]}
-    />
-  )
+/**
+ * Pasek celowo bez Suspense: podmiana wersji zastępczej na właściwą
+ * zamontowałaby go od nowa i segmenty weszłyby drugi raz (stopka by mignęła).
+ * Tu zostaje ten sam pasek, a zmieniają się tylko wartości.
+ */
+function PasekZDanymi({ kodem, godzina, analityka, planer }: {
+  kodem: boolean
+  godzina: string
+  analityka: Promise<DaneAnalityki>
+  planer: Promise<DanePlanera>
+}) {
+  const [dane, setDane] = useState<DanePaska | null>(null)
+  useEffect(() => {
+    let aktualny = true
+    void Promise.all([analityka, planer]).then(([a, p]) => {
+      if (aktualny) setDane({ czasArkuszaMs: a.czasArkuszaMs, firestoreOk: p.ok, metryki: a.kpiRazem, alerty: a.alerty })
+    })
+    return () => {
+      aktualny = false
+    }
+  }, [analityka, planer])
+  return <PasekStatusu kodem={kodem} godzina={godzina} dane={dane} />
 }
 
 /** Miejsce na liczbę, która jeszcze nie przyszła. */

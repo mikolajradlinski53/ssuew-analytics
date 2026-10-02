@@ -2,6 +2,8 @@ import { act, render, screen, fireEvent } from '@testing-library/react'
 import { describe, it, expect, vi } from 'vitest'
 import type { ReactNode } from 'react'
 import { DeckHub, type DaneAnalityki, type DanePlanera } from '@/components/deck/DeckHub'
+import type { ZapisanaOdprawa } from '@/lib/asystent/odprawa'
+import type { Fakt } from '@/lib/asystent/fakty'
 
 vi.mock('next/link', () => ({
   default: ({ children, href, ...rest }: { children: ReactNode; href: string }) => (
@@ -16,47 +18,59 @@ const push = vi.fn()
 vi.mock('next/navigation', () => ({ useRouter: () => ({ push, refresh: vi.fn() }) }))
 vi.mock('@/lib/auth/useAuth', () => ({ useAuth: () => ({ wyloguj }) }))
 
-const ANALITYKA: DaneAnalityki = { konwersja: 61.1, retencja: 3.81, kpiWzrosty: 20, kpiRazem: 28, alerty: 2 }
-const PLANER: DanePlanera = { propozycje: 0, sesja: { wlaczony: false, od: null, przez: null } }
+const ANALITYKA: DaneAnalityki = { konwersja: 61.1, retencja: 3.81, kpiWzrosty: 20, kpiRazem: 28, alerty: 2, czasArkuszaMs: 420 }
+const PLANER: DanePlanera = { propozycje: 0, sesja: { wlaczony: false, od: null, przez: null }, najblizsze: [], ok: true }
+const ZAPIS: ZapisanaOdprawa = {
+  slad: 's', dzien: '02.10.2026', utworzono: Date.UTC(2026, 9, 2, 12, 32), model: 'm',
+  odprawa: { podsumowanie: 'Rekrutacja trzyma poziom, retencja słabnie.', zagrozenia: [], dzis: [] },
+}
 
 /** Obietnica, która nigdy się nie spełnia - arkusz, który jeszcze nie odpowiedział. */
 const nigdy = <T,>() => new Promise<T>(() => {})
 
+const obietnica = <T,>(x: T | Promise<T>) => (x instanceof Promise ? x : Promise.resolve(x))
+
 async function hub(nadpisz: {
   rola?: 'owner' | 'board'
   email?: string
+  kodem?: boolean
   analityka?: Partial<DaneAnalityki> | Promise<DaneAnalityki>
   planer?: Partial<DanePlanera> | Promise<DanePlanera>
+  fakty?: Fakt[] | Promise<Fakt[]>
+  odprawa?: ZapisanaOdprawa | null | Promise<ZapisanaOdprawa | null>
 } = {}) {
-  const analityka = nadpisz.analityka instanceof Promise
-    ? nadpisz.analityka
-    : Promise.resolve({ ...ANALITYKA, ...nadpisz.analityka })
-  const planer = nadpisz.planer instanceof Promise
-    ? nadpisz.planer
-    : Promise.resolve({ ...PLANER, ...nadpisz.planer })
+  const rola = nadpisz.rola ?? 'owner'
+  const analityka = nadpisz.analityka instanceof Promise ? nadpisz.analityka : Promise.resolve({ ...ANALITYKA, ...nadpisz.analityka })
+  const planer = nadpisz.planer instanceof Promise ? nadpisz.planer : Promise.resolve({ ...PLANER, ...nadpisz.planer })
+  const odprawa = rola === 'owner' ? obietnica(nadpisz.odprawa === undefined ? ZAPIS : nadpisz.odprawa) : null
   // Dane ze strumienia (use + Suspense) dopływają w mikrozadaniach - bez
   // asynchronicznego act React nie zdąży podmienić wersji zastępczej.
   return act(async () => {
     render(
-    <DeckHub
-      rola={nadpisz.rola ?? 'owner'}
-      email={nadpisz.email ?? 'ja@e.com'}
-      analityka={analityka}
-      planer={planer}
-    />,
+      <DeckHub
+        rola={rola}
+        email={nadpisz.email ?? 'ja@e.com'}
+        kodem={nadpisz.kodem ?? false}
+        godzina="14:32"
+        analityka={analityka}
+        planer={planer}
+        fakty={obietnica(nadpisz.fakty ?? [])}
+        odprawa={odprawa}
+      />,
     )
   })
 }
 
 describe('DeckHub', () => {
-  it('nagłówek i kafelki są od razu - nie czekają na arkusz ani Firestore', async () => {
-    // Przyczyna kilkusekundowego wejścia: strona czekała z wyświetleniem
-    // czegokolwiek na trzy zakładki Apps Script (2-3 s każda przy pustym cache).
-    await hub({ analityka: nigdy(), planer: nigdy() })
-    expect(screen.getByText('DECK')).toBeInTheDocument()
+  it('nagłówek, kafelki, odprawa i pasek są od razu - nie czekają na dane', async () => {
+    await hub({ analityka: nigdy(), planer: nigdy(), fakty: nigdy(), odprawa: nigdy() })
+    expect(screen.getByRole('heading', { level: 1, name: 'D.E.C.K.' })).toBeInTheDocument()
+    expect(screen.getByText('Diagnostic Evaluation of Change & KPIs')).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Odprawa D.E.C.K.' })).toBeInTheDocument()
     expect(screen.getByRole('link', { name: /SSUEW Analytics/ })).toHaveAttribute('href', '/analytics')
-    expect(screen.getByRole('link', { name: /Planer semestru/ })).toHaveAttribute('href', '/planer')
+    expect(screen.getByRole('link', { name: /Sesja Operacyjna/ })).toHaveAttribute('href', '/planer')
     expect(screen.getByRole('button', { name: /wyloguj/i })).toBeInTheDocument()
+    expect(screen.getAllByText('łączę…').length).toBeGreaterThan(0)
   })
 
   it('pokazuje Orbitę właścicielowi', async () => {
@@ -69,6 +83,19 @@ describe('DeckHub', () => {
     expect(screen.queryByText('Orbita')).toBeNull()
   })
 
+  it('właściciel widzi odprawę, nie panel faktów', async () => {
+    await hub()
+    expect(await screen.findByText(/retencja słabnie/)).toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: 'Na teraz' })).toBeNull()
+  })
+
+  it('zarząd widzi fakty, nigdy odprawy', async () => {
+    await hub({ rola: 'board', email: 'Jula', kodem: true, fakty: [{ etykieta: 'Jutro 18:00', tresc: 'Zebranie Zarządu', link: '/planer' }] })
+    expect(screen.getByRole('heading', { name: 'Na teraz' })).toBeInTheDocument()
+    expect(await screen.findByRole('link', { name: /Jutro 18:00/ })).toHaveAttribute('href', '/planer')
+    expect(screen.queryByRole('heading', { name: 'Odprawa D.E.C.K.' })).toBeNull()
+  })
+
   it('pokazuje liczbę alertów na kafelku Analytics, gdy arkusz odpowie', async () => {
     await hub()
     expect(await screen.findByText('2 alerty')).toBeInTheDocument()
@@ -76,9 +103,7 @@ describe('DeckHub', () => {
 
   it('nie pokazuje odznaki alertów, gdy alertów nie ma', async () => {
     await hub({ analityka: { alerty: 0 } })
-    await screen.findByText(/28 metryk w pamięci/)
-    // Sama etykieta „alerty" zostaje w kafelku statystyk - znika tylko odznaka
-    // z liczbą, więc szukamy wzorca „<liczba> alerty".
+    await screen.findByText('0,4 s')
     expect(screen.queryByText(/\d+ alerty/)).toBeNull()
   })
 
@@ -97,9 +122,11 @@ describe('DeckHub', () => {
     expect(wyloguj).toHaveBeenCalled()
   })
 
-  it('pokazuje odznakę z liczbą propozycji do decyzji', async () => {
-    await hub({ planer: { propozycje: 3 } })
+  it('kafelek Sesji Operacyjnej: odznaka propozycji i najbliższe wydarzenia', async () => {
+    await hub({ planer: { propozycje: 3, najblizsze: [{ id: 'a', kiedy: 'dziś 18:00', tytul: 'Zebranie Zarządu' }] } })
     expect(await screen.findByText('3 do decyzji')).toBeInTheDocument()
+    expect(screen.getByText('Zebranie Zarządu')).toBeInTheDocument()
+    expect(screen.getByText('dziś 18:00')).toBeInTheDocument()
   })
 
   it('pokazuje baner trwającej Sesji Operacyjnej z odnośnikiem do Planera', async () => {
@@ -118,7 +145,12 @@ describe('DeckHub', () => {
 
   it('bez sesji baneru nie ma', async () => {
     await hub()
-    await screen.findByText(/28 metryk w pamięci/)
+    await screen.findByText('0,4 s')
     expect(screen.queryByText(/Sesja Operacyjna trwa/)).toBeNull()
+  })
+
+  it('pasek statusu zna sposób wejścia', async () => {
+    await hub({ rola: 'board', email: 'Jula', kodem: true })
+    expect(screen.getByText('kod')).toBeInTheDocument()
   })
 })

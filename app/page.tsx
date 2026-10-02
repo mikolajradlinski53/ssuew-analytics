@@ -1,58 +1,42 @@
+import { after } from 'next/server'
 import { redirect } from 'next/navigation'
 import { ktoNaStronie } from '@/lib/auth/naStronie'
-import { gasList } from '@/lib/gas/client'
 import { computeOverview } from '@/lib/overview'
 import { buildAlerts } from '@/lib/stats'
 import { serieZWierszy, ilorazSerii } from '@/lib/kpi/serie'
 import { DeckHub, type DaneAnalityki, type DanePlanera } from '@/components/deck/DeckHub'
-import { propozycjeRef } from '@/lib/firebase/admin'
 import { biezacySemestr } from '@/lib/planer/semestry'
-import { stanSesji } from '@/lib/planer/obraz'
-import { SESJA_WYLACZONA } from '@/lib/planer/stan'
-import type { Rola } from '@/lib/auth/role'
+import { dzisWarszawa, godzinaWarszawa } from '@/lib/czas'
+import { faktyKokpitu, najblizszeWydarzenia } from '@/lib/asystent/fakty'
+import {
+  czytajOdprawe,
+  odswiezOdpraweWTle,
+  pobierzArkusz,
+  pobierzPlaner,
+  type DaneArkusza,
+} from '@/lib/asystent/dane'
+import type { ZapisanaOdprawa } from '@/lib/asystent/odprawa'
 
-/**
- * Liczby z arkusza. Awaria arkusza nie może zabrać kokpitu - kafelek pokaże
- * zera, a pozostałe moduły dalej działają. Obietnica nigdy nie odrzuca.
- */
-async function daneAnalityki(): Promise<DaneAnalityki> {
-  const [rekrutacje, kohorty, punkty] = await Promise.all([
-    gasList('rekrutacje').catch(() => []),
-    gasList('kohorty').catch(() => []),
-    gasList('kpi_punkty').catch(() => []),
-  ])
-  const serie = serieZWierszy(punkty)
+/** Zapas na odprawę generowaną w tle po wysłaniu strony (Gemini do 25 s). */
+export const maxDuration = 60
 
+function naAnalityke(a: DaneArkusza): DaneAnalityki {
+  const serie = serieZWierszy(a.punkty)
   // Trzeci argument to KpiPeriod[], którego aplikacja nie pobiera - tak samo
   // wywołuje to OverviewClient.
-  const m = computeOverview(rekrutacje, kohorty, [])
+  const m = computeOverview(a.rekrutacje, a.kohorty, [])
   const konwersja =
     m.lastApplications && m.lastApplications > 0 && m.lastAccepted != null
       ? (m.lastAccepted / m.lastApplications) * 100
       : 0
-
   return {
     konwersja,
     retencja: m.histRetention ?? 0,
     kpiWzrosty: serie.filter((s) => ilorazSerii(s) > 1).length,
     kpiRazem: serie.length,
-    alerty: buildAlerts(rekrutacje, kohorty, serie).length,
+    alerty: buildAlerts(a.rekrutacje, a.kohorty, serie).length,
+    czasArkuszaMs: a.czasMs,
   }
-}
-
-/**
- * Stan z Firestore. Odznakę propozycji widzi wyłącznie właściciel - dla
- * zarządu ta liczba nic nie znaczy. Awaria Firestore to zero i brak baneru,
- * nie wyjątek. Oba odczyty równolegle.
- */
-async function danePlanera(rola: Rola, semestrId: string): Promise<DanePlanera> {
-  const [propozycje, sesja] = await Promise.all([
-    rola === 'owner'
-      ? propozycjeRef(semestrId).count().get().then((s) => s.data().count).catch(() => 0)
-      : Promise.resolve(0),
-    stanSesji(semestrId).catch(() => SESJA_WYLACZONA),
-  ])
-  return { propozycje, sesja }
 }
 
 export default async function KokpitPage() {
@@ -61,17 +45,54 @@ export default async function KokpitPage() {
   const kto = await ktoNaStronie()
   if (!kto) redirect('/login')
 
-  const semestr = biezacySemestr(new Date())
+  const teraz = new Date()
+  const semestr = biezacySemestr(teraz)
+  const dzis = dzisWarszawa(teraz)
 
-  // Celowo bez `await`: strona idzie do przeglądarki od razu, a liczby
-  // dopływają strumieniem. Czekanie na arkusz (1-3 s przy pustym cache)
-  // i Firestore po kolei dawało kilka sekund pustego ekranu.
+  // Celowo bez `await`: strona idzie do przeglądarki od razu, a dane
+  // dopływają strumieniem. Arkusz i Firestore pytamy równolegle i raz -
+  // każdy panel bierze z tych samych dwóch obietnic.
+  const arkusz = pobierzArkusz()
+  const planer = pobierzPlaner(semestr.id, kto.rola)
+
+  const analityka = arkusz.then(naAnalityke)
+  const danePlanera: Promise<DanePlanera> = planer.then((p) => ({
+    propozycje: p.propozycje,
+    sesja: p.sesja,
+    ok: p.ok,
+    najblizsze: najblizszeWydarzenia(p.wydarzenia, dzis, 2),
+  }))
+  const fakty = Promise.all([arkusz, planer]).then(([a, p]) =>
+    faktyKokpitu({
+      rola: kto.rola,
+      wydarzenia: p.wydarzenia,
+      propozycje: p.propozycje,
+      alerty: buildAlerts(a.rekrutacje, a.kohorty, serieZWierszy(a.punkty)).map((x) => ({ tytul: x.title })),
+      dzis,
+    }),
+  )
+
+  // Asystent jest tylko dla właściciela. Zapisaną odprawę pokazujemy od razu;
+  // ewentualną nową liczymy już po wysłaniu strony.
+  let odprawa: Promise<ZapisanaOdprawa | null> | null = null
+  if (kto.rola === 'owner') {
+    const zapisana = czytajOdprawe().catch(() => null)
+    odprawa = zapisana
+    after(() => odswiezOdpraweWTle({
+      arkusz, planer, zapisana, semestr: { id: semestr.id, nazwa: semestr.nazwa }, teraz,
+    }))
+  }
+
   return (
     <DeckHub
       rola={kto.rola}
       email={kto.email}
-      analityka={daneAnalityki()}
-      planer={danePlanera(kto.rola, semestr.id)}
+      kodem={kto.uid.startsWith('kod:')}
+      godzina={godzinaWarszawa(teraz)}
+      analityka={analityka}
+      planer={danePlanera}
+      fakty={fakty}
+      odprawa={odprawa}
     />
   )
 }
