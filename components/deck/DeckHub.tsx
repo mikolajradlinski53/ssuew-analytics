@@ -11,6 +11,7 @@ import { useTeraz } from '@/lib/useTeraz'
 import { odmiana, type Fakt, type NajblizszeWydarzenie } from '@/lib/asystent/fakty'
 import type { ZapisanaOdprawa } from '@/lib/asystent/odprawa'
 import type { Rola } from '@/lib/auth/role'
+import { CzatDeck } from './CzatDeck'
 import { DeckTile } from './DeckTile'
 import { MatrixRain } from './MatrixRain'
 import { PanelFaktow } from './PanelFaktow'
@@ -120,9 +121,12 @@ export function DeckHub({ rola, email, kodem, godzina, analityka, planer, fakty,
         </Suspense>
 
         {odprawa ? (
-          <Suspense fallback={<SzkieletOdprawy />}>
-            <PanelOdprawy odprawa={odprawa} fakty={fakty} />
-          </Suspense>
+          <div className="grid gap-3">
+            <Suspense fallback={<SzkieletOdprawy />}>
+              <PanelOdprawy odprawa={odprawa} fakty={fakty} />
+            </Suspense>
+            <CzatDeck />
+          </div>
         ) : (
           <PanelFaktow fakty={fakty} />
         )}

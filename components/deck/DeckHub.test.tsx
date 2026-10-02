@@ -149,6 +149,16 @@ describe('DeckHub', () => {
     expect(screen.queryByText(/Sesja Operacyjna trwa/)).toBeNull()
   })
 
+  it('właściciel ma czat z asystentem', async () => {
+    await hub()
+    expect(screen.getByRole('button', { name: /Zapytaj D\.E\.C\.K\./ })).toBeInTheDocument()
+  })
+
+  it('zarząd nie ma czatu', async () => {
+    await hub({ rola: 'board', email: 'Jula' })
+    expect(screen.queryByRole('button', { name: /Zapytaj D\.E\.C\.K\./ })).toBeNull()
+  })
+
   it('pasek statusu zna sposób wejścia', async () => {
     await hub({ rola: 'board', email: 'Jula', kodem: true })
     expect(screen.getByText('kod')).toBeInTheDocument()
