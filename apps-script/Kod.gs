@@ -676,7 +676,7 @@ function punktyZPar_(wiersze) {
       const wartosc = Number(surowa);
       if (isNaN(wartosc)) return;
 
-      const klucz = kat + ' ' + naz + ' ' + okres;
+      const klucz = kat + '\u0000' + naz + '\u0000' + okres;
       if (!(klucz in mapa)) kolejnosc.push(klucz);
       mapa[klucz] = { kategoria: kat, nazwa: naz, okres: okres, wartosc: wartosc };
     });
