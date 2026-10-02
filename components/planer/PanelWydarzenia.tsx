@@ -19,11 +19,11 @@ type Props = {
   /** Dzień wskazany kliknięciem w kratce; `null` przy dodawaniu z paska. */
   dzienStartowy?: number | null
   mozeEdytowac: boolean
-  /** Usuwanie jest nieodwracalne — ma je wyłącznie właściciel, także w trakcie sesji. */
+  /** Usuwanie jest nieodwracalne - ma je wyłącznie właściciel, także w trakcie sesji. */
   mozeUsunac?: boolean
-  /** Osoby do wyboru — Skład zarządu. */
+  /** Osoby do wyboru - Skład zarządu. */
   sklad: string[]
-  /** Wątek pokazujemy tylko przy istniejącym wydarzeniu — nowe nie ma jeszcze o czym rozmawiać. */
+  /** Wątek pokazujemy tylko przy istniejącym wydarzeniu - nowe nie ma jeszcze o czym rozmawiać. */
   watek?: ReactNode
   /** Dostaje dane już sprawdzone i znormalizowane. `powtorzenia` ma znaczenie tylko przy nowym. */
   onZapisz: (dane: NoweWydarzenie, powtorzenia?: number) => void
@@ -43,7 +43,7 @@ function bezId({ id: _id, ...reszta }: Wydarzenie): NoweWydarzenie {
 }
 
 /**
- * Formularz nie synchronizuje się z `wydarzenie` przez efekt — rodzic
+ * Formularz nie synchronizuje się z `wydarzenie` przez efekt - rodzic
  * przemontowuje go przez `key`, gdy zmienia się wybrane wydarzenie.
  */
 export function PanelWydarzenia({
@@ -198,7 +198,7 @@ export function PanelWydarzenia({
               onChange={(e) => zmien('budynek', e.target.value || null)}
               className={pole}
             >
-              <option value="">—</option>
+              <option value="">-</option>
               <optgroup label="Budynki UEW">
                 {BUDYNKI.map((b) => (
                   <option key={b} value={b}>{b}</option>
@@ -257,7 +257,7 @@ export function PanelWydarzenia({
 
       {mozeEdytowac && (
         <>
-          {/* Pusty tytuł blokuje przycisk bez komunikatu — krzyczenie „wpisz
+          {/* Pusty tytuł blokuje przycisk bez komunikatu - krzyczenie „wpisz
               tytuł”, zanim ktokolwiek zaczął pisać, byłoby szumem. */}
           {!wynik.ok && dane.tytul.trim() !== '' && (
             <p role="alert" className="mt-3 text-[11px] text-deck-danger">{wynik.blad}</p>

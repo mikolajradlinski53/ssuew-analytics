@@ -12,8 +12,8 @@ function w(nadpisz: Partial<Wydarzenie> = {}): Wydarzenie {
 describe('opisCzasu', () => {
   it('cały dzień, przedział, sam start, brak', () => {
     expect(opisCzasu(w({ calyDzien: true }))).toBe('cały dzień')
-    expect(opisCzasu(w({ godzina: '18:00', godzinaDo: '20:00' }))).toBe('18:00–20:00')
-    expect(opisCzasu(w({ godzina: '18:00', godzinaDo: '04:00' }))).toBe('18:00–04:00 (+1)')
+    expect(opisCzasu(w({ godzina: '18:00', godzinaDo: '20:00' }))).toBe('18:00-20:00')
+    expect(opisCzasu(w({ godzina: '18:00', godzinaDo: '04:00' }))).toBe('18:00-04:00 (+1)')
     expect(opisCzasu(w({ godzina: '18:00' }))).toBe('18:00')
     expect(opisCzasu(w())).toBeNull()
   })

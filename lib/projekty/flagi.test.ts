@@ -12,7 +12,7 @@ function p(nadpisz: Partial<Projekt> = {}): Projekt {
 }
 const ma = (f: ReturnType<typeof flagiProjektu>, id: string) => f.find((x) => x.id === id)
 
-describe('flagiProjektu — budżet', () => {
+describe('flagiProjektu - budżet', () => {
   it('przekroczenie daje alarm z procentem i kwotami', () => {
     const f = ma(flagiProjektu(p({ budzet_plan: 5000, budzet_wydany: 7000 }), null), 'budzet-przekroczony')
     expect(f?.waga).toBe('alarm')
@@ -43,7 +43,7 @@ describe('flagiProjektu — budżet', () => {
   })
 })
 
-describe('flagiProjektu — nabór i partnerzy', () => {
+describe('flagiProjektu - nabór i partnerzy', () => {
   it('dwa przedłużenia dają uwagę, jedno nie', () => {
     expect(ma(flagiProjektu(p({ przedluzenia: 2 }), null), 'nabor-przedluzany')).toBeTruthy()
     expect(ma(flagiProjektu(p({ przedluzenia: 1 }), null), 'nabor-przedluzany')).toBeUndefined()
@@ -74,7 +74,7 @@ describe('flagiProjektu — nabór i partnerzy', () => {
   })
 })
 
-describe('flagiProjektu — porównanie z poprzednią edycją', () => {
+describe('flagiProjektu - porównanie z poprzednią edycją', () => {
   const stara = p({ edycja: '2024/2025', aplikujacy: 31, uczestnicy: 25 })
 
   it('spadek chętnych poniżej progu daje uwagę z obiema liczbami', () => {

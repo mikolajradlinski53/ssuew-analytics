@@ -1,6 +1,6 @@
 'use client'
 
-/** Zapisuje plik w przeglądarce — bez serwera, prosto z pamięci. */
+/** Zapisuje plik w przeglądarce - bez serwera, prosto z pamięci. */
 export function pobierzPlik(dane: Blob, nazwa: string): void {
   const url = URL.createObjectURL(dane)
   const a = document.createElement('a')

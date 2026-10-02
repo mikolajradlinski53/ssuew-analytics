@@ -13,7 +13,7 @@ export interface Znak {
  * Odsiew nieaktualnych znaków życia.
  *
  * Wygasanie liczymy po stronie odbiorcy, bo gwałtownie zamknięta przeglądarka
- * nie zdąży się wymeldować — bez tego pasek pokazywałby duchy.
+ * nie zdąży się wymeldować - bez tego pasek pokazywałby duchy.
  */
 export function aktualni(znaki: Znak[], teraz: number = Date.now()): Znak[] {
   return znaki.filter((z) => teraz - z.ostatniZnak < WYGASA_PO_MS)
@@ -29,7 +29,7 @@ const KOLORY = [
   '#ec4899', '#14b8a6', '#f97316', '#6366f1', '#84cc16',
 ]
 
-/** Ten sam kolor dla tego samego imienia — bez zapamiętywania czegokolwiek. */
+/** Ten sam kolor dla tego samego imienia - bez zapamiętywania czegokolwiek. */
 export function kolorOsoby(kto: string): string {
   let h = 0
   for (let i = 0; i < kto.length; i++) h = (h * 31 + kto.charCodeAt(i)) >>> 0

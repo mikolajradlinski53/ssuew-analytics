@@ -13,7 +13,7 @@ import { MatrixRain } from './MatrixRain'
 import { SekwencjaStartowa } from './SekwencjaStartowa'
 import type { Rola } from '@/lib/auth/role'
 
-/** Liczby z arkusza — wolne: Apps Script odpowiada 1–3 s przy pustym cache. */
+/** Liczby z arkusza - wolne: Apps Script odpowiada 1-3 s przy pustym cache. */
 export interface DaneAnalityki {
   konwersja: number
   retencja: number
@@ -22,7 +22,7 @@ export interface DaneAnalityki {
   alerty: number
 }
 
-/** Stan z Firestore — szybszy, więc nie może czekać na arkusz. */
+/** Stan z Firestore - szybszy, więc nie może czekać na arkusz. */
 export interface DanePlanera {
   /** Propozycje zarządu czekające na decyzję. Liczone tylko dla właściciela. */
   propozycje: number
@@ -32,7 +32,7 @@ export interface DanePlanera {
 
 /**
  * Dane przychodzą jako dwa niezależne strumienie. Wcześniej strona czekała
- * z wysłaniem czegokolwiek na arkusz i Firestore po kolei — przy pustym cache
+ * z wysłaniem czegokolwiek na arkusz i Firestore po kolei - przy pustym cache
  * i zimnej funkcji dawało to kilka sekund pustego ekranu. Teraz nagłówek
  * i kafelki są od razu, a liczby dopływają, gdy są gotowe.
  */
@@ -104,8 +104,7 @@ export function DeckHub({ rola, email, analityka, planer }: Props) {
       </Suspense>
 
       <main className="grid flex-1 auto-rows-[minmax(168px,auto)] grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        {/* Zanim arkusz odpowie, kafelek jest ten sam, tylko bez liczb —
-            da się w niego kliknąć od pierwszej chwili. */}
+        {/* Zanim arkusz odpowie, kafelek jest ten sam, tylko bez liczb -             da się w niego kliknąć od pierwszej chwili. */}
         <Suspense fallback={<KafelekAnalytics dane={null} />}>
           <KafelekAnalyticsZDanymi analityka={analityka} />
         </Suspense>
@@ -122,7 +121,7 @@ export function DeckHub({ rola, email, analityka, planer }: Props) {
             tytul="Orbita"
             wkrotce="etap 2"
           >
-            <p className="text-[12px] leading-relaxed">Radar zadań — bliżej środka znaczy pilniej.</p>
+            <p className="text-[12px] leading-relaxed">Radar zadań - bliżej środka znaczy pilniej.</p>
           </DeckTile>
         )}
 
@@ -154,7 +153,7 @@ function BanerSesji({ planer }: { planer: Promise<DanePlanera> }) {
 
   return (
     // Sesję wyłącza się ręcznie, więc przypomnienie musi być widać także
-    // spoza Planera — zapomniana sesja to bezterminowy zapis dla zarządu.
+    // spoza Planera - zapomniana sesja to bezterminowy zapis dla zarządu.
     <Link
       href="/planer"
       className="flex items-center gap-3 rounded-lg border border-deck-accent/45 bg-deck-accent/10 px-4 py-3 text-[12.5px] transition hover:bg-deck-accent/15"
@@ -188,7 +187,7 @@ function KafelekAnalytics({ dane }: { dane: DaneAnalityki | null }) {
     >
       <div className="flex h-full flex-col justify-between gap-4">
         <div className="flex items-baseline gap-2.5 tabular-nums">
-          {/* AnimatedNumber renderuje własny <span> i nie przyjmuje className — styl idzie na opakowanie. */}
+          {/* AnimatedNumber renderuje własny <span> i nie przyjmuje className - styl idzie na opakowanie. */}
           <span className="text-[clamp(30px,3.4vw,46px)] font-bold leading-none tracking-[-0.035em]">
             {dane ? <AnimatedNumber value={dane.konwersja} decimals={1} /> : <Brak />}
           </span>
@@ -248,7 +247,7 @@ function Stopka({ rola, kpiRazem }: { rola: Rola; kpiRazem: number | null }) {
 
 /** Miejsce na liczbę, która jeszcze nie przyszła. */
 function Brak() {
-  return <span className="animate-pulse text-deck-muted/40">—</span>
+  return <span className="animate-pulse text-deck-muted/40">-</span>
 }
 
 function Statystyka({

@@ -5,9 +5,9 @@ import type { Miesiac, Wydarzenie } from '@/lib/planer/typy'
 import { pobierzPlik } from '@/lib/pobierz'
 
 type Props = {
-  /** Wydarzenia widoczne w miesiącu — do „zaznacz wszystkie”. */
+  /** Wydarzenia widoczne w miesiącu - do „zaznacz wszystkie”. */
   wMiesiacu: Wydarzenie[]
-  /** Wszystkie wydarzenia semestru — zaznaczenie może obejmować kilka miesięcy. */
+  /** Wszystkie wydarzenia semestru - zaznaczenie może obejmować kilka miesięcy. */
   wszystkie: Wydarzenie[]
   zaznaczone: Set<string>
   miesiac: Miesiac

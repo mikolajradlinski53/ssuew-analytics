@@ -1,7 +1,7 @@
 /**
  * Trzy sposoby, w jakie sześć kratek kodu zbiera się w jedno po wpisaniu
  * ostatniej cyfry. Ruchy liczą rzeczywiste pozycje slotów, więc muszą żyć
- * w JavaScripcie — w CSS-ie nie da się obrócić czegoś wokół punktu, którego
+ * w JavaScripcie - w CSS-ie nie da się obrócić czegoś wokół punktu, którego
  * położenie znamy dopiero po ułożeniu strony.
  */
 
@@ -22,7 +22,7 @@ function sprzataczka(animacje: Animation[]): Sprzatanie {
 /**
  * Orbita: każdy slot krąży wokół wspólnego środka rzędu.
  *
- * Sztuczka jest w przesunięciu punktu obrotu do środka rzędu — wtedy zwykły
+ * Sztuczka jest w przesunięciu punktu obrotu do środka rzędu - wtedy zwykły
  * `rotate()` rysuje dokładny okrąg i wystarczą dwie klatki. Próbkowanie toru
  * po kawałku dawałoby wielokąt i widoczne szarpanie.
  */
@@ -45,7 +45,7 @@ export function orbita(sloty: HTMLElement[], rzad: HTMLElement): Sprzatanie {
 /**
  * Obwód: sloty przechylają się w głąb i jadą łukiem, nie po prostej.
  *
- * Obracają się wokół środka całego rzędu, a nie własnego — dlatego tor jest
+ * Obracają się wokół środka całego rzędu, a nie własnego - dlatego tor jest
  * łukiem. Rodzic ma `perspective`, więc przechylenie widać jako głębię.
  */
 export function obwod(sloty: HTMLElement[], rzad: HTMLElement): Sprzatanie {
@@ -72,7 +72,7 @@ export function obwod(sloty: HTMLElement[], rzad: HTMLElement): Sprzatanie {
 /**
  * Elektron: kratki zlatują do środka rzędu i kurczą się w jeden punkt.
  *
- * FLIP — mierzymy, gdzie każda kratka jest teraz, i przesuwamy ją do środka.
+ * FLIP - mierzymy, gdzie każda kratka jest teraz, i przesuwamy ją do środka.
  * Skrajne ruszają pierwsze, więc rząd zwija się od zewnątrz, a nie naraz.
  */
 export function elektron(sloty: HTMLElement[], rzad: HTMLElement): Sprzatanie {

@@ -28,7 +28,7 @@ describe('serieZWierszy', () => {
     expect(serie[0].punkty[0].wartosc).toBe(84)
   })
 
-  it('kolejność wejścia nie decyduje — starszy wiersz nie nadpisze nowszego', () => {
+  it('kolejność wejścia nie decyduje - starszy wiersz nie nadpisze nowszego', () => {
     const serie = serieZWierszy([
       w('SKS', 'Listopad', '2025/2026', 84, '2026-06-01'),
       w('SKS', 'Listopad', '2025/2026', 57, '2026-01-01'),

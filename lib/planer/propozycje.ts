@@ -3,7 +3,7 @@ import type { NoweWydarzenie, Wydarzenie } from './typy'
 interface Wspolne {
   id: string
   autor: string
-  /** Milisekundy — Firestore zapisuje `Date.now()`, tak jak przy wydarzeniach. */
+  /** Milisekundy - Firestore zapisuje `Date.now()`, tak jak przy wydarzeniach. */
   utworzone: number
 }
 
@@ -40,7 +40,7 @@ export function stanPropozycji(p: Propozycja, wydarzenia: Wydarzenie[]): StanPro
 
   const w = wydarzenia.find((x) => x.id === p.wydarzenieId)
   if (!w) {
-    return { mozna: false, ostrzezenie: 'Tego wydarzenia już nie ma — propozycję można tylko odrzucić.' }
+    return { mozna: false, ostrzezenie: 'Tego wydarzenia już nie ma - propozycję można tylko odrzucić.' }
   }
   if (w.dzien !== p.zDnia) {
     return { mozna: true, ostrzezenie: `Ktoś już przesunął to wydarzenie na ${w.dzien}.` }

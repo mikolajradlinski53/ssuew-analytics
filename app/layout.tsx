@@ -4,7 +4,7 @@ import { AuthProvider } from '@/lib/auth/useAuth'
 
 export const metadata: Metadata = {
   title: 'DECK',
-  description: 'Prywatne centrum dowodzenia — analityka SSUEW, planer semestru, zadania i strony',
+  description: 'Prywatne centrum dowodzenia - analityka SSUEW, planer semestru, zadania i strony',
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

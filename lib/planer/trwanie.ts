@@ -29,7 +29,7 @@ export function porownajDaty(a: Data, b: Data): number {
   return naMs(a) - naMs(b)
 }
 
-/** Liczba dni od–do, oba włącznie: ten sam dzień to 1. */
+/** Liczba dni od-do, oba włącznie: ten sam dzień to 1. */
 export function dniMiedzy(od: Data, doDnia: Data): number {
   return Math.round((naMs(doDnia) - naMs(od)) / DOBA) + 1
 }

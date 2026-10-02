@@ -1,15 +1,15 @@
 import { miejsceSpecjalne } from './budynki'
 import { KATEGORIE, type Wydarzenie } from './typy'
 
-/** Koniec przed startem znaczy: kończy się następnego dnia (18:00–04:00). */
+/** Koniec przed startem znaczy: kończy się następnego dnia (18:00-04:00). */
 export function przezPolnoc(w: Pick<Wydarzenie, 'godzina' | 'godzinaDo'>): boolean {
   return !!w.godzina && !!w.godzinaDo && w.godzinaDo < w.godzina
 }
 
-/** „cały dzień”, „18:00–20:00”, „18:00–04:00 (+1)”, „18:00” albo nic, gdy godzina nieustalona. */
+/** „cały dzień”, „18:00-20:00”, „18:00-04:00 (+1)”, „18:00” albo nic, gdy godzina nieustalona. */
 export function opisCzasu(w: Pick<Wydarzenie, 'calyDzien' | 'godzina' | 'godzinaDo'>): string | null {
   if (w.calyDzien) return 'cały dzień'
-  if (w.godzina && w.godzinaDo) return `${w.godzina}–${w.godzinaDo}${przezPolnoc(w) ? ' (+1)' : ''}`
+  if (w.godzina && w.godzinaDo) return `${w.godzina}-${w.godzinaDo}${przezPolnoc(w) ? ' (+1)' : ''}`
   return w.godzina
 }
 

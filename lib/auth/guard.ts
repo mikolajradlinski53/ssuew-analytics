@@ -16,7 +16,7 @@ export interface Pytajacy {
  * kod daje zawsze `board`, bo pełne uprawnienia wymagają hasła.
  *
  * Prawdziwa weryfikacja: podpis, wystawca, odbiorca, termin ważności.
- * Middleware sprawdza jedynie obecność ciasteczka — bezpieczeństwo mieszka tutaj.
+ * Middleware sprawdza jedynie obecność ciasteczka - bezpieczeństwo mieszka tutaj.
  *
  * Działa na samych wartościach ciasteczek, więc służy i trasom API (`ktoPyta`),
  * i stronom serwerowym (`ktoNaStronie`). Gdy strona sprawdzała tylko hasło,

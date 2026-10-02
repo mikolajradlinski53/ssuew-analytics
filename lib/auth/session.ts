@@ -21,7 +21,7 @@ function sekret(): Uint8Array {
 
 /**
  * Bilet wstępu dla osoby wchodzącej kodem. Podpisany po stronie serwera, więc
- * przeglądarka może go przechowywać, ale nie może w nim niczego zmienić —
+ * przeglądarka może go przechowywać, ale nie może w nim niczego zmienić - 
  * w szczególności podnieść sobie roli.
  */
 export async function podpiszSesjeKodu(dane: Omit<SesjaKodu, 'rola'>): Promise<string> {
@@ -33,7 +33,7 @@ export async function podpiszSesjeKodu(dane: Omit<SesjaKodu, 'rola'>): Promise<s
     .sign(sekret())
 }
 
-/** Zwraca zawartość biletu albo `null` — bez tłumaczenia, co było nie tak. */
+/** Zwraca zawartość biletu albo `null` - bez tłumaczenia, co było nie tak. */
 export async function odczytajSesjeKodu(bilet: string): Promise<SesjaKodu | null> {
   if (!bilet) return null
   try {

@@ -78,7 +78,7 @@ describe('BanerZrodla', () => {
     const baner = await screen.findByRole('status')
     expect(baner.textContent).toMatch(/dane przykładowe/i)
     expect(baner.textContent).toMatch(/KPI: Nieznana zakladka/)
-    // Rekrutacje przyszły z arkusza — baner nie może ich oczerniać.
+    // Rekrutacje przyszły z arkusza - baner nie może ich oczerniać.
     expect(baner.textContent).not.toMatch(/Rekrutacje/)
   })
 })

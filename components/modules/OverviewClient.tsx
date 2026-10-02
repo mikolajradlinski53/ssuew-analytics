@@ -28,7 +28,7 @@ export default function OverviewClient() {
   const insights = buildExecutiveInsights(rekr, koh, serie)
   const health = strategic[0]
 
-  // ilorazSerii daje 0 tam, gdzie zmiany nie da się policzyć — takie serie
+  // ilorazSerii daje 0 tam, gdzie zmiany nie da się policzyć - takie serie
   // wypadają, zamiast lądować na dnie zestawienia jako fałszywe spadki.
   const movers = serie
     .filter((s) => ilorazSerii(s) > 0)

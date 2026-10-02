@@ -39,7 +39,7 @@ export default function CzlonkowieClient() {
   const edycja = wybranaEdycja || cohortList[0]?.edycja || ''
 
   // `rows` to lokalna kopia pod optymistyczne kliknięcia w siatce. Wraca do
-  // stanu z serwera, gdy przyjdą nowe dane albo zmieni się kohorta — liczone
+  // stanu z serwera, gdy przyjdą nowe dane albo zmieni się kohorta - liczone
   // w renderze, bo efekt pokazywałby przez klatkę wiersze poprzedniej kohorty.
   const [zrodloRows, setZrodloRows] = useState<{ czlonkowie: Czlonek[]; edycja: string } | null>(null)
   if (zrodloRows?.czlonkowie !== czlonkowie || zrodloRows.edycja !== edycja) {

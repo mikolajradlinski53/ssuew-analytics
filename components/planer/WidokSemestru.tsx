@@ -32,7 +32,7 @@ function odmianaDni(ile: number): string {
   return `${ile} ${mnoga ? 'dni z kolizjami' : 'dni z kolizjami'}`
 }
 
-/** Pięć miesięcy naraz — do patrzenia z lotu ptaka przy układaniu planu. */
+/** Pięć miesięcy naraz - do patrzenia z lotu ptaka przy układaniu planu. */
 export function WidokSemestru({ miesiace, wydarzenia, onWejdz }: Props) {
   return (
     <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">

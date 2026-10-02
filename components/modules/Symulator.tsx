@@ -81,7 +81,7 @@ export default function Symulator({ rekrutacje, kohorty }: Props) {
               Sezon: {sezonJesien ? 'jesień' : 'wiosna'}
             </button>
             <div className="text-deck-violet text-lg font-semibold tabular">
-              {retencjaPred != null ? `${retencjaPred} sem` : '—'}
+              {retencjaPred != null ? `${retencjaPred} sem` : '-'}
             </div>
             {!model && <div className="text-[10px] text-deck-warn">za mało danych do modelu (≥4 kohort)</div>}
           </div>
@@ -128,7 +128,7 @@ export default function Symulator({ rekrutacje, kohorty }: Props) {
                 <tr key={s.name} className="border-t border-deck-border tabular">
                   <td className="py-1 text-deck-text">{s.name}</td>
                   <td className="text-deck-accent">{s.przyjeciCR}</td>
-                  <td className="text-deck-violet">{s.retencjaPred != null ? `${s.retencjaPred} sem` : '—'}</td>
+                  <td className="text-deck-violet">{s.retencjaPred != null ? `${s.retencjaPred} sem` : '-'}</td>
                   <td className="text-deck-accent">{s.utrzymani}</td>
                 </tr>
               ))}

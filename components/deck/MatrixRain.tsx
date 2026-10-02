@@ -5,7 +5,7 @@ const ZNAKI = 'アイウエオカキクケコサシスセソタチツテトナ�
 const ROZMIAR = 15
 
 type Props = {
-  /** 0–1. Wyżej niż 0.35 i tekst nad spodem przestaje być czytelny. */
+  /** 0-1. Wyżej niż 0.35 i tekst nad spodem przestaje być czytelny. */
   moc?: number
 }
 
@@ -51,7 +51,7 @@ export function MatrixRain({ moc = 0.28 }: Props) {
         const y = kolumny[i]
         const znak = ZNAKI[Math.floor(Math.random() * ZNAKI.length)]
 
-        // Czoło strugi świeci, ogon jest przygaszony — stąd wrażenie głębi.
+        // Czoło strugi świeci, ogon jest przygaszony - stąd wrażenie głębi.
         ctx!.fillStyle = `rgba(190, 255, 230, ${moc})`
         ctx!.fillText(znak, x, y)
         ctx!.fillStyle = `rgba(46, 230, 166, ${moc * 0.55})`

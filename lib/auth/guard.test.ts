@@ -83,7 +83,7 @@ describe('ktoPyta', () => {
     expect(await ktoPyta(zada({ deck_kod: 'podrobka' }))).toBeNull()
   })
 
-  it('ktoZCiasteczek rozpoznaje sam bilet kodu — tak wchodzi zarząd bez hasła', async () => {
+  it('ktoZCiasteczek rozpoznaje sam bilet kodu - tak wchodzi zarząd bez hasła', async () => {
     odczytajSesjeKodu.mockResolvedValue({ kod: 'Jula', urzadzenie: 'u1', rola: 'board' })
     const { ktoZCiasteczek } = await import('@/lib/auth/guard')
     expect(await ktoZCiasteczek(undefined, 'bilet')).toEqual({ uid: 'kod:Jula', email: 'Jula', rola: 'board' })

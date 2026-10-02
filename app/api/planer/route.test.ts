@@ -72,7 +72,7 @@ describe('POST /api/planer', () => {
   })
 
   it('zarząd przesuwa wprost, gdy tryb wspólny jest włączony', async () => {
-    // O tym decyduje SERWER, nie klient — klient wie tylko po to, żeby pokazać
+    // O tym decyduje SERWER, nie klient - klient wie tylko po to, żeby pokazać
     // właściwy interfejs.
     trybWspolny.mockReturnValue(true)
     ktoPyta.mockResolvedValue({ uid: 'kod:482913', email: 'Jula', rola: 'board' })
@@ -143,7 +143,7 @@ describe('POST /api/planer', () => {
     expect(dodajWydarzenie).not.toHaveBeenCalled()
   })
 
-  it('zarząd w sesji dodaje — zapisane są tylko znane pola', async () => {
+  it('zarząd w sesji dodaje - zapisane są tylko znane pola', async () => {
     ktoPyta.mockResolvedValue({ uid: 'kod:482913', email: 'Jula', rola: 'board' })
     trybWspolny.mockReturnValue(true)
     const { POST } = await import('@/app/api/planer/route')
@@ -179,7 +179,7 @@ describe('POST /api/planer', () => {
     expect(dodajPropozycje).not.toHaveBeenCalled()
   })
 
-  it('serwer nie ma akcji usuwania — usuwa wyłącznie właściciel, wprost', async () => {
+  it('serwer nie ma akcji usuwania - usuwa wyłącznie właściciel, wprost', async () => {
     ktoPyta.mockResolvedValue({ uid: 'kod:482913', email: 'Jula', rola: 'board' })
     trybWspolny.mockReturnValue(true)
     const { POST } = await import('@/app/api/planer/route')
@@ -216,7 +216,7 @@ describe('GET /api/planer', () => {
     expect(dane.sklad).toEqual(['Jula', 'Kuba'])
   })
 
-  it('zasob=sesja zwraca sam stan sesji — bez czytania kalendarza', async () => {
+  it('zasob=sesja zwraca sam stan sesji - bez czytania kalendarza', async () => {
     const { GET } = await import('@/app/api/planer/route')
     const dane = await (await GET(pyta('/api/planer?semestr=2026Z&zasob=sesja'))).json()
     expect(dane).toEqual({ sesja: { wlaczony: true, od: null, przez: null } })

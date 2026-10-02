@@ -17,7 +17,7 @@ const tekstLubNull = (x: unknown): string | null => (typeof x === 'string' && x 
  * Dokument Firestore na typ domenowy.
  *
  * Plik celowo NIE ma dyrektywy `'use client'`: mapowania potrzebują dwie strony
- * — przeglądarka przez `zapis.ts` i serwer przez `/api/planer`.
+ * - przeglądarka przez `zapis.ts` i serwer przez `/api/planer`.
  *
  * Braki uzupełniamy zamiast rzucać wyjątkiem: wiersz może być dopisany ręcznie
  * w konsoli albo pochodzić ze starszej wersji aplikacji (sprzed wielodniowych,

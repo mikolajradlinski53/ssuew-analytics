@@ -26,7 +26,7 @@ export interface Wydarzenie {
   godzinaDo: string | null
   /** Kod z `BUDYNKI` albo 'POZA'. */
   budynek: string | null
-  /** Numer sali ("110L"), a przy budynku 'POZA' — nazwa miejsca. */
+  /** Numer sali ("110L"), a przy budynku 'POZA' - nazwa miejsca. */
   sala: string | null
   /** 'wszyscy' znaczy cały zarząd i nie bierze udziału w liczeniu kolizji. */
   osoby: string[]
@@ -45,7 +45,7 @@ interface StylKategorii {
   ranga: number
   /** Nasycony kolor na obrys i kropkę. */
   obrys: string
-  /** Przezroczysta wersja obrysu — kładzie się na ciemnym bez utraty kontrastu tekstu. */
+  /** Przezroczysta wersja obrysu - kładzie się na ciemnym bez utraty kontrastu tekstu. */
   tlo: string
   /** Ciemniejsza odmiana do eksportu: kolory interfejsu giną na białym arkuszu. */
   druk: string
@@ -53,7 +53,7 @@ interface StylKategorii {
 
 /**
  * Kolejność ważności ustalona na Sesji Operacyjnej: Zebrania → Komisje → …
- * → Inne. Wygląd karty zależy od rangi, nie od kategorii — dopisanie
+ * → Inne. Wygląd karty zależy od rangi, nie od kategorii - dopisanie
  * kategorii przesuwa wygląd tych poniżej.
  */
 export const KATEGORIE: Record<Kategoria, StylKategorii> = {
@@ -74,7 +74,7 @@ export function jestKategoria(nazwa: string): nazwa is Kategoria {
   return (KLUCZE_KATEGORII as string[]).includes(nazwa)
 }
 
-/** Numer rangi na karcie — tylko cztery najważniejsze; niżej byłby szumem. */
+/** Numer rangi na karcie - tylko cztery najważniejsze; niżej byłby szumem. */
 export function numerRangi(k: Kategoria): number | null {
   const r = KATEGORIE[k].ranga
   return r <= 4 ? r : null
@@ -88,5 +88,5 @@ export const POLA_DOMYSLNE: Pick<Wydarzenie, 'dni' | 'calyDzien' | 'godzinaDo' |
   budynek: null,
 }
 
-/** Wydarzenie bez identyfikatora — tyle, ile trzeba, żeby je utworzyć. */
+/** Wydarzenie bez identyfikatora - tyle, ile trzeba, żeby je utworzyć. */
 export type NoweWydarzenie = Omit<Wydarzenie, 'id'>

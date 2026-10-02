@@ -6,7 +6,7 @@ export const TABELE = ['rekrutacje', 'kohorty', 'kpi_punkty', 'projekty', 'czlon
 export type Tabela = (typeof TABELE)[number]
 
 /**
- * Przypisanie zakładki do typu domenowego — dzięki temu gasList('kpi_punkty')
+ * Przypisanie zakładki do typu domenowego - dzięki temu gasList('kpi_punkty')
  * zwraca KpiMetric[].
  *
  * Stara zakładka `kpi` (format szeroki, dwa okresy w jednym wierszu) celowo nie

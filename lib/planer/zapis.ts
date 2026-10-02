@@ -20,7 +20,7 @@ function sciezka(semestrId: string) {
 }
 
 /**
- * Subskrypcja na żywo. Obejmuje wyłącznie jeden semestr — bez tego każde wejście
+ * Subskrypcja na żywo. Obejmuje wyłącznie jeden semestr - bez tego każde wejście
  * czytałoby całą historię i koszt rósłby z każdą kadencją.
  * Zwraca funkcję odpinającą.
  */
@@ -79,11 +79,11 @@ export function subskrybujTrybWspolny(
   gdyZmiana: (s: StanSesjiWspolnej) => void,
 ): () => void {
   // Brak dokumentu semestru to normalny stan przed pierwszym włączeniem sesji,
-  // więc błąd tu oznacza wyłącznie problem z uprawnieniami — logujemy i milczymy.
+  // więc błąd tu oznacza wyłącznie problem z uprawnieniami - logujemy i milczymy.
   return onSnapshot(semestrDoc(semestrId), (zrzut) => gdyZmiana(naStanSesji(zrzut.data())))
 }
 
-/** `setDoc` z `merge`, bo dokument semestru mógł jeszcze nie powstać — w 3a go nie tworzyliśmy. */
+/** `setDoc` z `merge`, bo dokument semestru mógł jeszcze nie powstać - w 3a go nie tworzyliśmy. */
 export async function ustawTrybWspolny(semestrId: string, wlaczony: boolean, przez: string): Promise<void> {
   await setDoc(
     semestrDoc(semestrId),
@@ -95,7 +95,7 @@ export async function ustawTrybWspolny(semestrId: string, wlaczony: boolean, prz
 /**
  * Przyjęcie propozycji: nanosi zmianę i kasuje propozycję JEDNYM zapisem.
  * Rozdzielenie tych dwóch kroków groziłoby propozycją zaakceptowaną i wciąż
- * wiszącą w skrzynce — przyjąłbyś ją wtedy drugi raz.
+ * wiszącą w skrzynce - przyjąłbyś ją wtedy drugi raz.
  */
 export async function przyjmijPropozycje(semestrId: string, p: Propozycja): Promise<void> {
   const partia = writeBatch(baza())

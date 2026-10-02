@@ -9,7 +9,7 @@ export function dniWMiesiacu(rok: number, miesiac: number): number {
 }
 
 /**
- * Numer kolumny, w której zaczyna się miesiąc. Zero to poniedziałek — kalendarz
+ * Numer kolumny, w której zaczyna się miesiąc. Zero to poniedziałek - kalendarz
  * układamy po polsku, a `getDay()` zwraca zero dla niedzieli.
  */
 export function pierwszyDzienTygodnia(rok: number, miesiac: number): number {

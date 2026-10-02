@@ -6,7 +6,7 @@ type Variant = 'overview' | 'rekrutacje' | 'retencja' | 'czlonkowie' | 'kpi' | '
 /**
  * Powłoka udająca BentoCard: ta sama obwódka, promień i padding, plus pasek
  * na tytuł i podtytuł. Bez tego ładowanie pokazywało gołe prostokąty, a po
- * chwili wskakiwały karty z nagłówkami — układ podskakiwał i wyglądało to
+ * chwili wskakiwały karty z nagłówkami - układ podskakiwał i wyglądało to
  * jak dwa różne ekrany.
  */
 function Karta({ children, className = '' }: { children?: ReactNode; className?: string }) {
@@ -24,7 +24,7 @@ function Karta({ children, className = '' }: { children?: ReactNode; className?:
   )
 }
 
-/** Wiersz tabeli — tyle kolumn, ile ma prawdziwa tabela w module. */
+/** Wiersz tabeli - tyle kolumn, ile ma prawdziwa tabela w module. */
 function Wiersze({ ile = 6, kolumny = 6 }: { ile?: number; kolumny?: number }) {
   return (
     <div className="space-y-1.5">
@@ -39,7 +39,7 @@ function Wiersze({ ile = 6, kolumny = 6 }: { ile?: number; kolumny?: number }) {
   )
 }
 
-/** Miejsce na wykres — proporcje zbliżone do tego, co rysuje Recharts. */
+/** Miejsce na wykres - proporcje zbliżone do tego, co rysuje Recharts. */
 function Wykres({ h = 'h-64' }: { h?: string }) {
   return <Skeleton className={`w-full ${h}`} />
 }

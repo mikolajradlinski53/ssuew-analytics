@@ -9,9 +9,9 @@ import { pobierzPlik } from '@/lib/pobierz'
 const SZEROKOSCI_LISTY = [12, 15, 12, 10, 8, 7, 15, 36, 12, 18, 28]
 const argb = (hex: string) => `FF${hex.slice(1).toUpperCase()}`
 
-/** Eksport jako skoroszyt — osobno od pobierania, żeby dało się go sprawdzić w teście. */
+/** Eksport jako skoroszyt - osobno od pobierania, żeby dało się go sprawdzić w teście. */
 export async function zbudujSkoroszyt(e: Eksport): Promise<Workbook> {
-  // ExcelJS waży kilkaset kilobajtów — ładujemy go dopiero po kliknięciu,
+  // ExcelJS waży kilkaset kilobajtów - ładujemy go dopiero po kliknięciu,
   // nie przy wejściu do Planera.
   const ExcelJS = (await import('exceljs')).default
   const plik = new ExcelJS.Workbook()
@@ -57,7 +57,7 @@ export async function zbudujSkoroszyt(e: Eksport): Promise<Workbook> {
 }
 
 type Props = {
-  /** Wszystkie wydarzenia semestru — eksport sam wybiera miesiąc i pomija filtry. */
+  /** Wszystkie wydarzenia semestru - eksport sam wybiera miesiąc i pomija filtry. */
   wydarzenia: Wydarzenie[]
   miesiac: Miesiac
 }
@@ -89,7 +89,7 @@ export function PobierzMiesiac({ wydarzenia, miesiac }: Props) {
       className="deck-chip flex items-center gap-2 rounded-lg px-3 py-2 text-[12px] text-deck-muted transition hover:text-deck-text disabled:opacity-60"
     >
       <Download size={14} />
-      {stan === 'trwa' ? 'Przygotowuję…' : stan === 'blad' ? 'Nie udało się — spróbuj ponownie' : 'Pobierz miesiąc'}
+      {stan === 'trwa' ? 'Przygotowuję…' : stan === 'blad' ? 'Nie udało się - spróbuj ponownie' : 'Pobierz miesiąc'}
     </button>
   )
 }

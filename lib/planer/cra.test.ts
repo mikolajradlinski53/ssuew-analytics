@@ -15,7 +15,7 @@ describe('eksport do CRA', () => {
       .toEqual([['SKS', '07.10.2026', '19:00', '21:00', 'B/L 110L']])
   })
 
-  it('wydarzenie wielodniowe to wiersz na każdy dzień — sala rezerwuje się na dzień', () => {
+  it('wydarzenie wielodniowe to wiersz na każdy dzień - sala rezerwuje się na dzień', () => {
     const wiersze = wierszeCra([w({ tytul: 'Wyjazd', dzien: 31, dni: 2, calyDzien: true })])
     expect(wiersze.map((r) => r[1])).toEqual(['31.10.2026', '01.11.2026'])
     expect(wiersze[0].slice(2, 4)).toEqual(['', ''])

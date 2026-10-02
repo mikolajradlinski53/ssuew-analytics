@@ -5,7 +5,7 @@ import type { Tabela, TabelaTypy } from './schema'
 const LIMIT_CZASU_MS = 8000
 const CACHE_S = 300
 
-/** Jeden znacznik na wszystkie dane analityczne — zapis w dowolnej zakładce unieważnia całość. */
+/** Jeden znacznik na wszystkie dane analityczne - zapis w dowolnej zakładce unieważnia całość. */
 export const ZNACZNIK = 'analytics'
 
 /**
@@ -28,7 +28,7 @@ export class GasError extends Error {
 type Init = RequestInit & { next?: { revalidate?: number; tags?: string[] } }
 
 /**
- * Apps Script odpowiada kodem 200 nawet przy błędzie — prawdziwy kod jest w treści.
+ * Apps Script odpowiada kodem 200 nawet przy błędzie - prawdziwy kod jest w treści.
  * Dlatego nigdzie tu nie sprawdzamy `res.ok`; to byłby fałszywy spokój.
  */
 async function wywolaj(url: string, init: Init): Promise<unknown> {
@@ -59,7 +59,7 @@ async function wywolaj(url: string, init: Init): Promise<unknown> {
     dane = JSON.parse(tresc)
   } catch {
     throw new GasError(
-      'Apps Script zwrócił treść, która nie jest JSON-em — sprawdź, czy wdrożenie ma dostęp „Wszyscy”',
+      'Apps Script zwrócił treść, która nie jest JSON-em - sprawdź, czy wdrożenie ma dostęp „Wszyscy”',
       502,
     )
   }
@@ -85,7 +85,7 @@ export async function gasList<T extends Tabela>(t: T): Promise<TabelaTypy[T][]> 
 export type Operacja = 'insert' | 'upsert' | 'update'
 
 /**
- * Zapis nigdy nie jest cache'owany. `rows` jest zawsze tablicą — także dla jednego wiersza,
+ * Zapis nigdy nie jest cache'owany. `rows` jest zawsze tablicą - także dla jednego wiersza,
  * żeby po stronie skryptu istniał jeden kształt żądania zamiast dwóch.
  */
 export async function gasWrite<T extends Tabela>(

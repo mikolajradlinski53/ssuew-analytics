@@ -19,7 +19,7 @@ const proc = (czesc: number, calosc: number) => Math.round((czesc / calosc) * 10
 
 /**
  * Zastrzeżenia wobec projektu. `poprzednia` to ten sam projekt rok wcześniej;
- * `null` znaczy pierwszą edycję — wtedy flagi porównawcze **milczą**, bo brak
+ * `null` znaczy pierwszą edycję - wtedy flagi porównawcze **milczą**, bo brak
  * porównania to „nie wiem", a nie „bez zastrzeżeń".
  *
  * Każda flaga niesie liczby w `detal`, nie samą etykietę. Bez tego i tak
@@ -55,7 +55,7 @@ export function flagiProjektu(b: Projekt, poprzednia: Projekt | null): Flaga[] {
       detal: `${b.przedluzenia} razy`,
     })
   }
-  // Obie liczby muszą być wypełnione — przy pustych polach nie ma o czym mówić.
+  // Obie liczby muszą być wypełnione - przy pustych polach nie ma o czym mówić.
   if (b.uczestnicy > 0 && b.aplikujacy > 0 && b.aplikujacy <= b.uczestnicy) {
     f.push({
       id: 'nabor-ledwo-obsadzony', waga: 'uwaga', tytul: 'Nabór bez nadwyżki chętnych',
@@ -73,7 +73,7 @@ export function flagiProjektu(b: Projekt, poprzednia: Projekt | null): Flaga[] {
 
   // ─ Porównanie z poprzednią edycją
   // Pusta komórka przychodzi z arkusza jako 0, więc zero po żadnej stronie
-  // nie jest porównaniem — inaczej niewpisane pole krzyczałoby „spadek do 0”.
+  // nie jest porównaniem - inaczej niewpisane pole krzyczałoby „spadek do 0”.
   if (poprzednia) {
     if (b.aplikujacy > 0 && poprzednia.aplikujacy > 0 && b.aplikujacy < PROGI.spadek * poprzednia.aplikujacy) {
       f.push({
@@ -109,14 +109,14 @@ function policz(flagi: Flaga[], waga: Flaga['waga']): number {
 
 /**
  * Projekty danej edycji, ustawione od najgłośniejszego. To nie jest ranking
- * rentowności — tylko kolejność „ile się świeci", żeby przy kilkunastu
+ * rentowności - tylko kolejność „ile się świeci", żeby przy kilkunastu
  * projektach nie trzeba było przewijać w poszukiwaniu kłopotów.
  */
 export function kondycjaEdycji(wszystkie: Projekt[], edycja: string): KondycjaProjektu[] {
   return wszystkie
     .filter((p) => p.edycja === edycja)
     .map((projekt) => {
-      // Najblizsza wczesniejsza edycja, nie najstarsza — projekt moze mieć
+      // Najblizsza wczesniejsza edycja, nie najstarsza - projekt moze mieć
       // dziure w historii, a porownanie z rokiem 2022 nic by nie powiedzialo.
       const wczesniejsze = wszystkie
         .filter((x) => x.projekt === projekt.projekt && porownajOkresy(x.edycja, edycja) < 0)

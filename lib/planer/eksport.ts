@@ -56,7 +56,7 @@ function linia(w: Wydarzenie, dzien: Data): LiniaKomorki {
 }
 
 /**
- * Zawartość pliku miesiąca bez zależności od biblioteki arkuszy — dzięki temu
+ * Zawartość pliku miesiąca bez zależności od biblioteki arkuszy - dzięki temu
  * da się ją przetestować na zwykłych danych. Zawsze CAŁY miesiąc, niezależnie
  * od filtrów: plik wysłany dalej nie może być po cichu niepełny.
  */

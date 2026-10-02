@@ -107,7 +107,7 @@ export default function LoginPage() {
                 <div className="deck-meter-fill h-full w-[82%] rounded-full bg-gradient-to-r from-deck-accent to-deck-warn" />
               </div>
               <p className="mt-4 text-[11px] leading-5 text-deck-muted">
-                Nazwiska członków i zapis danych są za sesją — kod otwiera podgląd, hasło otwiera edycję.
+                Nazwiska członków i zapis danych są za sesją - kod otwiera podgląd, hasło otwiera edycję.
               </p>
             </div>
           </div>
@@ -123,7 +123,7 @@ export default function LoginPage() {
               <p className="mt-1 text-[11px] leading-5 text-deck-muted">
                 {droga === 'kod'
                   ? 'Kod zwiąże się z tą przeglądarką przy pierwszym użyciu.'
-                  : 'Konto z hasłem — tylko dla dwóch osób.'}
+                  : 'Konto z hasłem - tylko dla dwóch osób.'}
               </p>
             </div>
 
@@ -189,7 +189,7 @@ export default function LoginPage() {
             ) : (
               // Kod nie ma przycisku: wpisanie szóstej cyfry samo go wysyła.
               <p className="mt-1 text-center text-[11px] text-deck-muted">
-                {zajety ? 'Sprawdzam...' : udalo ? 'Wchodzę...' : 'Sześć cyfr — wysyła się samo'}
+                {zajety ? 'Sprawdzam...' : udalo ? 'Wchodzę...' : 'Sześć cyfr - wysyła się samo'}
               </p>
             )}
 

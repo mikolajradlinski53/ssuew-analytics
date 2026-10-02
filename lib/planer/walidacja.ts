@@ -12,7 +12,7 @@ const MAX_OSOB = 30
 
 const blad = (tekst: string): WynikSprawdzenia => ({ ok: false, blad: tekst })
 
-/** `undefined` znaczy: wartość jest, ale błędna. `null` — brak godziny. */
+/** `undefined` znaczy: wartość jest, ale błędna. `null` - brak godziny. */
 function godzina(x: unknown): string | null | undefined {
   if (x === null || x === undefined || x === '') return null
   return typeof x === 'string' && GODZINA.test(x) ? x : undefined
@@ -51,8 +51,8 @@ export function sprawdzWydarzenie(x: unknown): WynikSprawdzenia {
   const doGodziny = godzina(d.godzinaDo)
   if (od === undefined || doGodziny === undefined) return blad('Godzina w formacie GG:MM')
   if (!calyDzien && doGodziny !== null && od === null) return blad('Podaj godzinę „od”, zanim podasz „do”')
-  // „do” wcześniejsze niż „od” to koniec następnego dnia (impreza 18:00–04:00).
-  // Błędem jest tylko ta sama godzina — nie wiadomo, czy to zero, czy doba.
+  // „do” wcześniejsze niż „od” to koniec następnego dnia (impreza 18:00-04:00).
+  // Błędem jest tylko ta sama godzina - nie wiadomo, czy to zero, czy doba.
   if (!calyDzien && od !== null && od === doGodziny) {
     return blad('Godzina „do” nie może być taka sama jak „od”')
   }

@@ -18,7 +18,7 @@ describe('ktoNaStronie', () => {
     ktoZCiasteczek.mockReset().mockResolvedValue(null)
   })
 
-  it('podaje dalej bilet kodu — kokpit nie może go pominąć', async () => {
+  it('podaje dalej bilet kodu - kokpit nie może go pominąć', async () => {
     ciasteczka.deck_kod = 'bilet'
     const { ktoNaStronie } = await import('@/lib/auth/naStronie')
     await ktoNaStronie()

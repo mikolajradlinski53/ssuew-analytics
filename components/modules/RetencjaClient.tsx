@@ -60,7 +60,7 @@ export default function RetencjaClient() {
 
   return (
     <div className="space-y-3">
-      <BentoCard title="Kohorty" sub={editable ? 'kliknij wartość, by edytować · dodaj kohortę poniżej (autosave)' : 'tryb demo — read-only'} span={4}>
+      <BentoCard title="Kohorty" sub={editable ? 'kliknij wartość, by edytować · dodaj kohortę poniżej (autosave)' : 'tryb demo - read-only'} span={4}>
         <table className="w-full text-[11px] border-collapse">
           <thead>
             <tr className="text-deck-muted text-left">
@@ -86,7 +86,7 @@ export default function RetencjaClient() {
               </tr>
             ))}
             {sortedKoh.length === 0 && (
-              <tr><td colSpan={5} className="p-2 text-deck-muted text-center">Brak kohort{editable ? ' — dodaj pierwszą poniżej.' : '.'}</td></tr>
+              <tr><td colSpan={5} className="p-2 text-deck-muted text-center">Brak kohort{editable ? ' - dodaj pierwszą poniżej.' : '.'}</td></tr>
             )}
           </tbody>
         </table>
@@ -111,7 +111,7 @@ export default function RetencjaClient() {
       <div className={`text-[11px] border rounded-md px-2 py-1 inline-block ${allMeasured ? 'text-deck-accent border-deck-accent/40' : 'text-deck-warn border-deck-warn/40'}`}>
         {allMeasured
           ? 'Pomiar z danych per-osoba (% aktywnych po t semestrach)'
-          : 'Część krzywych to szacunek (model wykładniczy) — brak pomiaru per semestr'}
+          : 'Część krzywych to szacunek (model wykładniczy) - brak pomiaru per semestr'}
       </div>
 
       <BentoCard title="Krzywe przeżycia kohort" sub="% aktywnych w kolejnych semestrach" span={4}>
@@ -148,7 +148,7 @@ export default function RetencjaClient() {
               <div key={c.name} className="text-[11px]">
                 <span className="text-deck-text">{c.name}: </span>
                 <span className="tabular-nums text-deck-accent">β = {c.beta.toFixed(3)}</span>
-                <span className="text-deck-muted"> — {c.interpretation}</span>
+                <span className="text-deck-muted"> - {c.interpretation}</span>
               </div>
             ))}
             <div className="text-[11px] text-deck-muted">

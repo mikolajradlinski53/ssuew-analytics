@@ -44,7 +44,7 @@ type Props = {
   semestr: Semestr
   /** `owner` pisze wprost do Firestore; `board` przez serwer. */
   rola: 'owner' | 'board'
-  /** Adres e-mail albo etykieta kodu — trafia do propozycji jako autor. */
+  /** Adres e-mail albo etykieta kodu - trafia do propozycji jako autor. */
   kto: string
   /** Obraz z serwera dla osób na kodzie; konta z hasłem dostają dane z subskrypcji (`null`). */
   poczatkowy: ObrazPlanera | null
@@ -62,7 +62,7 @@ export function PlanerClient({ semestr, rola, kto, poczatkowy, naZywo }: Props) 
   const [osoba, setOsoba] = useState('')
   const [wybrane, setWybrane] = useState<Wydarzenie | null>(null)
   const [dodaje, setDodaje] = useState(false)
-  /** Dzień wskazany przy dodawaniu z kratki — panel startuje z tą datą. */
+  /** Dzień wskazany przy dodawaniu z kratki - panel startuje z tą datą. */
   const [dzienDodania, setDzienDodania] = useState<number | null>(null)
   const [sesja, setSesja] = useState<StanSesjiWspolnej>(poczatkowy?.sesja ?? SESJA_WYLACZONA)
   const [propozycje, setPropozycje] = useState<Propozycja[]>([])
@@ -99,7 +99,7 @@ export function PlanerClient({ semestr, rola, kto, poczatkowy, naZywo }: Props) 
   }, [semestr.id, naZywo, wlascicielem])
 
   /**
-   * Pobranie stanu przez serwer — dla osób na kodzie, które nie mają
+   * Pobranie stanu przez serwer - dla osób na kodzie, które nie mają
    * subskrypcji Firestore. `tylkoSesja` czyta jeden dokument zamiast całego
    * kalendarza.
    */
@@ -113,7 +113,7 @@ export function PlanerClient({ semestr, rola, kto, poczatkowy, naZywo }: Props) 
   }, [semestr.id])
 
   // Poza sesją co minutę sprawdzamy wyłącznie, czy się zaczęła; w trakcie
-  // sesji co 15 sekund pobieramy cały obraz — wtedy opóźnienie naprawdę
+  // sesji co 15 sekund pobieramy cały obraz - wtedy opóźnienie naprawdę
   // przeszkadza. Tylko przy widocznej karcie.
   useEffect(() => {
     if (naZywo) return
@@ -136,7 +136,7 @@ export function PlanerClient({ semestr, rola, kto, poczatkowy, naZywo }: Props) 
 
   useEffect(() => {
     if (!naZywo) return
-    // Obecność jest ozdobą — jej awaria nie może zasłaniać kalendarza banerem,
+    // Obecność jest ozdobą - jej awaria nie może zasłaniać kalendarza banerem,
     // ale nie może też przepaść bez śladu, bo właśnie takie ciche padanie
     // utrudniło diagnozę braku reguł Firestore.
     return subskrybujObecnosc(semestr.id, setZnaki, (e) =>
@@ -144,7 +144,7 @@ export function PlanerClient({ semestr, rola, kto, poczatkowy, naZywo }: Props) 
     )
   }, [semestr.id, naZywo])
 
-  /** Zapis wprost albo propozycja — rozstrzyga rola i stan sesji. */
+  /** Zapis wprost albo propozycja - rozstrzyga rola i stan sesji. */
   const piszeWprost = wlascicielem || sesja.wlaczony
 
   const miesiac = semestr.miesiace[indeksMiesiaca]
@@ -153,7 +153,7 @@ export function PlanerClient({ semestr, rola, kto, poczatkowy, naZywo }: Props) 
     const zWydarzen = new Set<string>()
     for (const w of wydarzenia) for (const o of w.osoby) if (o !== 'wszyscy') zWydarzen.add(o)
     // Najpierw Skład w jego kolejności, potem osoby spoza Składu ze starszych
-    // wpisów — inaczej starych wydarzeń nie dałoby się dalej filtrować.
+    // wpisów - inaczej starych wydarzeń nie dałoby się dalej filtrować.
     const spoza = [...zWydarzen].filter((o) => !sklad.includes(o)).sort((a, b) => a.localeCompare(b, 'pl'))
     return [...sklad, ...spoza]
   }, [wydarzenia, sklad])
@@ -162,14 +162,14 @@ export function PlanerClient({ semestr, rola, kto, poczatkowy, naZywo }: Props) 
     () =>
       wydarzenia.filter((w) => {
         if (!aktywne.has(w.kategoria)) return false
-        // Filtr osoby pokazuje też wydarzenia oznaczone 'wszyscy' — one jej dotyczą.
+        // Filtr osoby pokazuje też wydarzenia oznaczone 'wszyscy' - one jej dotyczą.
         if (osoba && !w.osoby.includes(osoba) && !w.osoby.includes('wszyscy')) return false
         return true
       }),
     [wydarzenia, aktywne, osoba],
   )
 
-  // Do miesiąca trafia wszystko, co na niego nachodzi — także wielodniowe
+  // Do miesiąca trafia wszystko, co na niego nachodzi - także wielodniowe
   // ze startem w poprzednim miesiącu.
   const wMiesiacu = useMemo(
     () => widoczne.filter((w) => nachodziNaMiesiac(w, miesiac)),
@@ -201,7 +201,7 @@ export function PlanerClient({ semestr, rola, kto, poczatkowy, naZywo }: Props) 
         if (wlascicielem) await zapiszObecnosc(semestr.id, `konto:${kto}`, kto, patrzyNa)
         else await zglosObecnosc(semestr.id, patrzyNa)
       } catch {
-        // Nieudany znak życia nie ma znaczenia — następny pójdzie za minutę.
+        // Nieudany znak życia nie ma znaczenia - następny pójdzie za minutę.
       }
     }
 
@@ -229,7 +229,7 @@ export function PlanerClient({ semestr, rola, kto, poczatkowy, naZywo }: Props) 
         if (wlascicielem) await zmienWydarzenie(semestr.id, wybrane.id, dane)
         else await zmienPrzezSerwer(semestr.id, wybrane.id, dane)
       } else {
-        // Powtarzanie tworzy osobne wpisy, a nie powiązaną serię — dzięki temu
+        // Powtarzanie tworzy osobne wpisy, a nie powiązaną serię - dzięki temu
         // nie ma pytania „edytujesz to jedno czy wszystkie”.
         const terminy = terminyCoTydzien(
           { rok: dane.rok, miesiac: dane.miesiac, dzien: dane.dzien },
@@ -237,13 +237,13 @@ export function PlanerClient({ semestr, rola, kto, poczatkowy, naZywo }: Props) 
           powtorzenia,
         )
         for (const t of terminy) {
-          // Bezpośredni zapis do Firestore ma wyłącznie właściciel — zarząd
+          // Bezpośredni zapis do Firestore ma wyłącznie właściciel - zarząd
           // w sesji pisze przez serwer, który sam sprawdza, czy sesja trwa.
           if (wlascicielem) await dodajWydarzenie(semestr.id, { ...dane, ...t })
           else await dodajPrzezSerwer(semestr.id, { ...dane, ...t })
         }
       }
-      // Osoba na kodzie nie ma subskrypcji — bez tego swoją zmianę zobaczy
+      // Osoba na kodzie nie ma subskrypcji - bez tego swoją zmianę zobaczy
       // dopiero przy następnym odpytaniu.
       if (!naZywo && piszeWprost) await odswiez()
       setBlad(null)
@@ -296,19 +296,19 @@ export function PlanerClient({ semestr, rola, kto, poczatkowy, naZywo }: Props) 
     }
   }
 
-  /** Przesunięcie strzałkami. Poza miesiąc nie wychodzimy — to zmieniłoby widok pod palcami. */
+  /** Przesunięcie strzałkami. Poza miesiąc nie wychodzimy - to zmieniłoby widok pod palcami. */
   async function przesun(id: string, oDni: number) {
     const w = wydarzenia.find((x) => x.id === id)
     if (!w) return
     const nowy = w.dzien + oDni
     if (nowy < 1 || nowy > dniWMiesiacu(w.rok, w.miesiac)) return
     // Ta sama droga co przeciągnięcie: zarząd poza sesją zgłasza propozycję,
-    // w sesji pisze przez serwer. Wprost do Firestore — tylko właściciel.
+    // w sesji pisze przez serwer. Wprost do Firestore - tylko właściciel.
     await przenies(id, nowy)
   }
 
   const panelOtwarty = wybrane !== null || dodaje
-  // Pusty jest CAŁY semestr, nie bieżący miesiąc — filtry i przełącznik widoku
+  // Pusty jest CAŁY semestr, nie bieżący miesiąc - filtry i przełącznik widoku
   // nie mają wtedy czego filtrować, więc znikają razem z siatką.
   const semestrPusty = wydarzenia.length === 0
 
@@ -502,14 +502,14 @@ export function PlanerClient({ semestr, rola, kto, poczatkowy, naZywo }: Props) 
         {panelOtwarty && (
           <PanelWydarzenia
             // Zmiana wybranego wydarzenia przemontowuje formularz i resetuje
-            // jego pola — zalecany przez Reacta sposób zamiast synchronizacji
+            // jego pola - zalecany przez Reacta sposób zamiast synchronizacji
             // stanu efektem.
             key={wybrane?.id ?? `nowe-${dzienDodania ?? 0}`}
             wydarzenie={wybrane}
             miesiac={miesiac}
             dzienStartowy={dzienDodania}
             // Zarzad wypelnia tylko formularz nowego wydarzenia (zeby je zglosic);
-            // istniejacego nie edytuje — moze jedynie proponowac przeniesienie.
+            // istniejacego nie edytuje - moze jedynie proponowac przeniesienie.
             mozeEdytowac={piszeWprost || wybrane === null}
             mozeUsunac={wlascicielem}
             sklad={sklad}

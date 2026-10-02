@@ -48,7 +48,7 @@ export default function KorelacjeClient() {
         Korelacje per edycja (rekrutacje × retencja). KPI rok-do-roku ma inną ziarnistość i nie wchodzi do macierzy.
       </div>
 
-      <BentoCard title="Macierz korelacji — rekrutacje × retencja" sub="kliknij komórkę, by zobaczyć wykres rozrzutu" span={4}>
+      <BentoCard title="Macierz korelacji - rekrutacje × retencja" sub="kliknij komórkę, by zobaczyć wykres rozrzutu" span={4}>
         <Heatmap vars={MAIN_VARS} cells={mainCells} onSelect={(a, b) => setPair({ a, b })} />
       </BentoCard>
 

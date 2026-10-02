@@ -3,7 +3,7 @@ import type { PunktKpi } from '@/types'
 
 type Props = {
   punkty: PunktKpi[]
-  /** Nazwa metryki — trafia do opisu dla czytnika ekranu. */
+  /** Nazwa metryki - trafia do opisu dla czytnika ekranu. */
   etykieta: string
   className?: string
 }
@@ -17,14 +17,14 @@ const MAX_KROPEK = 8
 /**
  * Przebieg metryki przez lata. Czysty SVG, bez Rechartsa: na stronie stoi
  * kilkanaście takich wykresów naraz, a Recharts montuje na każdy własny
- * kontener i obserwator rozmiaru — przy tej liczbie widać to przy ładowaniu.
+ * kontener i obserwator rozmiaru - przy tej liczbie widać to przy ładowaniu.
  *
  * Forma dobiera się do długości serii, bo dwa punkty połączone linią udawałyby
  * trend, którego z dwóch pomiarów nie da się zobaczyć.
  */
 export function WykresSerii({ punkty, etykieta, className }: Props) {
   const opis = punkty.length
-    ? `${etykieta}: ${punkty.map((p) => `${p.okres} — ${p.wartosc}`).join(', ')}`
+    ? `${etykieta}: ${punkty.map((p) => `${p.okres} - ${p.wartosc}`).join(', ')}`
     : `${etykieta}: brak danych`
 
   return (

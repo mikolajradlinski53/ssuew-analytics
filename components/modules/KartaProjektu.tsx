@@ -3,7 +3,7 @@ import { AlertTriangle, CircleAlert, Info } from 'lucide-react'
 import type { Flaga, KondycjaProjektu } from '@/types'
 
 /**
- * Waga niesie własną etykietę i ikonę, nie tylko kolor — na wydruku
+ * Waga niesie własną etykietę i ikonę, nie tylko kolor - na wydruku
  * i przy daltonizmie sam odcień nie odróżniłby alarmu od uwagi.
  */
 const STYL: Record<Flaga['waga'], { klasa: string; Ikona: typeof Info; etykieta: string }> = {
@@ -44,7 +44,7 @@ export function KartaProjektu({ kondycja }: { kondycja: KondycjaProjektu }) {
                 <span className={`w-14 shrink-0 font-semibold tracking-wide ${klasa}`}>{etykieta}</span>
                 <span className="text-deck-text">
                   {f.tytul}
-                  <span className="text-deck-muted"> — {f.detal}</span>
+                  <span className="text-deck-muted"> - {f.detal}</span>
                 </span>
               </li>
             )
@@ -56,7 +56,7 @@ export function KartaProjektu({ kondycja }: { kondycja: KondycjaProjektu }) {
 
       {!poprzednia && (
         <p className="mt-2 text-[10.5px] italic text-deck-muted/80">
-          Brak danych z poprzedniej edycji — porównania milczą, bo nie ma z czym zestawiać.
+          Brak danych z poprzedniej edycji - porównania milczą, bo nie ma z czym zestawiać.
         </p>
       )}
     </div>

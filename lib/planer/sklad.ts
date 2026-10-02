@@ -7,7 +7,7 @@ function skladDoc() {
   return doc(baza(), 'ustawienia', 'sklad')
 }
 
-/** Czytają wszyscy z dostępem, pisze właściciel — tak mówią reguły `ustawienia`. */
+/** Czytają wszyscy z dostępem, pisze właściciel - tak mówią reguły `ustawienia`. */
 export function subskrybujSklad(
   gdyZmiana: (osoby: string[]) => void,
   gdyBlad: (b: Error) => void,

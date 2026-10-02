@@ -6,7 +6,7 @@ import { serieZWierszy } from '@/lib/kpi/serie'
 export type ZrodloDanych = 'live' | 'demo'
 export type Zbior = 'rekrutacje' | 'kpi' | 'kohorty'
 
-/** Nazwy modułów, jakie widzi użytkownik — komunikat ma mówić jego językiem, nie nazwami tras. */
+/** Nazwy modułów, jakie widzi użytkownik - komunikat ma mówić jego językiem, nie nazwami tras. */
 export const NAZWA_ZBIORU: Record<Zbior, string> = {
   rekrutacje: 'Rekrutacje',
   kpi: 'KPI',
@@ -18,7 +18,7 @@ type Pobrany<T> = { dane: T[]; zrodlo: ZrodloDanych; blad: string | null }
 /**
  * Każda zakładka arkusza osobno. Wcześniej jeden błąd (np. brak `kpi_punkty`)
  * przełączał na dane przykładowe całą analitykę, także rekrutacje, które
- * przyszły poprawnie — i nikt się o tym nie dowiadywał.
+ * przyszły poprawnie - i nikt się o tym nie dowiadywał.
  *
  * Pusta lista to arkusz bez danych albo nieskonfigurowany skrypt: wtedy dane
  * przykładowe z historii SSUEW, ale zawsze z oznaczeniem `demo`.
@@ -69,11 +69,11 @@ const POCZATEK: Stan = {
   bledy: [], loading: true,
 }
 
-/** Właściwy stan danych. Woła go tylko `AnalyticsDataProvider` — moduły czytają kontekst. */
+/** Właściwy stan danych. Woła go tylko `AnalyticsDataProvider` - moduły czytają kontekst. */
 export function useAnalyticsZrodlo() {
   const [stan, setStan] = useState<Stan>(POCZATEK)
 
-  // Odświeżenie po zapisie nie wraca do szkieletu — stare liczby zostają
+  // Odświeżenie po zapisie nie wraca do szkieletu - stare liczby zostają
   // na ekranie, dopóki nie przyjdą nowe.
   const fetchAll = useCallback(async () => {
     const nowe = await pobierzWszystko()
@@ -144,7 +144,7 @@ export function useAnalyticsZrodlo() {
     await fetchAll()
   }
 
-  // Serie liczymy raz na komplet wierszy — cały interfejs KPI patrzy na nie,
+  // Serie liczymy raz na komplet wierszy - cały interfejs KPI patrzy na nie,
   // a nie na surowe wiersze, więc sklejanie nie może się dziać przy każdym renderze.
   const serie = useMemo(() => serieZWierszy(kpiMetrics), [kpiMetrics])
 
@@ -157,7 +157,7 @@ export const AnalyticsDataContext = createContext<AnalyticsData | null>(null)
 
 /**
  * Dane analityki, wspólne dla całej sekcji. Przejście między modułami nie
- * pobiera wszystkiego od nowa — Apps Script odpowiada 1–3 s i każda zakładka
+ * pobiera wszystkiego od nowa - Apps Script odpowiada 1-3 s i każda zakładka
  * zaczynała od szkieletu.
  */
 export function useAnalyticsData(): AnalyticsData {
@@ -168,7 +168,7 @@ export function useAnalyticsData(): AnalyticsData {
 
 // ─── Dane demo (realne dane SSUEW, używane gdy arkusz jest pusty albo nie odpowiada) ─
 
-// Z dane_zrodlowe/KPI SSUEW.xlsx — "PRZYJĘCI DZIAŁACZE". Zgłoszenia od rekrutacji J'23.
+// Z dane_zrodlowe/KPI SSUEW.xlsx - "PRZYJĘCI DZIAŁACZE". Zgłoszenia od rekrutacji J'23.
 export const DEMO_REKRUTACJE: Rekrutacja[] = [
   { id:'1', edycja:"J'23", sezon:'jesien', rok:2023, zgloszenia:100, przyjeci:38, created_at:'' },
   { id:'2', edycja:"W'24", sezon:'wiosna', rok:2024, zgloszenia:28,  przyjeci:13, created_at:'' },
@@ -194,7 +194,7 @@ export const DEMO_KOHORTY: Kohorta[] = [
 const DEMO_OKRESY = ['2024/2025', '2025/2026']
 
 /**
- * Dane demo trzymamy zwarto — nazwa i wartości rok po roku — a rozwijamy do
+ * Dane demo trzymamy zwarto - nazwa i wartości rok po roku - a rozwijamy do
  * wierszy dopiero tutaj. Wypisanie sześćdziesięciu wierszy wprost byłoby
  * nieczytelne i przy każdej poprawce prosiłoby się o przekręconą liczbę.
  *
@@ -233,7 +233,7 @@ export const DEMO_KPI_METRICS: KpiMetric[] = [
   ]),
   // Zwrotność ankiety zarządu
   ...demoKpi('Ankieta', [['Zimowa Zarządu', [47, 28]]]),
-  // Aplikacje na koordynatorów (pipeline liderów) — wszystkie projekty
+  // Aplikacje na koordynatorów (pipeline liderów) - wszystkie projekty
   ...demoKpi('Koordynatorzy', [
     ['DA', [1, 1]],
     ['RJ', [2, 1]],

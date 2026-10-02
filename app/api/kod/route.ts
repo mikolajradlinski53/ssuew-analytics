@@ -37,7 +37,7 @@ export async function POST(req: NextRequest) {
   const wynik = rozpatrzKod(kody, wpisany, urzadzenie)
 
   if (!wynik.ok) {
-    // Sześć cyfr to milion możliwości — bez tej pauzy dałoby się je przemielić
+    // Sześć cyfr to milion możliwości - bez tej pauzy dałoby się je przemielić
     // po kolei. Pół sekundy jest niezauważalne przy wpisywaniu ręką i zabójcze
     // dla zgadywania maszyną.
     await new Promise((r) => setTimeout(r, 500))
@@ -45,7 +45,7 @@ export async function POST(req: NextRequest) {
   }
 
   // IP zapisujemy tylko po to, żeby dało się zobaczyć, kto skąd wchodził.
-  // Nie bierze udziału w wpuszczaniu — patrz komentarz w lib/auth/kody.ts.
+  // Nie bierze udziału w wpuszczaniu - patrz komentarz w lib/auth/kody.ts.
   const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? ''
   const teraz = new Date().toISOString()
 
@@ -66,7 +66,7 @@ export async function POST(req: NextRequest) {
 
 export async function DELETE() {
   const res = NextResponse.json({ ok: true })
-  // Identyfikator urządzenia zostaje — inaczej po wylogowaniu własny kod
+  // Identyfikator urządzenia zostaje - inaczej po wylogowaniu własny kod
   // wyglądałby jak próba wejścia z obcego sprzętu.
   res.cookies.delete('deck_kod')
   return res

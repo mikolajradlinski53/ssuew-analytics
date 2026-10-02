@@ -52,9 +52,9 @@ export function pearsonTest(x: number[], y: number[]): StatResult {
   const direction = r > 0 ? 'dodatnia' : 'ujemna'
 
   const interpretation =
-    `r = ${r.toFixed(3)} — korelacja ${direction}, ${strength}. ` +
+    `r = ${r.toFixed(3)} - korelacja ${direction}, ${strength}. ` +
     `R² = ${(r2 * 100).toFixed(1)}% zmienności wyjaśnionej. ` +
-    `p ${p_approx}${significant ? ' — wynik statystycznie istotny.' : ' — brak istotności przy obecnej liczbie obserwacji.'}`
+    `p ${p_approx}${significant ? ' - wynik statystycznie istotny.' : ' - brak istotności przy obecnej liczbie obserwacji.'}`
 
   return { r, r2, p_approx, significant, interpretation }
 }
@@ -88,7 +88,7 @@ export function welchT(a: number[], b: number[]) {
     interpretation:
       `t = ${tStat.toFixed(2)}, df ≈ ${df.toFixed(1)}, p ${p_approx}. ` +
       (significant
-        ? `Różnica (${(ma - mb).toFixed(1)} jednostki) jest statystycznie istotna — sezon ma realny wpływ.`
+        ? `Różnica (${(ma - mb).toFixed(1)} jednostki) jest statystycznie istotna - sezon ma realny wpływ.`
         : `Różnica widoczna (${(ma - mb).toFixed(1)}), ale nieistotna statystycznie przy tej liczbie obserwacji.`)
   }
 }
@@ -103,17 +103,17 @@ export function zScores(values: number[]): number[] {
 }
 
 export function zInterpretation(z: number): string {
-  if (z > 2)    return 'Wyjątkowo powyżej normy — wzorzec do replikacji'
+  if (z > 2)    return 'Wyjątkowo powyżej normy - wzorzec do replikacji'
   if (z > 1)    return 'Powyżej normy organizacyjnej'
   if (z > -0.5) return 'W normie'
-  if (z > -1)   return 'Nieznacznie poniżej — warto monitorować'
-  if (z > -2)   return 'Poniżej normy — wymaga interwencji'
-  return 'Krytycznie poniżej — priorytet Zarządu'
+  if (z > -1)   return 'Nieznacznie poniżej - warto monitorować'
+  if (z > -2)   return 'Poniżej normy - wymaga interwencji'
+  return 'Krytycznie poniżej - priorytet Zarządu'
 }
 
 // ─── Regresja OLS wielokrotna ─────────────────────────────────────────────────
 // Minimalizuje sumę kwadratów residuów metodą macierzową X'X β = X'y
-// Uproszczona implementacja bez bibliotek – działa dla 2–4 zmiennych.
+// Uproszczona implementacja bez bibliotek - działa dla 2-4 zmiennych.
 
 function matMul(A: number[][], B: number[][]): number[][] {
   const rows = A.length, cols = B[0].length
@@ -261,8 +261,8 @@ export function analyzeRetention(kohort: Kohorta[]): RegressionResult {
       name: 'Nr edycji (trend czasowy)',
       beta: betas[0],
       interpretation: betas[0] < 0
-        ? `Każda kolejna edycja to ${Math.abs(betas[0]).toFixed(2)} sem. mniej retention — trend spadkowy wymaga interwencji.`
-        : `Trend rosnący: +${betas[0].toFixed(2)} sem. na edycję — poprawa jakości rekrutacji lub środowiska organizacyjnego.`
+        ? `Każda kolejna edycja to ${Math.abs(betas[0]).toFixed(2)} sem. mniej retention - trend spadkowy wymaga interwencji.`
+        : `Trend rosnący: +${betas[0].toFixed(2)} sem. na edycję - poprawa jakości rekrutacji lub środowiska organizacyjnego.`
     },
     {
       name: 'Sezon (1=jesień, 0=wiosna)',
@@ -273,7 +273,7 @@ export function analyzeRetention(kohort: Kohorta[]): RegressionResult {
       name: 'Liczba przyjętych',
       beta: betas[2],
       interpretation: Math.abs(betas[2]) < 0.05
-        ? `Efekt minimalny (β=${betas[2].toFixed(3)}) — liczba przyjętych nie wyjaśnia retencji. Liczy się jakość, nie wolumen.`
+        ? `Efekt minimalny (β=${betas[2].toFixed(3)}) - liczba przyjętych nie wyjaśnia retencji. Liczy się jakość, nie wolumen.`
         : `Każda dodatkowa przyjęta osoba zmienia retention o ${betas[2].toFixed(3)} sem.`
     },
   ]
@@ -289,7 +289,7 @@ export function analyzeRetention(kohort: Kohorta[]): RegressionResult {
     coefficients: varDefs,
     prediction: Math.max(0, prediction),
     warning: r2 < 0.4
-      ? `R²=${(r2 * 100).toFixed(0)}% — model słabo dopasowany. Kluczowe zmienne (jakość onboardingu, obciążenie sesją) nie są jeszcze mierzone.`
+      ? `R²=${(r2 * 100).toFixed(0)}% - model słabo dopasowany. Kluczowe zmienne (jakość onboardingu, obciążenie sesją) nie są jeszcze mierzone.`
       : null
   }
 }
@@ -448,7 +448,7 @@ export function correlationMatrix(
 
 // ─── Prognoza liniowa z przedziałem predykcji ────────────────────────────────
 // Dopasowuje y ~ a + b·i, prognozuje `steps` kolejnych punktów.
-// SE_pred = s·√(1 + 1/n + (x₀−x̄)²/Sxx) — przedział rośnie z odległością.
+// SE_pred = s·√(1 + 1/n + (x₀−x̄)²/Sxx) - przedział rośnie z odległością.
 
 export interface ForecastPoint {
   i: number
@@ -558,8 +558,8 @@ export function buildAlerts(
     const detail = `${przed} → ${teraz} (${Math.round(ratio * 100)}% r/r)`
     alerts.push(
       ratio < 0.6
-        ? { id, severity: 'critical', title: `${s.kategoria}: ${s.nazwa} — duży spadek`, detail, recommendation: 'Sprawdź przyczyny — priorytet Zarządu.', href: '/analytics/kpi' }
-        : { id, severity: 'warning', title: `${s.kategoria}: ${s.nazwa} — spadek r/r`, detail, recommendation: 'Monitorować trend.', href: '/analytics/kpi' },
+        ? { id, severity: 'critical', title: `${s.kategoria}: ${s.nazwa} - duży spadek`, detail, recommendation: 'Sprawdź przyczyny - priorytet Zarządu.', href: '/analytics/kpi' }
+        : { id, severity: 'warning', title: `${s.kategoria}: ${s.nazwa} - spadek r/r`, detail, recommendation: 'Monitorować trend.', href: '/analytics/kpi' },
     )
   }
 
@@ -599,7 +599,7 @@ export function buildAlerts(
       }
     }
     if (worstIdx > 0 && worstDrop > 0.5) {
-      alerts.push({ id: 'funnel-leak', severity: 'info', title: 'Duży wyciek w lejku', detail: `${funnel[worstIdx - 1].stage} → ${funnel[worstIdx].stage}: −${Math.round(worstDrop * 100)}%.`, recommendation: 'Najsłabszy etap ścieżki — punkt do poprawy.', href: '/analytics/lejek' })
+      alerts.push({ id: 'funnel-leak', severity: 'info', title: 'Duży wyciek w lejku', detail: `${funnel[worstIdx - 1].stage} → ${funnel[worstIdx].stage}: −${Math.round(worstDrop * 100)}%.`, recommendation: 'Najsłabszy etap ścieżki - punkt do poprawy.', href: '/analytics/lejek' })
     }
   }
 
@@ -607,7 +607,7 @@ export function buildAlerts(
 }
 
 // ─── KPI rok-do-roku ─────────────────────────────────────────────────────────
-// Iloraz i grupowanie mieszkaja w lib/kpi/serie.ts — tu zostaje tylko to,
+// Iloraz i grupowanie mieszkaja w lib/kpi/serie.ts - tu zostaje tylko to,
 // co skleja metryki w obraz calosci.
 
 export function kpiSummary(serie: SeriaKpi[]): { up: number; down: number; avgRatio: number } {

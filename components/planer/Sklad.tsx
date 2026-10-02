@@ -12,7 +12,7 @@ type Props = {
 /**
  * Lista osób do wyboru przy wydarzeniach. Zmiany nazwy celowo nie ma: osoby
  * są zapisane w wydarzeniach po etykiecie, więc zmiana musiałaby przepisać
- * każde z nich — prościej usunąć i dodać.
+ * każde z nich - prościej usunąć i dodać.
  */
 export function Sklad({ osoby, onZmien, onZamknij }: Props) {
   const [nowa, setNowa] = useState('')
@@ -44,7 +44,7 @@ export function Sklad({ osoby, onZmien, onZamknij }: Props) {
       </p>
 
       {osoby.length === 0 ? (
-        <p className="mb-3 text-[11.5px] text-deck-muted">Skład jest pusty — dodaj pierwszą osobę.</p>
+        <p className="mb-3 text-[11.5px] text-deck-muted">Skład jest pusty - dodaj pierwszą osobę.</p>
       ) : (
         <ul className="mb-3 flex flex-wrap gap-1.5">
           {osoby.map((o) => (

@@ -33,7 +33,7 @@ export default function AlertyClient() {
   if (!alerts.length) {
     return (
       <BentoCard title="Alerty">
-        <p className="text-[11px] text-deck-accent">Brak alertów — wszystko w normie. ✓</p>
+        <p className="text-[11px] text-deck-accent">Brak alertów - wszystko w normie. ✓</p>
       </BentoCard>
     )
   }

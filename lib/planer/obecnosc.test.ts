@@ -13,7 +13,7 @@ describe('aktualni', () => {
   })
 
   it('odsiewa znak sprzed trzech minut', () => {
-    // Gwałtownie zamknięta przeglądarka nie zdąży się wymeldować — bez wygasania
+    // Gwałtownie zamknięta przeglądarka nie zdąży się wymeldować - bez wygasania
     // pasek pokazywałby duchy.
     expect(aktualni([znak({ ostatniZnak: teraz - 180_000 })], teraz)).toHaveLength(0)
   })

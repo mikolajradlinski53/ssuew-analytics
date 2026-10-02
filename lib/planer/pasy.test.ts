@@ -32,7 +32,7 @@ describe('odcinkiTygodnia', () => {
     const [przed] = odcinkiTygodnia(t[1], PAZ, [w(10, 5)])
     const [po] = odcinkiTygodnia(t[2], PAZ, [w(10, 5)])
     expect(przed).toMatchObject({ kolOd: 5, kolDo: 6, ciagnieSieWPrawo: true })
-    // 10.10 + 5 dni = 10–14: w tygodniu 12–18 to poniedziałek–środa.
+    // 10.10 + 5 dni = 10-14: w tygodniu 12-18 to poniedziałek-środa.
     expect(po).toMatchObject({ kolOd: 0, kolDo: 2, ciagnieSieZLewej: true, ciagnieSieWPrawo: false })
   })
 
@@ -44,7 +44,7 @@ describe('odcinkiTygodnia', () => {
     expect(lis).toMatchObject({ kolOd: 6, kolDo: 6, ciagnieSieZLewej: true })
   })
 
-  it('nachodzące na siebie trafiają do różnych pasów, rozłączne — do jednego', () => {
+  it('nachodzące na siebie trafiają do różnych pasów, rozłączne - do jednego', () => {
     const t = tygodnieMiesiaca(PAZ)[1]
     const nachodzace = odcinkiTygodnia(t, PAZ, [w(6, 3, 'a'), w(7, 3, 'b')])
     expect(new Set(nachodzace.map((o) => o.pas))).toEqual(new Set([0, 1]))

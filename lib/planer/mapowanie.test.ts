@@ -17,7 +17,7 @@ describe('naWydarzenie', () => {
 
   it('stary dokument bez nowych pól dostaje wartości domyślne', () => {
     // Dokumenty zapisane przed Sesjami Operacyjnymi nie mają dni, godziny
-    // końca ani budynku. Bez migracji — tłumaczymy przy odczycie.
+    // końca ani budynku. Bez migracji - tłumaczymy przy odczycie.
     const w = naWydarzenie('x', { tytul: 'Coś', kategoria: 'SSUEW', rok: 2026, miesiac: 10, dzien: 1, sala: '9J' })
     expect(w).toMatchObject({ dni: 1, calyDzien: false, godzinaDo: null, budynek: null, sala: '9J' })
   })

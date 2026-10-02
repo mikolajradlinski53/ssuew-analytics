@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { KATEGORIE, KLUCZE_KATEGORII, jestKategoria, numerRangi } from '@/lib/planer/typy'
 
 describe('kategorie', () => {
-  it('siedem kategorii w kolejności ważności — Komisje zaraz po Zebraniach', () => {
+  it('siedem kategorii w kolejności ważności - Komisje zaraz po Zebraniach', () => {
     expect(KLUCZE_KATEGORII).toEqual(['ZEBRANIA', 'KOMISJE', 'SSUEW', 'PROJEKTY', 'UE', 'APLIKACJE', 'INNE'])
   })
 

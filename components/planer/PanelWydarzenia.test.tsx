@@ -78,7 +78,7 @@ describe('PanelWydarzenia', () => {
     expect(screen.getByRole('button', { name: /zapisz/i })).toBeDisabled()
   })
 
-  it('„do” wcześniejsze niż „od” to koniec następnego dnia — z podpowiedzią', () => {
+  it('„do” wcześniejsze niż „od” to koniec następnego dnia - z podpowiedzią', () => {
     const onZapisz = vi.fn()
     render(<PanelWydarzenia {...wspolne} onZapisz={onZapisz} wydarzenie={w} mozeEdytowac />)
     fireEvent.change(screen.getByLabelText('Do'), { target: { value: '04:00' } })
@@ -105,7 +105,7 @@ describe('PanelWydarzenia', () => {
     expect(onZapisz).toHaveBeenCalledWith(expect.objectContaining({ budynek: 'POZA' }), 1)
   })
 
-  it('online to miejsce bez sali — pole pyta o platformę', () => {
+  it('online to miejsce bez sali - pole pyta o platformę', () => {
     const onZapisz = vi.fn()
     render(<PanelWydarzenia {...wspolne} onZapisz={onZapisz} wydarzenie={w} mozeEdytowac />)
     fireEvent.change(screen.getByLabelText('Budynek'), { target: { value: 'ONLINE' } })
@@ -130,7 +130,7 @@ describe('PanelWydarzenia', () => {
     expect(onZapisz).toHaveBeenCalledWith(expect.anything(), 4)
   })
 
-  it('bez prawa usuwania nie ma kosza — usuwa wyłącznie właściciel', () => {
+  it('bez prawa usuwania nie ma kosza - usuwa wyłącznie właściciel', () => {
     render(<PanelWydarzenia {...wspolne} wydarzenie={w} mozeEdytowac mozeUsunac={false} />)
     expect(screen.queryByRole('button', { name: /usuń/i })).toBeNull()
   })

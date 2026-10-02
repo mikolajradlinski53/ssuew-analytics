@@ -35,7 +35,7 @@ export default function KpiClient() {
   if (loading) return <ModuleSkeleton variant="kpi" />
 
   const editable = rola === 'owner'
-  // Podpowiadamy okres z najdłuższej serii — bierze się z realnych danych,
+  // Podpowiadamy okres z najdłuższej serii - bierze się z realnych danych,
   // a nie z przypadkowego pierwszego wiersza arkusza.
   const najdluzsza = serie.reduce<(typeof serie)[number] | null>(
     (a, s) => (!a || s.punkty.length > a.punkty.length ? s : a), null,

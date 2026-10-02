@@ -9,7 +9,7 @@ export interface Termin {
 /**
  * Terminy co siedem dni, licząc od podanego.
  *
- * Liczymy prawdziwymi datami, nie dodawaniem siódemki do numeru dnia — inaczej
+ * Liczymy prawdziwymi datami, nie dodawaniem siódemki do numeru dnia - inaczej
  * przejście przez koniec miesiąca albo roku dawałoby daty, których nie ma.
  * Ciąg urywa się, gdy kolejny termin wypada poza semestrem: powtarzanie ma
  * wypełnić semestr, a nie wyjść poza niego.

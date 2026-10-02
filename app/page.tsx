@@ -12,7 +12,7 @@ import { SESJA_WYLACZONA } from '@/lib/planer/stan'
 import type { Rola } from '@/lib/auth/role'
 
 /**
- * Liczby z arkusza. Awaria arkusza nie może zabrać kokpitu — kafelek pokaże
+ * Liczby z arkusza. Awaria arkusza nie może zabrać kokpitu - kafelek pokaże
  * zera, a pozostałe moduły dalej działają. Obietnica nigdy nie odrzuca.
  */
 async function daneAnalityki(): Promise<DaneAnalityki> {
@@ -23,7 +23,7 @@ async function daneAnalityki(): Promise<DaneAnalityki> {
   ])
   const serie = serieZWierszy(punkty)
 
-  // Trzeci argument to KpiPeriod[], którego aplikacja nie pobiera — tak samo
+  // Trzeci argument to KpiPeriod[], którego aplikacja nie pobiera - tak samo
   // wywołuje to OverviewClient.
   const m = computeOverview(rekrutacje, kohorty, [])
   const konwersja =
@@ -41,7 +41,7 @@ async function daneAnalityki(): Promise<DaneAnalityki> {
 }
 
 /**
- * Stan z Firestore. Odznakę propozycji widzi wyłącznie właściciel — dla
+ * Stan z Firestore. Odznakę propozycji widzi wyłącznie właściciel - dla
  * zarządu ta liczba nic nie znaczy. Awaria Firestore to zero i brak baneru,
  * nie wyjątek. Oba odczyty równolegle.
  */
@@ -57,14 +57,14 @@ async function danePlanera(rola: Rola, semestrId: string): Promise<DanePlanera> 
 
 export default async function KokpitPage() {
   // Obie drogi wejścia. Sprawdzanie samego hasła odsyłało osoby na kodzie
-  // na /login, a stamtąd useAuth odsyłał je z powrotem — pętla.
+  // na /login, a stamtąd useAuth odsyłał je z powrotem - pętla.
   const kto = await ktoNaStronie()
   if (!kto) redirect('/login')
 
   const semestr = biezacySemestr(new Date())
 
   // Celowo bez `await`: strona idzie do przeglądarki od razu, a liczby
-  // dopływają strumieniem. Czekanie na arkusz (1–3 s przy pustym cache)
+  // dopływają strumieniem. Czekanie na arkusz (1-3 s przy pustym cache)
   // i Firestore po kolei dawało kilka sekund pustego ekranu.
   return (
     <DeckHub

@@ -8,11 +8,11 @@ type Props = {
   onOtworz: (w: Wydarzenie) => void
   przeciagalne: boolean
   onPrzeciagnij?: (id: string) => void
-  /** Przesunięcie o podaną liczbę dni — obsługa klawiatury. */
+  /** Przesunięcie o podaną liczbę dni - obsługa klawiatury. */
   onPrzesun?: (id: string, oDni: number) => void
-  /** Czy przy wydarzeniu toczy się rozmowa. Kropka bez liczby — liczbę widać po otwarciu. */
+  /** Czy przy wydarzeniu toczy się rozmowa. Kropka bez liczby - liczbę widać po otwarciu. */
   maRozmowe?: boolean
-  /** Który to dzień wydarzenia wielodniowego, np. „2/4” — na liście dni na telefonie. */
+  /** Który to dzień wydarzenia wielodniowego, np. „2/4” - na liście dni na telefonie. */
   dopisek?: string
   /** Tryb zaznaczania (eksport do CRA): `undefined` = tryb wyłączony. */
   zaznaczone?: boolean

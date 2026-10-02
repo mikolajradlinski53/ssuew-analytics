@@ -3,7 +3,7 @@ import { getFirestore, type Firestore } from 'firebase-admin/firestore'
 
 /**
  * Admin SDK omija reguły Firestore. Każde miejsce, które z niego korzysta, MUSI
- * samo sprawdzić, kto pyta — inaczej byłoby otwartym oknem do bazy.
+ * samo sprawdzić, kto pyta - inaczej byłoby otwartym oknem do bazy.
  *
  * Inicjalizacja jest idempotentna, bo Next trzyma jeden proces dla wielu tras,
  * a dwa wywołania `initializeApp` rzucają błędem o powtórzonej aplikacji.

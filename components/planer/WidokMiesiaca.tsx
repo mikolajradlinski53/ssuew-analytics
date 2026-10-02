@@ -18,7 +18,7 @@ const NAZWA_MIESIACA = [
 
 type Props = {
   miesiac: Miesiac
-  /** Wydarzenia, które nachodzą na miesiąc — także wielodniowe ze startem obok. */
+  /** Wydarzenia, które nachodzą na miesiąc - także wielodniowe ze startem obok. */
   wydarzenia: Wydarzenie[]
   onOtworz: (w: Wydarzenie) => void
   onPrzenies: (id: string, naDzien: number) => void
@@ -28,13 +28,13 @@ type Props = {
   /** Identyfikatory wydarzeń, przy których toczy się rozmowa. */
   zRozmowa?: Set<string>
   /**
-   * Tryb zaznaczania do eksportu CRA — identyfikatory wybranych. Gdy podane,
+   * Tryb zaznaczania do eksportu CRA - identyfikatory wybranych. Gdy podane,
    * edycja jest wyłączona: kliknięcie zaznacza, a nic nie da się przeciągnąć.
    */
   zaznaczone?: Set<string>
 }
 
-/** Opis kolizji do dymka — sam trójkąt mówi „coś jest nie tak", ale nie co. */
+/** Opis kolizji do dymka - sam trójkąt mówi „coś jest nie tak", ale nie co. */
 function opiszKolizje(k: KolizjeDnia): string {
   const czesci = [
     ...k.osoby.map((o) =>
@@ -165,7 +165,7 @@ export function WidokMiesiaca({
           </span>
           <div className="flex items-center gap-1">
             {kol && (
-              // Dymek na opakowaniu, nie na ikonie — Lucide nie przyjmuje `title`.
+              // Dymek na opakowaniu, nie na ikonie - Lucide nie przyjmuje `title`.
               <span
                 title={opiszKolizje(kol)}
                 aria-label={twarda ? 'kolizja twarda' : 'kolizja miękka'}

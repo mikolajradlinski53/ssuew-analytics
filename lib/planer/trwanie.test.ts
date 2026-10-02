@@ -24,7 +24,7 @@ describe('trwanie', () => {
     expect(nachodziNaMiesiac(zjazd, { m: 12, y: 2026 })).toBe(false)
   })
 
-  it('liczy dni od–do włącznie', () => {
+  it('liczy dni od-do włącznie', () => {
     expect(dniMiedzy({ rok: 2026, miesiac: 10, dzien: 30 }, { rok: 2026, miesiac: 11, dzien: 2 })).toBe(4)
     expect(dniMiedzy({ rok: 2026, miesiac: 10, dzien: 7 }, { rok: 2026, miesiac: 10, dzien: 7 })).toBe(1)
   })
@@ -34,7 +34,7 @@ describe('trwanie', () => {
   })
 
   it('nie gubi dnia na zmianie czasu', () => {
-    // 25.10.2026 to przejście na czas zimowy — doba ma 25 godzin.
+    // 25.10.2026 to przejście na czas zimowy - doba ma 25 godzin.
     expect(dniMiedzy({ rok: 2026, miesiac: 10, dzien: 24 }, { rok: 2026, miesiac: 10, dzien: 26 })).toBe(3)
   })
 

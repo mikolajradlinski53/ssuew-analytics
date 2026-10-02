@@ -2,7 +2,7 @@ import { dniWMiesiacu, pierwszyDzienTygodnia } from './daty'
 import { dniTrwaniaWMiesiacu, koniec, poczatek, porownajDaty } from './trwanie'
 import type { Miesiac, Wydarzenie } from './typy'
 
-/** Siedem kolumn Pn–Nd; `null` to dzień spoza miesiąca. */
+/** Siedem kolumn Pn-Nd; `null` to dzień spoza miesiąca. */
 export type Tydzien = (number | null)[]
 
 export function tygodnieMiesiaca(m: Miesiac): Tydzien[] {
@@ -21,7 +21,7 @@ export interface Odcinek {
   wydarzenie: Wydarzenie
   kolOd: number
   kolDo: number
-  /** Wydarzenie zaczęło się przed tym odcinkiem — w poprzednim tygodniu albo miesiącu. */
+  /** Wydarzenie zaczęło się przed tym odcinkiem - w poprzednim tygodniu albo miesiącu. */
   ciagnieSieZLewej: boolean
   /** Wydarzenie trwa dalej za tym odcinkiem. */
   ciagnieSieWPrawo: boolean
@@ -49,7 +49,7 @@ export function odcinkiTygodnia(tydzien: Tydzien, m: Miesiac, wielodniowe: Wydar
     })
   }
 
-  // Od lewej, a przy wspólnym starcie dłuższe najpierw — krótsze wypełniają
+  // Od lewej, a przy wspólnym starcie dłuższe najpierw - krótsze wypełniają
   // wtedy luki w niższych pasach zamiast otwierać nowe.
   odcinki.sort((a, b) => a.kolOd - b.kolOd || (b.kolDo - b.kolOd) - (a.kolDo - a.kolOd))
 

@@ -8,7 +8,7 @@ async function pobierzProjekty(): Promise<Omit<Stan, 'loading'>> {
   try {
     const res = await fetch('/api/projekty')
     // Pusta zakładka to pusty moduł, a nie dane demo. Kondycji projektów nie
-    // da się pokazać na wymyślonych liczbach — cała jej wartość polega na tym,
+    // da się pokazać na wymyślonych liczbach - cała jej wartość polega na tym,
     // że mówi o prawdziwych projektach, a zmyślony alarm byłby gorszy niż brak.
     if (!res.ok) {
       const tresc = await res.json().catch(() => null)

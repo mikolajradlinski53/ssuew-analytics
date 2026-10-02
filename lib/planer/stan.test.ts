@@ -29,7 +29,7 @@ describe('Skład', () => {
     expect(dodajDoSkladu(sklad, 'jula')).toBe(sklad)
   })
 
-  it('nie przyjmuje słowa „wszyscy” — to zarezerwowany znacznik całego zarządu', () => {
+  it('nie przyjmuje słowa „wszyscy” - to zarezerwowany znacznik całego zarządu', () => {
     const sklad = ['Jula']
     expect(dodajDoSkladu(sklad, 'Wszyscy')).toBe(sklad)
   })

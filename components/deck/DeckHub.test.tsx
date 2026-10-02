@@ -19,7 +19,7 @@ vi.mock('@/lib/auth/useAuth', () => ({ useAuth: () => ({ wyloguj }) }))
 const ANALITYKA: DaneAnalityki = { konwersja: 61.1, retencja: 3.81, kpiWzrosty: 20, kpiRazem: 28, alerty: 2 }
 const PLANER: DanePlanera = { propozycje: 0, sesja: { wlaczony: false, od: null, przez: null } }
 
-/** Obietnica, która nigdy się nie spełnia — arkusz, który jeszcze nie odpowiedział. */
+/** Obietnica, która nigdy się nie spełnia - arkusz, który jeszcze nie odpowiedział. */
 const nigdy = <T,>() => new Promise<T>(() => {})
 
 async function hub(nadpisz: {
@@ -34,7 +34,7 @@ async function hub(nadpisz: {
   const planer = nadpisz.planer instanceof Promise
     ? nadpisz.planer
     : Promise.resolve({ ...PLANER, ...nadpisz.planer })
-  // Dane ze strumienia (use + Suspense) dopływają w mikrozadaniach — bez
+  // Dane ze strumienia (use + Suspense) dopływają w mikrozadaniach - bez
   // asynchronicznego act React nie zdąży podmienić wersji zastępczej.
   return act(async () => {
     render(
@@ -49,9 +49,9 @@ async function hub(nadpisz: {
 }
 
 describe('DeckHub', () => {
-  it('nagłówek i kafelki są od razu — nie czekają na arkusz ani Firestore', async () => {
+  it('nagłówek i kafelki są od razu - nie czekają na arkusz ani Firestore', async () => {
     // Przyczyna kilkusekundowego wejścia: strona czekała z wyświetleniem
-    // czegokolwiek na trzy zakładki Apps Script (2–3 s każda przy pustym cache).
+    // czegokolwiek na trzy zakładki Apps Script (2-3 s każda przy pustym cache).
     await hub({ analityka: nigdy(), planer: nigdy() })
     expect(screen.getByText('DECK')).toBeInTheDocument()
     expect(screen.getByRole('link', { name: /SSUEW Analytics/ })).toHaveAttribute('href', '/analytics')
@@ -64,7 +64,7 @@ describe('DeckHub', () => {
     expect(screen.getByText('Orbita')).toBeInTheDocument()
   })
 
-  it('ukrywa Orbitę przed zarządem — nie wyszarza, tylko nie renderuje', async () => {
+  it('ukrywa Orbitę przed zarządem - nie wyszarza, tylko nie renderuje', async () => {
     await hub({ rola: 'board', email: 'z@e.com' })
     expect(screen.queryByText('Orbita')).toBeNull()
   })
@@ -77,7 +77,7 @@ describe('DeckHub', () => {
   it('nie pokazuje odznaki alertów, gdy alertów nie ma', async () => {
     await hub({ analityka: { alerty: 0 } })
     await screen.findByText(/28 metryk w pamięci/)
-    // Sama etykieta „alerty" zostaje w kafelku statystyk — znika tylko odznaka
+    // Sama etykieta „alerty" zostaje w kafelku statystyk - znika tylko odznaka
     // z liczbą, więc szukamy wzorca „<liczba> alerty".
     expect(screen.queryByText(/\d+ alerty/)).toBeNull()
   })
@@ -90,7 +90,7 @@ describe('DeckHub', () => {
 
   it('ma przycisk wylogowania', async () => {
     // Kokpit jest ekranem, na ktorym sie laduje po zalogowaniu. Bez tego
-    // przycisku nie da sie z niego wyjsc — powloka z sidebarem obejmuje
+    // przycisku nie da sie z niego wyjsc - powloka z sidebarem obejmuje
     // wylacznie /analytics/*, wiec tam wylogowania po prostu nie widac.
     await hub()
     fireEvent.click(screen.getByRole('button', { name: /wyloguj/i }))

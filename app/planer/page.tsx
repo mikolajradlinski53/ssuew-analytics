@@ -13,7 +13,7 @@ export default async function PlanerPage() {
   const semestr = biezacySemestr(new Date())
 
   // Konta z hasłem subskrybują Firestore same. Osoba na kodzie nie ma konta
-  // Firebase — bez obrazu z serwera widziała pusty kalendarz.
+  // Firebase - bez obrazu z serwera widziała pusty kalendarz.
   const naZywo = !kto.uid.startsWith('kod:')
   const poczatkowy: ObrazPlanera | null = naZywo
     ? null

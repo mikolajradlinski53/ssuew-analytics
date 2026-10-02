@@ -185,7 +185,7 @@ body::before {
    daja teraz obwodka i narozniki celownika. */
 
 /* Obracajacy sie klin swietlny (conic-gradient na inset -70% z animacja
-   deck-border-flow) tez zostal usuniety — to byl TEN promien. Zapalal sie
+   deck-border-flow) tez zostal usuniety - to byl TEN promien. Zapalal sie
    przy najechaniu na kazda karte, nie tylko na kafelki kokpitu, wiec
    wylaczenie go na .deck-tile nic nie dawalo w Analytics.
 
@@ -311,7 +311,7 @@ body::before {
 
 /* Rozmyta poświata pod kursorem wyleciala: zabierala czytelnosc liczbom,
    a to one sa tu trescia. W jej miejsce ostra linia skanu, ktora przejezdza
-   raz przy najechaniu — i narozniki celownika nizej. */
+   raz przy najechaniu - i narozniki celownika nizej. */
 
 /* Przechylenie w strone kursora: 3 stopnie, bo wiecej rozmazuje tekst. */
 .deck-tile {
@@ -324,7 +324,7 @@ body::before {
   box-shadow: 0 26px 66px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(46, 230, 166, 0.16);
 }
 
-/* Narozniki celownika — dorysowuja sie przy najechaniu, jak w celowniku HUD. */
+/* Narozniki celownika - dorysowuja sie przy najechaniu, jak w celowniku HUD. */
 .deck-tile__rog {
   position: absolute;
   z-index: 3;
@@ -362,7 +362,7 @@ body::before {
   background: rgba(255, 255, 255, 0.016);
 }
 
-/* Kafelki wjeżdżają po kolei — kolejność prowadzi wzrok od największego do najmniejszego. */
+/* Kafelki wjeżdżają po kolei - kolejność prowadzi wzrok od największego do najmniejszego. */
 .deck-tile,
 .deck-tile-locked {
   animation: deck-rise 640ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
@@ -376,7 +376,7 @@ body::before {
 
 /*
   Bez tego „mnóstwo animacji" zamienia się w interfejs, który u części osób
-  wywołuje mdłości — a kilka animacji w tym pliku chodzi w nieskończonej pętli.
+  wywołuje mdłości - a kilka animacji w tym pliku chodzi w nieskończonej pętli.
 */
 @media (prefers-reduced-motion: reduce) {
   *,
@@ -390,11 +390,11 @@ body::before {
 }
 
 /* ============================================================
-   Ekran kodu — trzy motywy losowane przy każdym wejściu.
+   Ekran kodu - trzy motywy losowane przy każdym wejściu.
    Zasady przejęte ze źródła, z którego wzięliśmy pomysł:
    · pierścień jest kropkowany, bo ciągły w tym rozmiarze
      czyta się jak kręciołek ładowania,
-   · kolor jest zarezerwowany na werdykt — uwagę w stanie
+   · kolor jest zarezerwowany na werdykt - uwagę w stanie
      spoczynku przyciąga światło, nie barwa,
    · pierścień płynie, nie mruga.
    ============================================================ */
@@ -417,7 +417,7 @@ body::before {
 }
 
 /* Szesc kratek po 46 px to 326 px sztywnej szerokosci. Na waskim ekranie
-   rozpychalo to karte poza widok — dlatego ponizej 400 px kratki chudna. */
+   rozpychalo to karte poza widok - dlatego ponizej 400 px kratki chudna. */
 @media (max-width: 400px) {
   .kod__rzad { gap: 6px; padding: 22px 2px; }
   .kod__slot { width: 38px; height: 50px; }
@@ -500,7 +500,7 @@ body::before {
 .kod__pierscien-sciezka {
   fill: none;
   stroke: rgba(220, 234, 255, 0.45);
-  /* Kropkowany celowo — ciągły czytałby się jak spinner. */
+  /* Kropkowany celowo - ciągły czytałby się jak spinner. */
   stroke-dasharray: 2 8;
   stroke-width: 1.5;
 }
@@ -668,7 +668,7 @@ body::after {
   display: inline-block;
 }
 
-/* Dwie kopie napisu rozjezdzaja sie w czerwien i blekit — tak dziala
+/* Dwie kopie napisu rozjezdzaja sie w czerwien i blekit - tak dziala
    aberracja chromatyczna na zepsutym sygnale. Kopie sa ukryte przed
    czytnikami ekranu, bo tekst juz raz zostal odczytany. */
 .deck-glitch::before,
@@ -691,7 +691,7 @@ body::after {
   animation: deck-glitch-b 6s steps(1) infinite;
 }
 
-/* Rwie sie tylko przez ~5% czasu — glitch bez przerwy przestaje byc
+/* Rwie sie tylko przez ~5% czasu - glitch bez przerwy przestaje byc
    glitchem i zaczyna byc migotaniem, ktore meczy. */
 @keyframes deck-glitch-a {
   0%, 92%, 100% { opacity: 0; transform: none; clip-path: none; }

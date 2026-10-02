@@ -58,7 +58,7 @@ describe('DELETE /api/session', () => {
   it('kasuje OBA bilety, nie tylko ten hasłowy', async () => {
     // Kto wszedł kiedyś kodem, a potem hasłem, ma jedno i drugie. Skasowanie
     // samego deck_session zostawiało ważny bilet kodowy i strażnik wpuszczał
-    // z powrotem — wyglądało to jak niedziałające wylogowanie.
+    // z powrotem - wyglądało to jak niedziałające wylogowanie.
     const { DELETE } = await import('@/app/api/session/route')
     const res = await DELETE()
     expect(res.status).toBe(200)

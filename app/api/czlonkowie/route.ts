@@ -16,13 +16,13 @@ async function odmowaZapisu(req: NextRequest) {
 }
 
 /**
- * Jedyna trasa wymagająca logowania także do odczytu — to nazwiska, nie liczby.
+ * Jedyna trasa wymagająca logowania także do odczytu - to nazwiska, nie liczby.
  * Czytać mogą obie role; zapisywać, jak wszędzie, tylko `owner`.
  */
 export async function GET(req: NextRequest) {
   if (!(await ktoPyta(req))) return NextResponse.json({ error: 'Wymagane logowanie' }, { status: 401 })
   // Brak arkusza to co innego niż arkusz z pustą zakładką. Przeglądarka nie widzi
-  // GAS_URL, więc rozróżnienie musi przyjść stąd — inaczej pusta lista prawdziwych
+  // GAS_URL, więc rozróżnienie musi przyjść stąd - inaczej pusta lista prawdziwych
   // członków byłaby nie do odróżnienia od trybu demonstracyjnego.
   if (!isConfigured) {
     return NextResponse.json({ error: 'Arkusz nie jest skonfigurowany' }, { status: 503 })

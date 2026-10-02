@@ -39,7 +39,7 @@ export function opisSemestru(rokAkademicki: number, typ: TypSemestru): Semestr {
 }
 
 /**
- * Semestr na dany dzień. Wrzesień liczymy już do zimy — to miesiąc układania
+ * Semestr na dany dzień. Wrzesień liczymy już do zimy - to miesiąc układania
  * jej kalendarza. Styczeń i luty należą do zimy z poprzedniego roku
  * kalendarzowego (rok akademicki 2026/2027 to zima `2026Z`).
  */

@@ -12,7 +12,7 @@ export const runtime = 'nodejs'
 /**
  * Odczyt Planera dla osób wchodzących kodem: nie mają konta Firebase, więc
  * reguły Firestore ich nie wpuszczą. `zasob=sesja` to tani odczyt jednego
- * dokumentu — odpytujemy nim poza sesją, żeby zauważyć jej start.
+ * dokumentu - odpytujemy nim poza sesją, żeby zauważyć jej start.
  */
 export async function GET(req: NextRequest) {
   const kto = await ktoPyta(req)
@@ -38,7 +38,7 @@ async function wolnoPisacWprost(kto: Pytajacy, semestrId: string): Promise<boole
 
 /**
  * Zapisy zarządu. Osoby na kodzie nie mają konta Firebase, a konto `board`
- * z hasłem celowo też pisze tędy — jedna ścieżka zapisu to jedno miejsce,
+ * z hasłem celowo też pisze tędy - jedna ścieżka zapisu to jedno miejsce,
  * w którym weryfikuje się uprawnienia.
  */
 export async function POST(req: NextRequest) {

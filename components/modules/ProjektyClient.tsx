@@ -53,7 +53,7 @@ export default function ProjektyClient() {
             </div>
             <h1 className="mt-4 text-3xl font-semibold text-deck-text">Co się świeci i dlaczego.</h1>
             <p className="mt-2 max-w-xl text-sm leading-6 text-deck-muted">
-              Bez oceny liczbowej — każdy projekt dostaje konkretne zastrzeżenia z konkretnym powodem.
+              Bez oceny liczbowej - każdy projekt dostaje konkretne zastrzeżenia z konkretnym powodem.
               Najgłośniejsze stoją na górze.
             </p>
           </div>

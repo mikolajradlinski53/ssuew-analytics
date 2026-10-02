@@ -16,7 +16,7 @@ export function normalizujKod(wpisany: string): string {
 }
 
 /**
- * Losuje kod z generatora kryptograficznego — `Math.random()` bywa przewidywalny.
+ * Losuje kod z generatora kryptograficznego - `Math.random()` bywa przewidywalny.
  *
  * Pierwsza cyfra nigdy nie jest zerem, i to nie dla urody: Arkusze traktują
  * `048291` jako liczbę i zapisują `48291`, przez co kod przestałby pasować,
@@ -31,7 +31,7 @@ export function losujKod(): string {
 }
 
 /**
- * Decyduje, czy wpisany kod otwiera drzwi. Czysta funkcja — cała rozmowa
+ * Decyduje, czy wpisany kod otwiera drzwi. Czysta funkcja - cała rozmowa
  * z arkuszem dzieje się w trasie, dzięki czemu tę logikę da się przetestować
  * bez sieci.
  *

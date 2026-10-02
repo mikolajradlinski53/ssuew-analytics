@@ -2,7 +2,7 @@ import type { KpiMetric, PunktKpi, SeriaKpi } from '@/types'
 
 /**
  * Okresy zapisujemy jako '2024/2025'. Samo porównanie tekstowe dałoby dla tego
- * formatu dobry wynik, ale rozsypałoby się na 'letni 2025/2026' — dlatego
+ * formatu dobry wynik, ale rozsypałoby się na 'letni 2025/2026' - dlatego
  * najpierw szukamy pierwszej czterocyfrowej liczby.
  */
 function rokZOkresu(okres: string): number | null {
@@ -19,10 +19,10 @@ export function porownajOkresy(a: string, b: string): number {
 
 /**
  * Skleja surowe wiersze arkusza w serie. Metryka jest rozpoznawana po parze
- * (kategoria, nazwa) — zmiana nazwy w arkuszu rozrywa serię na dwie.
+ * (kategoria, nazwa) - zmiana nazwy w arkuszu rozrywa serię na dwie.
  *
  * Deduplikacja jest tutaj, a nie tylko w migracji, bo ten sam okres może wpaść
- * dwa razy również przy zwykłym wpisywaniu — i wtedy prawdą jest wpis nowszy.
+ * dwa razy również przy zwykłym wpisywaniu - i wtedy prawdą jest wpis nowszy.
  */
 export function serieZWierszy(wiersze: KpiMetric[]): SeriaKpi[] {
   type Grupa = { kategoria: string; nazwa: string; punkty: Map<string, KpiMetric> }
@@ -57,8 +57,7 @@ export function ostatniPunkt(s: SeriaKpi): PunktKpi | null {
 }
 
 /**
- * Iloraz dwóch ostatnich punktów. Zwraca 0, gdy nie da się go policzyć —
- * ta sama umowa co w poprzednim modelu, więc wszędzie 0 jest odfiltrowywane
+ * Iloraz dwóch ostatnich punktów. Zwraca 0, gdy nie da się go policzyć -  * ta sama umowa co w poprzednim modelu, więc wszędzie 0 jest odfiltrowywane
  * przed liczeniem średnich.
  */
 export function ilorazSerii(s: SeriaKpi): number {

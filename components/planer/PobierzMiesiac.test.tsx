@@ -16,7 +16,7 @@ describe('PobierzMiesiac', () => {
   })
 
   // Pierwsze załadowanie ExcelJS (~1 MB) w środowisku testowym trwa kilkanaście
-  // sekund — domyślne 5 s to za mało, choć sama budowa skoroszytu jest natychmiastowa.
+  // sekund - domyślne 5 s to za mało, choć sama budowa skoroszytu jest natychmiastowa.
   it('buduje skoroszyt z kartami Kalendarz i Lista', { timeout: 60_000 }, async () => {
     const plik = await zbudujSkoroszyt(budujEksport([zebranie], { m: 10, y: 2026 }))
     expect(plik.worksheets.map((a) => a.name)).toEqual(['Kalendarz', 'Lista'])

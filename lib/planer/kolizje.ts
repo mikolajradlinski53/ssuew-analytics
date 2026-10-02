@@ -34,7 +34,7 @@ function zajmujeCalyDzien(w: Wydarzenie): boolean {
 
 /**
  * Koniec liczony od północy dnia startu: 04:00 po 18:00 to 28:00. Część po
- * północy w kolejnym dniu kolizji nie liczymy — to rzadkie, a dzień startu
+ * północy w kolejnym dniu kolizji nie liczymy - to rzadkie, a dzień startu
  * to ten, w którym ludzie faktycznie planują.
  */
 function koniecWMinutach(od: number, doMinut: number | null): number | null {
@@ -43,9 +43,8 @@ function koniecWMinutach(od: number, doMinut: number | null): number | null {
 }
 
 /**
- * Czy dwa wydarzenia z godziną zderzają się w czasie. Gdy oba mają koniec —
- * nakładanie się przedziałów (stykające się końcem nie kolidują). Gdy któremuś
- * brakuje końca — dotychczasowa reguła: starty bliżej niż 90 minut.
+ * Czy dwa wydarzenia z godziną zderzają się w czasie. Gdy oba mają koniec -  * nakładanie się przedziałów (stykające się końcem nie kolidują). Gdy któremuś
+ * brakuje końca - dotychczasowa reguła: starty bliżej niż 90 minut.
  */
 export function kolidujaWCzasie(a: Wydarzenie, b: Wydarzenie): boolean {
   const aOd = naMinuty(a.godzina)
@@ -90,13 +89,13 @@ function grupuj<T>(elementy: T[], klucz: (e: T) => string[]): Map<string, T[]> {
 
 /**
  * Kolizje w rozbiciu na dni miesiąca `miesiac`. Wydarzenie wielodniowe liczy się
- * w każdym dniu, w którym trwa — także gdy wystartowało w poprzednim miesiącu.
+ * w każdym dniu, w którym trwa - także gdy wystartowało w poprzednim miesiącu.
  * Dzień bez kolizji nie ma wpisu.
  */
 export function kolizjeWMiesiacu(wydarzenia: Wydarzenie[], miesiac: Miesiac): Map<number, KolizjeDnia> {
   const poDniach = new Map<number, Wydarzenie[]>()
   for (const w of wydarzenia) {
-    // Aplikacje to termin naboru, nie spotkanie — nikogo nie zajmują i nie
+    // Aplikacje to termin naboru, nie spotkanie - nikogo nie zajmują i nie
     // stoją w żadnej sali. Liczone, zapalałyby ostrzeżenia przy każdym naborze.
     if (BEZ_KOLIZJI.has(w.kategoria)) continue
     for (const d of dniTrwaniaWMiesiacu(w, miesiac)) {
@@ -111,7 +110,7 @@ export function kolizjeWMiesiacu(wydarzenia: Wydarzenie[], miesiac: Miesiac): Ma
     const osoby: KolizjaOsoby[] = []
     const sale: KolizjaSali[] = []
 
-    // 'wszyscy' celowo pomijamy — inaczej każde zebranie zarządu kolidowałoby
+    // 'wszyscy' celowo pomijamy - inaczej każde zebranie zarządu kolidowałoby
     // z każdym wydarzeniem tego dnia i ostrzeżenia straciłyby sens.
     for (const [osoba, jej] of grupuj(lista, (e) => e.osoby.filter((o) => o !== 'wszyscy'))) {
       if (jej.length < 2) continue

@@ -20,11 +20,11 @@ const spanClass = { 1: '', 2: 'col-span-2' } as const
 const rowsClass = { 1: '', 2: 'row-span-2' } as const
 
 /**
- * Lekkie przechylenie w stronę kursora — maksymalnie 3°, bo więcej rozmazuje
+ * Lekkie przechylenie w stronę kursora - maksymalnie 3°, bo więcej rozmazuje
  * tekst. Idzie przez zmienne CSS, nie przez stan Reacta: ruch myszy nie może
  * przerysowywać drzewa.
  *
- * Rozmyta poświata pod kursorem wylądowała w koszu — zabierała czytelność
+ * Rozmyta poświata pod kursorem wylądowała w koszu - zabierała czytelność
  * liczbom, a to one są tu treścią.
  */
 function sledzKursor(e: PointerEvent<HTMLElement>) {
@@ -89,7 +89,7 @@ export function DeckTile({
       onPointerLeave={odsunKursor}
       className={`${uklad} deck-card deck-tile flex flex-col gap-3 rounded-lg p-[18px] text-deck-text no-underline`}
     >
-      {/* Narożniki celownika — rysują się dopiero przy najechaniu. */}
+      {/* Narożniki celownika - rysują się dopiero przy najechaniu. */}
       <i className="deck-tile__rog deck-tile__rog--lg" aria-hidden="true" />
       <i className="deck-tile__rog deck-tile__rog--pg" aria-hidden="true" />
       <i className="deck-tile__rog deck-tile__rog--ld" aria-hidden="true" />

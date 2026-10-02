@@ -83,8 +83,8 @@ describe('kolizje sal', () => {
   })
 })
 
-describe('kolizje — przedziały, całe dni, wiele dni', () => {
-  it('nakładające się przedziały od–do to kolizja twarda', () => {
+describe('kolizje - przedziały, całe dni, wiele dni', () => {
+  it('nakładające się przedziały od-do to kolizja twarda', () => {
     const k = kolizjeWMiesiacu([
       w({ osoby: ['Jula'], godzina: '16:00', godzinaDo: '19:00' }),
       w({ osoby: ['Jula'], godzina: '18:30', godzinaDo: '20:00' }),
@@ -141,8 +141,8 @@ describe('kolizje — przedziały, całe dni, wiele dni', () => {
   })
 })
 
-describe('kolizje — przez północ', () => {
-  it('impreza 18:00–04:00 koliduje z wydarzeniem tej osoby o 23:00', () => {
+describe('kolizje - przez północ', () => {
+  it('impreza 18:00-04:00 koliduje z wydarzeniem tej osoby o 23:00', () => {
     const k = kolizjeWMiesiacu([
       w({ osoby: ['Jula'], godzina: '18:00', godzinaDo: '04:00' }),
       w({ osoby: ['Jula'], godzina: '23:00', godzinaDo: '23:30' }),
@@ -150,7 +150,7 @@ describe('kolizje — przez północ', () => {
     expect(k.get(7)?.osoby[0].twarda).toBe(true)
   })
 
-  it('impreza 18:00–04:00 nie koliduje z porannym wydarzeniem tego samego dnia', () => {
+  it('impreza 18:00-04:00 nie koliduje z porannym wydarzeniem tego samego dnia', () => {
     const k = kolizjeWMiesiacu([
       w({ osoby: ['Jula'], godzina: '18:00', godzinaDo: '04:00' }),
       w({ osoby: ['Jula'], godzina: '09:00', godzinaDo: '10:00' }),
@@ -159,9 +159,9 @@ describe('kolizje — przez północ', () => {
   })
 })
 
-describe('kolizje — aplikacje', () => {
+describe('kolizje - aplikacje', () => {
   it('nabór aplikacji nie koliduje z wydarzeniem tej samej osoby', () => {
-    // Aplikacje to termin, nie spotkanie — nikt nie siedzi na nich w sali.
+    // Aplikacje to termin, nie spotkanie - nikt nie siedzi na nich w sali.
     const k = kolizjeWMiesiacu([
       w({ osoby: ['Jula'], kategoria: 'APLIKACJE', calyDzien: true }),
       w({ osoby: ['Jula'], godzina: '18:00' }),
@@ -178,7 +178,7 @@ describe('kolizje — aplikacje', () => {
   })
 })
 
-describe('kolizje — miejsca spoza budynków', () => {
+describe('kolizje - miejsca spoza budynków', () => {
   it('dwa spotkania online o tej samej porze nie kolidują salą', () => {
     const k = kolizjeWMiesiacu([
       w({ budynek: 'ONLINE', sala: 'Teams', godzina: '20:00' }),

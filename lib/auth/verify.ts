@@ -10,7 +10,7 @@ export interface Tozsamosc {
 let jwks: ReturnType<typeof createRemoteJWKSet> | null = null
 
 /**
- * Zwraca tożsamość albo `null` — bez rozróżniania, co dokładnie było nie tak.
+ * Zwraca tożsamość albo `null` - bez rozróżniania, co dokładnie było nie tak.
  * Wywołujący ma odmówić dostępu, a nie tłumaczyć pytającemu, którego warunku nie spełnił.
  */
 export async function zweryfikujToken(token: string): Promise<Tozsamosc | null> {

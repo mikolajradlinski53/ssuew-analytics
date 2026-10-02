@@ -16,7 +16,7 @@ export function AnalyticsDataProvider({ children }: { children: ReactNode }) {
 
 /**
  * Jedno miejsce, które mówi, że część liczb nie pochodzi z arkusza. Dane
- * przykładowe wyglądają wiarygodnie — bez tego napisu łatwo podjąć decyzję
+ * przykładowe wyglądają wiarygodnie - bez tego napisu łatwo podjąć decyzję
  * na cudzych liczbach z zeszłego roku.
  */
 export function BanerZrodla() {
@@ -39,10 +39,10 @@ export function BanerZrodla() {
         </p>
         {bledy.length > 0 ? (
           <ul className="mt-1 text-deck-muted">
-            {bledy.map((b) => <li key={b}>Arkusz nie odpowiedział — {b}</li>)}
+            {bledy.map((b) => <li key={b}>Arkusz nie odpowiedział - {b}</li>)}
           </ul>
         ) : (
-          <p className="mt-1 text-deck-muted">Zakładki w arkuszu są puste — dopisz dane w „Wpisz dane”.</p>
+          <p className="mt-1 text-deck-muted">Zakładki w arkuszu są puste - dopisz dane w „Wpisz dane”.</p>
         )}
       </div>
     </div>

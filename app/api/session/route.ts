@@ -6,7 +6,7 @@ import { ktoPyta } from '@/lib/auth/guard'
 const GODZINA_S = 60 * 60
 
 /**
- * Kim jestem? Jedna odpowiedź dla obu dróg wejścia — konto z hasłem przychodzi
+ * Kim jestem? Jedna odpowiedź dla obu dróg wejścia - konto z hasłem przychodzi
  * z Firebase, a sesja kodowa w ogóle przez Firebase nie przechodzi, więc
  * przeglądarka nie ma jak sama tego ustalić.
  */
@@ -32,7 +32,7 @@ export async function POST(req: NextRequest) {
   const rola = rolaDla(tozsamosc.email)
   if (!rola) {
     // Adres w komunikacie jest celowy: to jedyny moment, w którym widać,
-    // którym kontem Google faktycznie się logujesz — wystarczy je wkleić
+    // którym kontem Google faktycznie się logujesz - wystarczy je wkleić
     // do DECK_OWNER_EMAIL albo DECK_BOARD_EMAILS.
     return NextResponse.json(
       { error: `Konto ${tozsamosc.email} nie ma dostępu do DECK` },
@@ -55,7 +55,7 @@ export async function POST(req: NextRequest) {
 
 /**
  * Wylogowanie kasuje OBA bilety, nie tylko ten, którym się weszło.
- * Kto wszedł kiedyś kodem, a potem hasłem, ma jedno i drugie — skasowanie
+ * Kto wszedł kiedyś kodem, a potem hasłem, ma jedno i drugie - skasowanie
  * samego `deck_session` zostawiałoby ważny bilet kodowy i strażnik wpuszczałby
  * z powrotem. Wyglądało to dokładnie jak niedziałające wylogowanie.
  *

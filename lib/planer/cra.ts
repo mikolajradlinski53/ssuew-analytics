@@ -4,7 +4,7 @@ import type { Miesiac, Wydarzenie } from './typy'
 
 /**
  * Surowy eksport zaznaczonych wydarzeń do systemu rezerwacji sal (CRA):
- * temat, data, godziny, sala — nic więcej. Arkusz „ładny” to osobny eksport
+ * temat, data, godziny, sala - nic więcej. Arkusz „ładny” to osobny eksport
  * .xlsx; ten ma się dać wkleić albo zaimportować bez obróbki.
  */
 export const NAGLOWKI_CRA = ['Temat', 'Data', 'Od', 'Do', 'Sala']
@@ -16,7 +16,7 @@ function pole(x: string): string {
   return /[;"\r\n]/.test(x) ? `"${x.replace(/"/g, '""')}"` : x
 }
 
-/** Jeden wiersz na każdy dzień wydarzenia — sala rezerwuje się na konkretny dzień. */
+/** Jeden wiersz na każdy dzień wydarzenia - sala rezerwuje się na konkretny dzień. */
 export function wierszeCra(wydarzenia: Wydarzenie[]): string[][] {
   return [...wydarzenia]
     .sort((a, b) => porownajDaty(poczatek(a), poczatek(b)) || porownajWydarzenia(a, b))

@@ -39,7 +39,7 @@ describe('KartaWydarzenia', () => {
     expect(container.querySelector('[data-rozmowa]')).not.toBeNull()
   })
 
-  it('najważniejsze kategorie mają numer rangi, aplikacje — nie', () => {
+  it('najważniejsze kategorie mają numer rangi, aplikacje - nie', () => {
     const { container, rerender } = render(<KartaWydarzenia wydarzenie={w} onOtworz={vi.fn()} przeciagalne={false} />)
     expect(container.querySelector('[data-numer-rangi]')?.textContent).toBe('1')
     rerender(<KartaWydarzenia wydarzenie={{ ...w, kategoria: 'APLIKACJE' }} onOtworz={vi.fn()} przeciagalne={false} />)
@@ -54,7 +54,7 @@ describe('KartaWydarzenia', () => {
         przeciagalne={false}
       />,
     )
-    expect(screen.getByText('18:00–20:00')).toBeInTheDocument()
+    expect(screen.getByText('18:00-20:00')).toBeInTheDocument()
     expect(screen.getByText('B/L 110L')).toBeInTheDocument()
   })
 

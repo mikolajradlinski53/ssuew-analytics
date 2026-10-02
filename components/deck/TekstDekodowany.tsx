@@ -13,7 +13,7 @@ type Props = {
 
 /**
  * Tekst zaskakuje znak po znaku, jakby się rozszyfrowywał. Litery przed
- * kursorem są już właściwe, za nim lecą losowe — dlatego długość nigdy się
+ * kursorem są już właściwe, za nim lecą losowe - dlatego długość nigdy się
  * nie zmienia i układ strony nie skacze w trakcie.
  */
 export function TekstDekodowany({ tekst, tempo = 34, className = '', as = 'span' }: Props) {
@@ -44,7 +44,7 @@ export function TekstDekodowany({ tekst, tempo = 34, className = '', as = 'span'
           .split('')
           .map((znak, i) => {
             if (i < odsloniete) return znak
-            // Spacje zostawiamy — bez nich słowa zlewałyby się w jeden ciąg.
+            // Spacje zostawiamy - bez nich słowa zlewałyby się w jeden ciąg.
             if (znak === ' ') return ' '
             return SZUM[Math.floor(Math.random() * SZUM.length)]
           })

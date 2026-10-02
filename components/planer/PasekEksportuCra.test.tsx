@@ -33,7 +33,7 @@ describe('PasekEksportuCra', () => {
     expect([...onZmien.mock.calls[0][0]].sort()).toEqual(['a', 'b', 'c'])
   })
 
-  it('gdy cały miesiąc jest zaznaczony — odznacza go', () => {
+  it('gdy cały miesiąc jest zaznaczony - odznacza go', () => {
     const onZmien = vi.fn()
     render(<PasekEksportuCra {...wspolne} zaznaczone={new Set(['a', 'b', 'c'])} onZmien={onZmien} />)
     fireEvent.click(screen.getByRole('button', { name: /odznacz miesiąc/i }))

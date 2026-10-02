@@ -29,7 +29,7 @@ describe('gasWrite', () => {
   })
 
   it('nie pozwala cache-ować zapisu', async () => {
-    // Zapis podany z cache oznaczalby ciche gubienie danych — zadanie
+    // Zapis podany z cache oznaczalby ciche gubienie danych - zadanie
     // wygladaloby na wykonane, a do arkusza nic by nie poszlo.
     const f = vi.fn().mockResolvedValue(odpowiedz('{"ok":true,"rows":[]}'))
     vi.stubGlobal('fetch', f)

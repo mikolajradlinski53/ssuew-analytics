@@ -12,7 +12,7 @@ type Stan = 'wpisywanie' | 'sprawdzanie' | 'ok' | 'blad'
 type Props = {
   onKomplet: (kod: string) => void | Promise<void>
   stan: Stan
-  /** Wymuszenie motywu — do podglądu. Bez tego losuje się przy każdym wejściu. */
+  /** Wymuszenie motywu - do podglądu. Bez tego losuje się przy każdym wejściu. */
   motyw?: Motyw
 }
 
@@ -23,7 +23,7 @@ function losujMotyw(): Motyw {
 export function KodInput({ onKomplet, stan, motyw }: Props) {
   // Losujemy raz, po zamontowaniu. Gdyby motyw wypadał podczas renderu, serwer
   // i przeglądarka wylosowałyby różne i React zgłosiłby niezgodność drzewa.
-  // To jedyny sposób na wartość, która ma się różnić między nimi — świadomie
+  // To jedyny sposób na wartość, która ma się różnić między nimi - świadomie
   // płacimy za to jednym dodatkowym renderem przy wejściu.
   const [wylosowany, setWylosowany] = useState<Motyw | null>(motyw ?? null)
   useEffect(() => {
@@ -47,7 +47,7 @@ export function KodInput({ onKomplet, stan, motyw }: Props) {
     if (!komplet) wyslano.current = false
   }, [komplet, kod, onKomplet])
 
-  // Po odmowie czyścimy pola i wracamy na początek — bez tego trzeba by
+  // Po odmowie czyścimy pola i wracamy na początek - bez tego trzeba by
   // kasować sześć kratek ręcznie, żeby spróbować jeszcze raz.
   useEffect(() => {
     if (stan === 'blad') {
@@ -111,7 +111,7 @@ export function KodInput({ onKomplet, stan, motyw }: Props) {
     pola.current[Math.min(wklejone.length, DLUGOSC_KODU - 1)]?.focus()
   }
 
-  // Do czasu wylosowania motywu renderujemy neutralny szkielet — inaczej
+  // Do czasu wylosowania motywu renderujemy neutralny szkielet - inaczej
   // pierwsza klatka pokazałaby motyw, który zaraz się zmieni.
   const klasaMotywu = aktywnyMotyw ? `kod--${aktywnyMotyw}` : ''
 

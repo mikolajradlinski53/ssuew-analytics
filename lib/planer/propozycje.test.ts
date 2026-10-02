@@ -29,7 +29,7 @@ describe('stanPropozycji', () => {
   })
 
   it('ostrzega, gdy ktoś zdążył przesunąć wydarzenie gdzie indziej', () => {
-    // Propozycja mówi, GDZIE coś ma być, a nie skąd wychodzi — więc nadal wykonalna.
+    // Propozycja mówi, GDZIE coś ma być, a nie skąd wychodzi - więc nadal wykonalna.
     const s = stanPropozycji(przeniesienie, [{ ...wydarzenie, dzien: 11 }])
     expect(s.mozna).toBe(true)
     expect(s.ostrzezenie).toMatch(/11/)
@@ -38,7 +38,7 @@ describe('stanPropozycji', () => {
   it('propozycja do nieistniejącego wydarzenia jest niewykonalna', () => {
     expect(stanPropozycji(przeniesienie, [])).toEqual({
       mozna: false,
-      ostrzezenie: 'Tego wydarzenia już nie ma — propozycję można tylko odrzucić.',
+      ostrzezenie: 'Tego wydarzenia już nie ma - propozycję można tylko odrzucić.',
     })
   })
 

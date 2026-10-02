@@ -3,7 +3,7 @@ import { naWydarzenie } from './mapowanie'
 import { naSklad, naStanSesji, type StanSesjiWspolnej } from './stan'
 import type { Wydarzenie } from './typy'
 
-/** Wszystko, czego Planer potrzebuje na start — dla osób bez konta Firebase. */
+/** Wszystko, czego Planer potrzebuje na start - dla osób bez konta Firebase. */
 export interface ObrazPlanera {
   wydarzenia: Wydarzenie[]
   sesja: StanSesjiWspolnej

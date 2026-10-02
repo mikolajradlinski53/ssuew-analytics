@@ -55,7 +55,7 @@ export default function RekrutacjeClient() {
 
   return (
     <div className="space-y-3">
-      <BentoCard title="Edycje rekrutacji" sub={editable ? 'kliknij wartość, by edytować · dodaj edycję poniżej (autosave)' : 'tryb demo — read-only'} span={4}>
+      <BentoCard title="Edycje rekrutacji" sub={editable ? 'kliknij wartość, by edytować · dodaj edycję poniżej (autosave)' : 'tryb demo - read-only'} span={4}>
         <table className="w-full text-[11px] border-collapse">
           <thead>
             <tr className="text-deck-muted text-left">
@@ -67,7 +67,7 @@ export default function RekrutacjeClient() {
           </thead>
           <tbody className="text-deck-text">
             {sorted.map((r) => {
-              const cr = r.zgloszenia > 0 ? ((r.przyjeci / r.zgloszenia) * 100).toFixed(1) : '—'
+              const cr = r.zgloszenia > 0 ? ((r.przyjeci / r.zgloszenia) * 100).toFixed(1) : '-'
               return (
                 <tr key={r.id} className="border-t border-deck-border">
                   <td className="p-1">{r.edycja}</td>
@@ -140,7 +140,7 @@ export default function RekrutacjeClient() {
             </BentoCard>
 
             <BentoCard
-              title="Sezonowość — test t Welcha"
+              title="Sezonowość - test t Welcha"
               sub={`t = ${s.sezonowosc.tStat.toFixed(2)} · df ≈ ${s.sezonowosc.df} · p ${s.sezonowosc.p_approx}`}
             >
               <div className="flex gap-3 mb-2">

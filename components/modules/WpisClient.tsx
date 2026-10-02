@@ -18,7 +18,7 @@ const PUSTY_PROJEKT = {
   problemy: '',
 }
 
-/** Puste pole to zero — tak samo traktuje je arkusz przy odczycie. */
+/** Puste pole to zero - tak samo traktuje je arkusz przy odczycie. */
 const liczba = (v: string) => {
   const n = parseFloat(v)
   return Number.isFinite(n) ? n : 0
@@ -40,11 +40,11 @@ export default function WpisClient() {
   const { dodajProjekt } = useProjekty()
   const [proj, setProj] = useState(PUSTY_PROJEKT)
 
-  /** Seria nie ma identyfikatora — rozpoznajemy ją po parze, tak jak reszta modułu. */
+  /** Seria nie ma identyfikatora - rozpoznajemy ją po parze, tak jak reszta modułu. */
   const kluczSerii = (s: { kategoria: string; nazwa: string }) => `${s.kategoria}|${s.nazwa}`
 
   // Rocznik KPI (wsadowo): nowy okres + jedna wartość na istniejącą metrykę.
-  // Okres bierzemy z najdłuższej serii, a nie z pierwszego wiersza arkusza —
+  // Okres bierzemy z najdłuższej serii, a nie z pierwszego wiersza arkusza - 
   // ten zależał od kolejności zapisu i potrafił podpowiedzieć byle co.
   const latestOkres = useMemo(() => {
     const najdluzsza = serie.reduce<(typeof serie)[number] | null>(
@@ -53,7 +53,7 @@ export default function WpisClient() {
     return najdluzsza ? ostatniPunkt(najdluzsza)?.okres ?? '2025/2026' : '2025/2026'
   }, [serie])
   const grouped = useMemo(() => serieWgKategorii(serie), [serie])
-  // Dopóki nic nie wpisano, podpowiedź idzie za danymi — po ich dociągnięciu
+  // Dopóki nic nie wpisano, podpowiedź idzie za danymi - po ich dociągnięciu
   // zmieni się z domyślnej na właściwą, czego efekt ustawiający raz by nie zrobił.
   const [rocznikWpisany, setRocznikOkres] = useState<string | null>(null)
   const rocznikOkres = rocznikWpisany ?? nextOkres(latestOkres)
@@ -132,7 +132,7 @@ export default function WpisClient() {
         partnerzy_barter: liczba(proj.partnerzy_barter),
         problemy: proj.problemy.trim(),
       })
-      // Edycja i obszar zostają — wpisując rocznik dodajesz projekty seriami.
+      // Edycja i obszar zostają - wpisując rocznik dodajesz projekty seriami.
       setProj({ ...PUSTY_PROJEKT, edycja: proj.edycja, obszar: proj.obszar })
     }, `Projekt „${proj.projekt.trim()}” zapisany.`)
 
@@ -168,8 +168,8 @@ export default function WpisClient() {
         {tab === 'kohorta' && 'Kohorta: liczebność i retencja (avg/max). Zasili moduł Retencja i krzywe przeżycia.'}
         {tab === 'kpi' && 'Pojedynczy pomiar: kategoria, nazwa, okres i wartość (np. SKS / Listopad / 2025/2026 / 84). Służy też do uzupełniania dziur w historii.'}
         {tab === 'rocznik' && 'Najszybszy sposób na nowy rok: wpisz tegoroczne liczby obok istniejących metryk (poprzednie przenoszą się automatycznie) i zapisz wszystkie naraz.'}
-        {tab === 'projekt' && 'Kondycja projektu w jednej edycji. Wystarczy nazwa i edycja — resztę uzupełnisz później. Puste pole liczy się jako zero i zwykle milczy; wyjątkiem są partnerzy finansowi — zero tam oznacza „brak partnera” i zapala flagę.'}
-        {' '}Wypełnij i kliknij „Zapisz" — zmiany od razu widać w modułach.
+        {tab === 'projekt' && 'Kondycja projektu w jednej edycji. Wystarczy nazwa i edycja - resztę uzupełnisz później. Puste pole liczy się jako zero i zwykle milczy; wyjątkiem są partnerzy finansowi - zero tam oznacza „brak partnera” i zapala flagę.'}
+        {' '}Wypełnij i kliknij „Zapisz" - zmiany od razu widać w modułach.
       </div>
 
       {status && (
@@ -243,14 +243,14 @@ export default function WpisClient() {
       )}
 
       {tab === 'rocznik' && (
-        <BentoCard title="Nowy rocznik KPI" sub="wpisz tegoroczne wartości — historia zostaje nietknięta">
+        <BentoCard title="Nowy rocznik KPI" sub="wpisz tegoroczne wartości - historia zostaje nietknięta">
           <div className="space-y-3">
             <div className="flex items-end gap-3">
               <div className="w-40"><label className={labelCls}>Nowy okres</label><input className={inputCls} value={rocznikOkres} onChange={(e) => setRocznikOkres(e.target.value)} /></div>
               <p className="text-[10px] text-deck-muted pb-2">ostatni wpisany: {latestOkres}</p>
             </div>
             {serie.length === 0 ? (
-              <p className="text-[11px] text-deck-muted">Brak istniejących metryk — dodaj najpierw pojedynczy pomiar.</p>
+              <p className="text-[11px] text-deck-muted">Brak istniejących metryk - dodaj najpierw pojedynczy pomiar.</p>
             ) : (
               [...grouped.entries()].map(([kat, metryki]) => (
                 <div key={kat}>
@@ -261,7 +261,7 @@ export default function WpisClient() {
                       return (
                         <div key={kluczSerii(s)} className="flex items-center gap-2 text-[11px]">
                           <span className="text-deck-muted flex-1 truncate">{s.nazwa}</span>
-                          <span className="text-deck-muted tabular w-16 text-right">{ost ? `${ost.wartosc} →` : '—'}</span>
+                          <span className="text-deck-muted tabular w-16 text-right">{ost ? `${ost.wartosc} →` : '-'}</span>
                           <input
                             type="number"
                             step="0.01"

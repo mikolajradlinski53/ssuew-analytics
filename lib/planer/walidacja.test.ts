@@ -19,7 +19,7 @@ describe('sprawdzWydarzenie', () => {
     expect(w.ok).toBe(true)
   })
 
-  it('zwraca wyłącznie znane pola — reszta treści żądania nie trafia do bazy', () => {
+  it('zwraca wyłącznie znane pola - reszta treści żądania nie trafia do bazy', () => {
     const w = sprawdzWydarzenie({ ...dobre, id: 'podrobione', zmienione: 1, admin: true })
     expect(w.ok && Object.keys(w.wydarzenie).sort()).toEqual([
       'budynek', 'calyDzien', 'dni', 'dzien', 'godzina', 'godzinaDo',

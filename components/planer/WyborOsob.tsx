@@ -18,7 +18,7 @@ function klasa(aktywny: boolean): string {
 }
 
 /**
- * Osoby z listy zamiast wpisywania z palca — literówka nie tworzy nowej osoby.
+ * Osoby z listy zamiast wpisywania z palca - literówka nie tworzy nowej osoby.
  * „Wszyscy” wyklucza pojedyncze osoby i odwrotnie. Osoby zapisane w starszych
  * wydarzeniach, których nie ma w Składzie, zostają jako przyciski do odpięcia,
  * żeby nic nie znikało bez decyzji.
@@ -61,7 +61,7 @@ export function WyborOsob({ sklad, wybrane, onZmien, zablokowane = false }: Prop
           type="button"
           disabled={zablokowane}
           onClick={() => onZmien(wybrane.filter((x) => x !== o))}
-          title="Spoza Składu — kliknij, żeby odpiąć"
+          title="Spoza Składu - kliknij, żeby odpiąć"
           className="rounded-md border border-dashed border-white/15 px-2.5 py-1 text-[11.5px] text-deck-muted/70 transition hover:text-deck-danger disabled:opacity-60"
         >
           {o} ×

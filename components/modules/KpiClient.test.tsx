@@ -56,7 +56,7 @@ describe('KpiClient', () => {
 
   it('procent liczy z dwóch ostatnich punktów', () => {
     const { container } = render(<KpiClient />)
-    // Adapciak kończy się na 4 → 6, czyli 150% — a nie 300% z 2 → 6.
+    // Adapciak kończy się na 4 → 6, czyli 150% - a nie 300% z 2 → 6.
     expect(within(wiersz(container, 'Adapciak')).getByText('150%')).toBeInTheDocument()
     // Gala to 4 → 2, czyli 50%.
     expect(within(wiersz(container, 'Gala')).getByText('50%')).toBeInTheDocument()

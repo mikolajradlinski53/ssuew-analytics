@@ -6,7 +6,7 @@ function normalizuj(email: string | null | undefined): string {
 }
 
 /**
- * Samo konto Google nie daje niczego — dostęp mają wyłącznie adresy z listy.
+ * Samo konto Google nie daje niczego - dostęp mają wyłącznie adresy z listy.
  * Lista żyje w zmiennych środowiskowych, bo zmienia się raz na kadencję.
  */
 export function rolaDla(email: string | null | undefined): Rola | null {

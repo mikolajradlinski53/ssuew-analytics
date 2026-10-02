@@ -17,7 +17,7 @@ describe('budynki', () => {
     expect(new Set(BUDYNKI).size).toBe(BUDYNKI.length)
   })
 
-  it('„POZA” ma ludzką etykietę, budynek — swój kod', () => {
+  it('„POZA” ma ludzką etykietę, budynek - swój kod', () => {
     expect(etykietaBudynku(POZA)).toBe('Poza uczelnią')
     expect(etykietaBudynku('B/J')).toBe('B/J')
   })

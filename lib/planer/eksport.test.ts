@@ -34,7 +34,7 @@ describe('budujEksport', () => {
   it('w komórce najważniejsze na górze, z numerem rangi, miejscem i osobami', () => {
     const siodmy = e.kalendarz.flat().find((k) => k.dzien === 7)!
     expect(siodmy.linie[0]).toEqual({
-      tekst: '① 18:00–20:00 Zebranie · B/L 110L · Jula, Kuba',
+      tekst: '① 18:00-20:00 Zebranie · B/L 110L · Jula, Kuba',
       kolor: '#1d4ed8',
       pogrubiona: true,
     })

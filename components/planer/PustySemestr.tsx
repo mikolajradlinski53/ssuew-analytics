@@ -9,7 +9,7 @@ type Props = {
 
 /**
  * Nowy semestr jest z definicji pusty, a pusta siatka niczego nie podpowiada.
- * Ten ekran mówi, co się właśnie stanie i od czego zacząć — pojawia się tylko
+ * Ten ekran mówi, co się właśnie stanie i od czego zacząć - pojawia się tylko
  * wtedy, gdy w całym semestrze nie ma jeszcze ani jednego wydarzenia.
  */
 export function PustySemestr({ nazwaSemestru, mozeEdytowac, onDodaj }: Props) {

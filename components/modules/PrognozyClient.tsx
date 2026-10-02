@@ -48,11 +48,11 @@ export default function PrognozyClient() {
   return (
     <div className="space-y-3">
       <div className="text-[11px] text-deck-warn border border-deck-warn/40 rounded-md px-2 py-1 inline-block">
-        Prognozy orientacyjne — mała próba; pas = przedział predykcji
+        Prognozy orientacyjne - mała próba; pas = przedział predykcji
       </div>
 
       <div className="grid grid-cols-2 gap-3">
-        <BentoCard title="Prognoza rekrutacji" sub="przyjęci — historia + 2 edycje">
+        <BentoCard title="Prognoza rekrutacji" sub="przyjęci - historia + 2 edycje">
           {rekrData.length >= 2 ? (
             <ResponsiveContainer width="100%" height={200}>
               <ComposedChart data={rekrData} margin={{ top: 4, right: 8, left: -16, bottom: 0 }}>
@@ -70,7 +70,7 @@ export default function PrognozyClient() {
           )}
         </BentoCard>
 
-        <BentoCard title="Prognoza retencji" sub="avg retencja — historia + następna edycja">
+        <BentoCard title="Prognoza retencji" sub="avg retencja - historia + następna edycja">
           {model ? (
             <ResponsiveContainer width="100%" height={200}>
               <ComposedChart data={retData} margin={{ top: 4, right: 8, left: -16, bottom: 0 }}>

@@ -18,7 +18,7 @@ const wspolne = {
 }
 
 /**
- * Siatka i lista na telefon sa w DOM naraz — o tym, ktora widac, decyduje CSS.
+ * Siatka i lista na telefon sa w DOM naraz - o tym, ktora widac, decyduje CSS.
  * Testy pytaja w obrebie siatki, zeby nie trafic w karte z listy.
  */
 function siatka(container: HTMLElement) {
@@ -73,7 +73,7 @@ describe('WidokMiesiaca', () => {
   })
 
   it('strzałka w prawo przesuwa wydarzenie o dzień, w dół o tydzień', () => {
-    // Przeciaganie dziala tylko mysza — bez klawiatury kalendarza nie da sie
+    // Przeciaganie dziala tylko mysza - bez klawiatury kalendarza nie da sie
     // ulozyc bez niej.
     const onPrzesun = vi.fn()
     const { container } = render(

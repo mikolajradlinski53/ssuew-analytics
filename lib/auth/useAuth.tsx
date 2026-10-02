@@ -7,7 +7,7 @@ export interface StanSesji {
   /** Adres e-mail przy koncie z hasłem; etykieta kodu przy wejściu na kod. */
   kto: string | null
   rola: Rola | null
-  /** Skąd wzięła się sesja — decyduje, czy w ogóle potrzebujemy Firebase. */
+  /** Skąd wzięła się sesja - decyduje, czy w ogóle potrzebujemy Firebase. */
   sposob: 'haslo' | 'kod' | null
   laduje: boolean
   blad: string | null
@@ -22,7 +22,7 @@ interface Wartosc extends StanSesji {
 const PUSTA: StanSesji = { kto: null, rola: null, sposob: null, laduje: true, blad: null }
 const Kontekst = createContext<Wartosc | null>(null)
 
-/** Pyta serwer, kto jest zalogowany — jedna odpowiedź dla obu dróg wejścia. */
+/** Pyta serwer, kto jest zalogowany - jedna odpowiedź dla obu dróg wejścia. */
 async function ktoJestem(): Promise<Pick<StanSesji, 'kto' | 'rola' | 'sposob'>> {
   const res = await fetch('/api/session')
   if (!res.ok) return { kto: null, rola: null, sposob: null }
@@ -36,7 +36,7 @@ async function ktoJestem(): Promise<Pick<StanSesji, 'kto' | 'rola' | 'sposob'>> 
  * Wcześniej `useAuth()` był wołany w ośmiu komponentach i każde wywołanie
  * niezależnie odpytywało `/api/session` oraz zakładało własny nasłuch Firebase.
  * Na stronie Analytics dawało to dwa komplety zapytań i cztery weryfikacje
- * podpisu tokenu po tę samą odpowiedź — stąd wolne wchodzenie w moduły.
+ * podpisu tokenu po tę samą odpowiedź - stąd wolne wchodzenie w moduły.
  */
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [stan, setStan] = useState<StanSesji>(PUSTA)
@@ -52,7 +52,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
    * Nasłuch odnawiania tokenu zakładamy dopiero wtedy, gdy jest po co: token
    * wygasa po godzinie i Firebase odnawia go sam, więc ciasteczko musi jechać
    * za nim. Osoby wchodzące kodem nie dotykają Firebase w ogóle, więc i pakiet
-   * ładujemy leniwie — nie ma powodu, żeby wisiał w każdej podstronie.
+   * ładujemy leniwie - nie ma powodu, żeby wisiał w każdej podstronie.
    */
   const pilnujTokenu = useCallback(async () => {
     if (!firebaseSkonfigurowany || odpiecie.current) return
@@ -131,7 +131,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [odswiez],
   )
 
-  /** Wylogowanie nie pyta, którą drogą się weszło — kasuje wszystko. */
+  /** Wylogowanie nie pyta, którą drogą się weszło - kasuje wszystko. */
   const wyloguj = useCallback(async () => {
     if (firebaseSkonfigurowany) {
       const [{ signOut }, { auth }] = await Promise.all([
@@ -153,6 +153,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
 export function useAuth(): Wartosc {
   const wartosc = useContext(Kontekst)
-  if (!wartosc) throw new Error('useAuth wymaga AuthProvider — sprawdź app/layout.tsx')
+  if (!wartosc) throw new Error('useAuth wymaga AuthProvider - sprawdź app/layout.tsx')
   return wartosc
 }

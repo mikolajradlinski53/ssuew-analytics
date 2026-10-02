@@ -1,5 +1,5 @@
 /**
- * Czyste mapowania stanu, które czytają OBIE strony — przeglądarka
+ * Czyste mapowania stanu, które czytają OBIE strony - przeglądarka
  * (subskrypcje) i serwer (`/api/planer`, strony). Plik celowo bez
  * `'use client'`, z tego samego powodu co `mapowanie.ts`.
  */
@@ -28,7 +28,7 @@ export function naSklad(d: Record<string, unknown> | undefined): string[] {
 }
 
 /**
- * Zwraca TĘ SAMĄ tablicę, gdy nie ma czego dodać — wywołujący poznaje po
+ * Zwraca TĘ SAMĄ tablicę, gdy nie ma czego dodać - wywołujący poznaje po
  * tożsamości, że osoba już była. „wszyscy” jest zarezerwowane: oznacza cały
  * zarząd i jest pomijane przy kolizjach.
  */

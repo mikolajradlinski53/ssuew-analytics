@@ -2,7 +2,7 @@ export interface Komentarz {
   id: string
   wydarzenieId: string
   tresc: string
-  /** Etykieta kodu albo adres e-mail — zapisywana przez serwer z biletu. */
+  /** Etykieta kodu albo adres e-mail - zapisywana przez serwer z biletu. */
   autor: string
   utworzone: number
 }

@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { olsMultiple } from '@/lib/stats'
 
-describe('olsMultiple — macierz osobliwa', () => {
+describe('olsMultiple - macierz osobliwa', () => {
   it('nie zwraca NaN przy współliniowych kolumnach', () => {
     // dwie identyczne kolumny → X^T X osobliwa
     const col = [1, 2, 3, 4]

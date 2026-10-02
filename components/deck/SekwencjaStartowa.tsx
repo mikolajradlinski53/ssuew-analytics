@@ -6,7 +6,7 @@ type Props = {
 }
 
 /**
- * Stopka kokpitu melduje się jak systemy po odpaleniu — jeden wpis za drugim.
+ * Stopka kokpitu melduje się jak systemy po odpaleniu - jeden wpis za drugim.
  * Opóźnienie idzie przez CSS, nie przez stan Reacta: sekwencja odtwarza się
  * raz, przy wejściu, i nie potrzebuje do tego ani jednego przerysowania.
  */
