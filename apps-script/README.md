@@ -93,7 +93,11 @@ Odpowiedź: `{ ok: true, rows: [ … ] }` albo `{ ok: false, kod: 403, error: "�
 | `kohorty` | `id`, `edycja`, `sezon`, `rok`, `n_czlonkow`, `avg_retention_sem`, `max_retention_sem`, `in_progress`, `survival`, `created_at` |
 | `kpi_punkty` | `id`, `kategoria`, `nazwa`, `okres`, `wartosc`, `created_at` |
 | `kpi` | **archiwum** — stary format dwuokresowy, nieczytany przez aplikację |
+| `projekty` | `id`, `projekt`, `edycja`, `obszar`, `budzet_plan`, `budzet_wydany`, `przedluzenia`, `aplikujacy`, `uczestnicy`, `partnerzy_fin`, `partnerzy_barter`, `problemy`, `created_at` |
 | `czlonkowie` | `id`, `kohorta_edycja`, `imie_nazwisko`, `status`, `aktywnosc`, `created_at` |
+
+Zakładkę `projekty` tworzy `setup()` — pustą, bo danych historycznych o projektach nie ma.
+Wpisuje się je z aplikacji (*Wpisz dane → Projekt*) albo prosto w arkuszu.
 
 W `kpi_punkty` **jeden wiersz to jeden pomiar**. Metryka jest rozpoznawana po parze
 `kategoria` + `nazwa`, a kolejne lata to kolejne wiersze:
@@ -120,17 +124,28 @@ Czego nie robić: nie usuwaj ani nie zmieniaj nazw nagłówków. Brakujący nag�
 a nie ciche zero — celowo, bo zera w kolumnie „zgłoszenia" dałyby wykresy, które wyglądają
 wiarygodnie i są nieprawdziwe.
 
+## Aktualizacja skryptu w działającym arkuszu
+
+**Samo zapisanie kodu niczego nie zmienia w aplikacji.** Adres `/exec` serwuje wersję
+zamrożoną w chwili wdrożenia — dopóki nie wydasz nowej wersji, DECK rozmawia ze starym kodem.
+
+1. Wklej aktualny `Kod.gs` do edytora Apps Script i zapisz (Ctrl+S).
+2. Jeśli w arkuszu nie ma jeszcze `kpi_punkty`: uruchom **`migrujKpi`** (patrz niżej).
+3. Uruchom **`setup`** — założy brakujące zakładki (np. pustą `projekty`). Istniejących
+   nie rusza i niczego do nich nie wgrywa.
+4. *Wdróż → Zarządzaj wdrożeniami* → ołówek przy wdrożeniu `DECK dane` → *Wersja:*
+   **Nowa wersja** → *Wdróż*. Adres `/exec` zostaje ten sam, więc na Vercelu nic nie zmieniasz.
+   (*Nowe wdrożenie* dałoby nowy adres — wtedy trzeba by podmienić `GAS_URL`.)
+5. Sprawdź `_ping` (sekcja niżej) — lista zakładek ma pokazać nowy schemat.
+
 ## Migracja KPI na format wieloletni (jednorazowo)
 
-Robisz to raz, przy przejściu ze starego modelu dwuokresowego. **Kolejność jest wiążąca** —
-odwrotna daje błąd w module KPI, bo aplikacja szukałaby zakładki, której jeszcze nie ma.
+Przejście ze starego modelu dwuokresowego. Aplikacja od wersji z 12.08.2026 czyta wyłącznie
+`kpi_punkty` — bez migracji moduł KPI nie dostanie danych.
 
-1. Wklej aktualny `Kod.gs` do edytora Apps Script i zapisz.
-2. Wybierz z listy funkcję **`migrujKpi`** i kliknij **Uruchom**.
-   Nie uruchamiaj `setup()` — ta wgrałaby dane przykładowe zamiast Twoich.
-3. Sprawdź nową zakładkę `kpi_punkty`. Wierszy ma być **dwa razy tyle co w `kpi`**
-   (każdy stary wiersz zawierał dwa pomiary). Funkcja wypisuje dokładną liczbę w dzienniku.
-4. Dopiero teraz wypchnij aplikację.
+Wybierz z listy funkcję **`migrujKpi`** i kliknij **Uruchom**. Sprawdź nową zakładkę
+`kpi_punkty`: wierszy ma być **dwa razy tyle co w `kpi`** (każdy stary wiersz zawierał dwa
+pomiary). Funkcja wypisuje dokładną liczbę w dzienniku.
 
 Stara zakładka `kpi` zostaje nietknięta jako archiwum. Nic jej już nie czyta, ale jest dokąd
 wrócić, gdyby migracja wyszła krzywo. `migrujKpi()` można puścić wielokrotnie — czyści
@@ -141,7 +156,7 @@ wrócić, gdyby migracja wyszła krzywo. `migrujKpi()` można puścić wielokrot
 Wklej w przeglądarkę adres wdrożenia z `&t=_ping` i swoim tokenem. Poprawna odpowiedź:
 
 ```json
-{ "ok": true, "zakladki": ["rekrutacje","kohorty","kpi","kpi_punkty","czlonkowie","kody"], "czas": "…" }
+{ "ok": true, "zakladki": ["rekrutacje","kohorty","kpi","kpi_punkty","projekty","czlonkowie","kody"], "czas": "…" }
 ```
 
 Odpowiedź `{ "ok": false, "kod": 403 }` oznacza zły token. Strona logowania Google zamiast
