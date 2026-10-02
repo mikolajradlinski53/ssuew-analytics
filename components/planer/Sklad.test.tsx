@@ -19,7 +19,7 @@ describe('Sklad', () => {
     fireEvent.change(screen.getByLabelText('Nowa osoba'), { target: { value: 'jula' } })
     fireEvent.click(screen.getByRole('button', { name: 'Dodaj' }))
     expect(onZmien).not.toHaveBeenCalled()
-    expect(screen.getByText(/już jest/i)).toBeInTheDocument()
+    expect(screen.getByRole('status')).toHaveTextContent(/już jest w składzie/i)
   })
 
   it('usuwa osobę', () => {
