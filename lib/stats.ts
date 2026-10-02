@@ -254,7 +254,7 @@ export function analyzeRetention(kohort: Kohorta[]): RegressionResult {
   const nCzl  = sorted.map(k => k.n_czlonkow)
   const y     = sorted.map(k => k.avg_retention_sem)
 
-  const { betas, r2, yhat } = olsMultiple([edNr, sezon, nCzl], y, [])
+  const { betas, r2 } = olsMultiple([edNr, sezon, nCzl], y, [])
 
   const varDefs = [
     {

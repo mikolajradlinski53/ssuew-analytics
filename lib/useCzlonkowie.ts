@@ -2,35 +2,42 @@
 import { useState, useEffect, useCallback } from 'react'
 import type { Czlonek } from '@/types'
 
+type Stan = { czlonkowie: Czlonek[]; usingDemo: boolean; loading: boolean }
+
+async function pobierzCzlonkow(): Promise<Omit<Stan, 'loading'>> {
+  try {
+    const res = await fetch('/api/czlonkowie')
+    // Podłączony arkusz + pusta zakładka = pusta siatka (dodajesz prawdziwych
+    // członków), a NIE zaślepione demo. Demo pokazujemy tylko wtedy, gdy arkusza
+    // w ogóle nie ma — a to trasa sygnalizuje kodem 503, bo przeglądarka nie widzi
+    // GAS_URL ani GAS_TOKEN i sama tego rozstrzygnąć nie może.
+    const brakArkusza = res.status === 503
+    const data = res.ok ? await res.json() : []
+    const live = Array.isArray(data) && data.length > 0
+    return {
+      czlonkowie: live ? data : brakArkusza ? DEMO_CZLONKOWIE : [],
+      usingDemo: !live && brakArkusza,
+    }
+  } catch {
+    return { czlonkowie: DEMO_CZLONKOWIE, usingDemo: true }
+  }
+}
+
 export function useCzlonkowie() {
-  const [czlonkowie, setCzlonkowie] = useState<Czlonek[]>([])
-  const [loading, setLoading] = useState(true)
-  const [usingDemo, setUsingDemo] = useState(false)
+  const [stan, setStan] = useState<Stan>({ czlonkowie: [], usingDemo: false, loading: true })
+  const { czlonkowie, usingDemo, loading } = stan
 
   const fetchAll = useCallback(async () => {
-    setLoading(true)
-    try {
-      const res = await fetch('/api/czlonkowie')
-      // Podłączony arkusz + pusta zakładka = pusta siatka (dodajesz prawdziwych
-      // członków), a NIE zaślepione demo. Demo pokazujemy tylko wtedy, gdy arkusza
-      // w ogóle nie ma — a to trasa sygnalizuje kodem 503, bo przeglądarka nie widzi
-      // GAS_URL ani GAS_TOKEN i sama tego rozstrzygnąć nie może.
-      const brakArkusza = res.status === 503
-      const data = res.ok ? await res.json() : []
-      const live = Array.isArray(data) && data.length > 0
-      setCzlonkowie(live ? data : brakArkusza ? DEMO_CZLONKOWIE : [])
-      setUsingDemo(!live && brakArkusza)
-    } catch {
-      setCzlonkowie(DEMO_CZLONKOWIE)
-      setUsingDemo(true)
-    } finally {
-      setLoading(false)
-    }
+    setStan({ ...(await pobierzCzlonkow()), loading: false })
   }, [])
 
   useEffect(() => {
-    fetchAll()
-  }, [fetchAll])
+    let aktywny = true
+    pobierzCzlonkow().then((nowe) => {
+      if (aktywny) setStan({ ...nowe, loading: false })
+    })
+    return () => { aktywny = false }
+  }, [])
 
   const addCzlonek = async (payload: Omit<Czlonek, 'id' | 'created_at'>) => {
     const res = await fetch('/api/czlonkowie', {

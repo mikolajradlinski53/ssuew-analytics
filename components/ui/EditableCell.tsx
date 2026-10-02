@@ -1,5 +1,5 @@
 'use client'
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 
 type Props = {
   value: number
@@ -13,7 +13,12 @@ type Props = {
 // Edytowalna komórka liczbowa: zachowuje się jak tekst, po kliknięciu/edycji zapisuje na blur/Enter.
 export function EditableCell({ value, onCommit, editable = true, decimals, suffix = '', className = '' }: Props) {
   const [v, setV] = useState(String(value))
-  useEffect(() => setV(String(value)), [value])
+  // Nowa wartość z zewnątrz (np. po zapisie) nadpisuje to, co wpisano.
+  const [poprzednia, setPoprzednia] = useState(value)
+  if (value !== poprzednia) {
+    setPoprzednia(value)
+    setV(String(value))
+  }
 
   const shown = decimals != null ? value.toFixed(decimals) : String(value)
   if (!editable) return <span className={`tabular ${className}`}>{shown}{suffix}</span>

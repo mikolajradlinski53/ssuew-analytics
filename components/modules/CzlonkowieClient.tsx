@@ -1,5 +1,5 @@
 'use client'
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useCzlonkowie } from '@/lib/useCzlonkowie'
 import { useAnalyticsData } from '@/lib/useAnalyticsData'
 import { useAuth } from '@/lib/auth/useAuth'
@@ -27,7 +27,7 @@ function colsForCohort(sezon: Sezon, rok: number) {
 export default function CzlonkowieClient() {
   const { czlonkowie, loading, usingDemo, updateCzlonek, addCzlonek } = useCzlonkowie()
   const { kohorty } = useAnalyticsData()
-  const [edycja, setEdycja] = useState('')
+  const [wybranaEdycja, setEdycja] = useState('')
   const [rows, setRows] = useState<Czlonek[]>([])
   const [newName, setNewName] = useState('')
   const [statusMsg, setStatusMsg] = useState<string | null>(null)
@@ -36,14 +36,16 @@ export default function CzlonkowieClient() {
     () => kohorty.map((k) => ({ edycja: k.edycja, sezon: k.sezon, rok: k.rok })),
     [kohorty],
   )
+  const edycja = wybranaEdycja || cohortList[0]?.edycja || ''
 
-  useEffect(() => {
-    if (!edycja && cohortList.length) setEdycja(cohortList[0].edycja)
-  }, [cohortList, edycja])
-
-  useEffect(() => {
+  // `rows` to lokalna kopia pod optymistyczne kliknięcia w siatce. Wraca do
+  // stanu z serwera, gdy przyjdą nowe dane albo zmieni się kohorta — liczone
+  // w renderze, bo efekt pokazywałby przez klatkę wiersze poprzedniej kohorty.
+  const [zrodloRows, setZrodloRows] = useState<{ czlonkowie: Czlonek[]; edycja: string } | null>(null)
+  if (zrodloRows?.czlonkowie !== czlonkowie || zrodloRows.edycja !== edycja) {
+    setZrodloRows({ czlonkowie, edycja })
     setRows(czlonkowie.filter((c) => c.kohorta_edycja === edycja))
-  }, [czlonkowie, edycja])
+  }
 
   const { rola } = useAuth()
 

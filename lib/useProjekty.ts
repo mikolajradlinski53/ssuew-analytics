@@ -2,31 +2,39 @@
 import { useState, useEffect, useCallback } from 'react'
 import type { Projekt } from '@/types'
 
+type Stan = { projekty: Projekt[]; loading: boolean; blad: string | null }
+
+async function pobierzProjekty(): Promise<Omit<Stan, 'loading'>> {
+  try {
+    const res = await fetch('/api/projekty')
+    // Pusta zakładka to pusty moduł, a nie dane demo. Kondycji projektów nie
+    // da się pokazać na wymyślonych liczbach — cała jej wartość polega na tym,
+    // że mówi o prawdziwych projektach, a zmyślony alarm byłby gorszy niż brak.
+    if (!res.ok) {
+      const tresc = await res.json().catch(() => null)
+      throw new Error(tresc?.error ?? `HTTP ${res.status}`)
+    }
+    const dane = await res.json()
+    return { projekty: Array.isArray(dane) ? dane : [], blad: null }
+  } catch (e) {
+    return { projekty: [], blad: e instanceof Error ? e.message : 'Nie udało się pobrać projektów' }
+  }
+}
+
 export function useProjekty() {
-  const [projekty, setProjekty] = useState<Projekt[]>([])
-  const [loading, setLoading] = useState(true)
-  const [blad, setBlad] = useState<string | null>(null)
+  const [stan, setStan] = useState<Stan>({ projekty: [], loading: true, blad: null })
 
   const fetchAll = useCallback(async () => {
-    setLoading(true)
-    setBlad(null)
-    try {
-      const res = await fetch('/api/projekty')
-      // Pusta zakładka to pusty moduł, a nie dane demo. Kondycji projektów nie
-      // da się pokazać na wymyślonych liczbach — cała jej wartość polega na tym,
-      // że mówi o prawdziwych projektach, a zmyślony alarm byłby gorszy niż brak.
-      if (!res.ok) throw new Error(await res.text())
-      const dane = await res.json()
-      setProjekty(Array.isArray(dane) ? dane : [])
-    } catch (e) {
-      setBlad(e instanceof Error ? e.message : 'Nie udało się pobrać projektów')
-      setProjekty([])
-    } finally {
-      setLoading(false)
-    }
+    setStan({ ...(await pobierzProjekty()), loading: false })
   }, [])
 
-  useEffect(() => { fetchAll() }, [fetchAll])
+  useEffect(() => {
+    let aktywny = true
+    pobierzProjekty().then((nowe) => {
+      if (aktywny) setStan({ ...nowe, loading: false })
+    })
+    return () => { aktywny = false }
+  }, [])
 
   const dodajProjekt = async (payload: Omit<Projekt, 'id' | 'created_at'>) => {
     const res = await fetch('/api/projekty', {
@@ -38,5 +46,5 @@ export function useProjekty() {
     await fetchAll()
   }
 
-  return { projekty, loading, blad, dodajProjekt, refresh: fetchAll }
+  return { ...stan, dodajProjekt, refresh: fetchAll }
 }

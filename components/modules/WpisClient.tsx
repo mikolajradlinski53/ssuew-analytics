@@ -1,5 +1,5 @@
 'use client'
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import Link from 'next/link'
 import { useAnalyticsData } from '@/lib/useAnalyticsData'
 import { useProjekty } from '@/lib/useProjekty'
@@ -53,11 +53,11 @@ export default function WpisClient() {
     return najdluzsza ? ostatniPunkt(najdluzsza)?.okres ?? '2025/2026' : '2025/2026'
   }, [serie])
   const grouped = useMemo(() => serieWgKategorii(serie), [serie])
-  const [rocznikOkres, setRocznikOkres] = useState('')
+  // Dopóki nic nie wpisano, podpowiedź idzie za danymi — po ich dociągnięciu
+  // zmieni się z domyślnej na właściwą, czego efekt ustawiający raz by nie zrobił.
+  const [rocznikWpisany, setRocznikOkres] = useState<string | null>(null)
+  const rocznikOkres = rocznikWpisany ?? nextOkres(latestOkres)
   const [rocznikVals, setRocznikVals] = useState<Record<string, string>>({})
-  useEffect(() => {
-    if (!rocznikOkres) setRocznikOkres(nextOkres(latestOkres))
-  }, [latestOkres, rocznikOkres])
 
   if (laduje) return <ModuleSkeleton />
   if (rola !== 'owner') {

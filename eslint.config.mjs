@@ -14,6 +14,8 @@ export default tseslint.config(
       ...(reactHooks.configs.recommended?.rules ?? {}),
       ...(nextPlugin.configs.recommended?.rules ?? {}),
       '@typescript-eslint/no-explicit-any': 'warn',
+      // Podkreślnik to świadome „ten parametr jest tu dla sygnatury”.
+      '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
     },
   },
 )
