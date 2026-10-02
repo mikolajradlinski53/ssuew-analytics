@@ -1,53 +1,96 @@
 'use client'
-import { useState, useEffect, useCallback, useMemo } from 'react'
+import { createContext, useState, useEffect, useCallback, useContext, useMemo } from 'react'
 import type { Rekrutacja, Kohorta, KpiMetric } from '@/types'
 import { serieZWierszy } from '@/lib/kpi/serie'
 
-export function useAnalyticsData() {
-  const [rekrutacje, setRekrutacje] = useState<Rekrutacja[]>([])
-  const [kohorty,    setKohorty]    = useState<Kohorta[]>([])
-  const [kpiMetrics, setKpiMetrics] = useState<KpiMetric[]>([])
-  const [loading,    setLoading]    = useState(true)
-  const [error,      setError]      = useState<string | null>(null)
-  const [usingDemo,  setUsingDemo]  = useState(false)
+export type ZrodloDanych = 'live' | 'demo'
+export type Zbior = 'rekrutacje' | 'kpi' | 'kohorty'
 
-  const fetchAll = useCallback(async () => {
-    setLoading(true)
-    setError(null)
-    try {
-      const [rRes, kRes, kohRes] = await Promise.all([
-        fetch('/api/rekrutacje'),
-        fetch('/api/kpi'),
-        fetch('/api/kohorty'),
-      ])
-      if (!rRes.ok || !kRes.ok) throw new Error('Błąd pobierania danych')
-      const [rData, kData, kohData] = await Promise.all([
-        rRes.json(),
-        kRes.json(),
-        kohRes.ok ? kohRes.json() : [],
-      ])
+/** Nazwy modułów, jakie widzi użytkownik — komunikat ma mówić jego językiem, nie nazwami tras. */
+export const NAZWA_ZBIORU: Record<Zbior, string> = {
+  rekrutacje: 'Rekrutacje',
+  kpi: 'KPI',
+  kohorty: 'Retencja',
+}
 
-      // Preferuj dane live; gdy backend pusty/niewdrożony — dane demo (realne SSUEW)
-      const liveRekr = Array.isArray(rData) && rData.length > 0
-      const liveKpi  = Array.isArray(kData) && kData.length > 0
-      const liveKoh  = Array.isArray(kohData) && kohData.length > 0
-      setRekrutacje(liveRekr ? rData : DEMO_REKRUTACJE)
-      setKpiMetrics(liveKpi  ? kData : DEMO_KPI_METRICS)
-      setKohorty(liveKoh ? kohData : DEMO_KOHORTY)
-      setUsingDemo(!liveRekr && !liveKpi && !liveKoh)
-    } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : 'Nieznany błąd'
-      setError(msg)
-      setRekrutacje(DEMO_REKRUTACJE)
-      setKohorty(DEMO_KOHORTY)
-      setKpiMetrics(DEMO_KPI_METRICS)
-      setUsingDemo(true)
-    } finally {
-      setLoading(false)
+type Pobrany<T> = { dane: T[]; zrodlo: ZrodloDanych; blad: string | null }
+
+/**
+ * Każda zakładka arkusza osobno. Wcześniej jeden błąd (np. brak `kpi_punkty`)
+ * przełączał na dane przykładowe całą analitykę, także rekrutacje, które
+ * przyszły poprawnie — i nikt się o tym nie dowiadywał.
+ *
+ * Pusta lista to arkusz bez danych albo nieskonfigurowany skrypt: wtedy dane
+ * przykładowe z historii SSUEW, ale zawsze z oznaczeniem `demo`.
+ */
+async function pobierz<T>(zbior: Zbior, demo: T[]): Promise<Pobrany<T>> {
+  try {
+    const res = await fetch(`/api/${zbior}`)
+    if (!res.ok) {
+      const tresc = await res.json().catch(() => null)
+      throw new Error(tresc?.error ?? `HTTP ${res.status}`)
     }
+    const dane = await res.json()
+    if (Array.isArray(dane) && dane.length > 0) return { dane, zrodlo: 'live', blad: null }
+    return { dane: demo, zrodlo: 'demo', blad: null }
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : 'nieznany błąd'
+    return { dane: demo, zrodlo: 'demo', blad: `${NAZWA_ZBIORU[zbior]}: ${msg}` }
+  }
+}
+
+type Stan = {
+  rekrutacje: Rekrutacja[]
+  kohorty: Kohorta[]
+  kpiMetrics: KpiMetric[]
+  zrodla: Record<Zbior, ZrodloDanych>
+  bledy: string[]
+  loading: boolean
+}
+
+async function pobierzWszystko(): Promise<Omit<Stan, 'loading'>> {
+  const [r, k, h] = await Promise.all([
+    pobierz<Rekrutacja>('rekrutacje', DEMO_REKRUTACJE),
+    pobierz<KpiMetric>('kpi', DEMO_KPI_METRICS),
+    pobierz<Kohorta>('kohorty', DEMO_KOHORTY),
+  ])
+  return {
+    rekrutacje: r.dane,
+    kpiMetrics: k.dane,
+    kohorty: h.dane,
+    zrodla: { rekrutacje: r.zrodlo, kpi: k.zrodlo, kohorty: h.zrodlo },
+    bledy: [r.blad, k.blad, h.blad].filter((b): b is string => b !== null),
+  }
+}
+
+const POCZATEK: Stan = {
+  rekrutacje: [], kohorty: [], kpiMetrics: [],
+  zrodla: { rekrutacje: 'live', kpi: 'live', kohorty: 'live' },
+  bledy: [], loading: true,
+}
+
+/** Właściwy stan danych. Woła go tylko `AnalyticsDataProvider` — moduły czytają kontekst. */
+export function useAnalyticsZrodlo() {
+  const [stan, setStan] = useState<Stan>(POCZATEK)
+
+  // Odświeżenie po zapisie nie wraca do szkieletu — stare liczby zostają
+  // na ekranie, dopóki nie przyjdą nowe.
+  const fetchAll = useCallback(async () => {
+    const nowe = await pobierzWszystko()
+    setStan({ ...nowe, loading: false })
   }, [])
 
-  useEffect(() => { fetchAll() }, [fetchAll])
+  useEffect(() => {
+    let aktywny = true
+    pobierzWszystko().then((nowe) => {
+      if (aktywny) setStan({ ...nowe, loading: false })
+    })
+    return () => { aktywny = false }
+  }, [])
+
+  const { rekrutacje, kohorty, kpiMetrics, zrodla, bledy, loading } = stan
+  const usingDemo = Object.values(zrodla).includes('demo')
+  const error = bledy.length ? bledy.join(' · ') : null
 
   const addRekrutacja = async (payload: Omit<Rekrutacja, 'id' | 'created_at'>) => {
     const res = await fetch('/api/rekrutacje', {
@@ -105,10 +148,25 @@ export function useAnalyticsData() {
   // a nie na surowe wiersze, więc sklejanie nie może się dziać przy każdym renderze.
   const serie = useMemo(() => serieZWierszy(kpiMetrics), [kpiMetrics])
 
-  return { rekrutacje, kohorty, kpiMetrics, serie, loading, error, usingDemo, addRekrutacja, addKpiMetric, addKohorta, addKpiMetricsBulk, updateKpiMetric, refresh: fetchAll }
+  return { rekrutacje, kohorty, kpiMetrics, serie, loading, error, bledy, zrodla, usingDemo, addRekrutacja, addKpiMetric, addKohorta, addKpiMetricsBulk, updateKpiMetric, refresh: fetchAll }
 }
 
-// ─── Dane demo (realne dane SSUEW, używane gdy Supabase nie jest skonfigurowane) ─
+export type AnalyticsData = ReturnType<typeof useAnalyticsZrodlo>
+
+export const AnalyticsDataContext = createContext<AnalyticsData | null>(null)
+
+/**
+ * Dane analityki, wspólne dla całej sekcji. Przejście między modułami nie
+ * pobiera wszystkiego od nowa — Apps Script odpowiada 1–3 s i każda zakładka
+ * zaczynała od szkieletu.
+ */
+export function useAnalyticsData(): AnalyticsData {
+  const dane = useContext(AnalyticsDataContext)
+  if (!dane) throw new Error('useAnalyticsData wymaga AnalyticsDataProvider (app/analytics/layout.tsx)')
+  return dane
+}
+
+// ─── Dane demo (realne dane SSUEW, używane gdy arkusz jest pusty albo nie odpowiada) ─
 
 // Z dane_zrodlowe/KPI SSUEW.xlsx — "PRZYJĘCI DZIAŁACZE". Zgłoszenia od rekrutacji J'23.
 export const DEMO_REKRUTACJE: Rekrutacja[] = [

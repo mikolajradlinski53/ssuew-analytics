@@ -15,7 +15,7 @@ import { AnimatedNumber } from '@/components/ui/AnimatedNumber'
 import { InsightCard } from '@/components/ui/InsightCard'
 
 export default function OverviewClient() {
-  const { rekrutacje, kohorty, serie, loading, usingDemo } = useAnalyticsData()
+  const { rekrutacje, kohorty, serie, loading } = useAnalyticsData()
   const { filters } = useFilters()
 
   if (loading) return <ModuleSkeleton variant="overview" />
@@ -42,12 +42,6 @@ export default function OverviewClient() {
 
   return (
     <div className="space-y-4">
-      {usingDemo && (
-        <div className="deck-chip inline-flex text-[11px] text-deck-warn rounded-lg px-3 py-1.5">
-          Tryb demo - skonfiguruj Supabase, aby zobaczyć dane na żywo
-        </div>
-      )}
-
       <BentoCard span={4} className="p-0">
         <div className="grid min-h-[260px] grid-cols-[1.15fr_0.85fr] overflow-hidden rounded-lg">
           <div className="p-6">
