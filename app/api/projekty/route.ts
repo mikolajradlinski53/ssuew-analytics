@@ -20,8 +20,8 @@ function kompletny(w: Record<string, unknown>): boolean {
 
 /**
  * Brakujące liczby stają się zerami, a nie powodem do odrzucenia wiersza.
- * Trzynaście kolumn to dużo do wypełnienia naraz; niewpisane pole po prostu
- * nie zapali swojej flagi, zamiast blokować zapis całej reszty.
+ * Trzynaście kolumn to dużo do wypełnienia naraz. Flagi traktują zero jako
+ * „nie wiem” wszędzie poza partnerem finansowym — tam zero jest odpowiedzią.
  */
 function wybierz(w: Record<string, unknown>): Record<string, unknown> {
   const out: Record<string, unknown> = {}

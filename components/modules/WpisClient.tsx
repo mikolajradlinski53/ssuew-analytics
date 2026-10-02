@@ -2,13 +2,27 @@
 import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { useAnalyticsData } from '@/lib/useAnalyticsData'
+import { useProjekty } from '@/lib/useProjekty'
 import { useAuth } from '@/lib/auth/useAuth'
 import { nextOkres } from '@/lib/period'
 import { serieWgKategorii, ostatniPunkt } from '@/lib/kpi/serie'
 import { BentoCard } from '@/components/ui/BentoCard'
 import { ModuleSkeleton } from '@/components/ui/ModuleSkeleton'
 
-type Tab = 'rekrutacja' | 'kohorta' | 'kpi' | 'rocznik'
+type Tab = 'rekrutacja' | 'kohorta' | 'kpi' | 'rocznik' | 'projekt'
+
+const PUSTY_PROJEKT = {
+  projekt: '', edycja: '', obszar: '',
+  budzet_plan: '', budzet_wydany: '', przedluzenia: '',
+  aplikujacy: '', uczestnicy: '', partnerzy_fin: '', partnerzy_barter: '',
+  problemy: '',
+}
+
+/** Puste pole to zero — tak samo traktuje je arkusz przy odczycie. */
+const liczba = (v: string) => {
+  const n = parseFloat(v)
+  return Number.isFinite(n) ? n : 0
+}
 const inputCls = 'w-full bg-deck-bg border border-deck-border rounded-md px-3 py-2 text-sm text-deck-text'
 const labelCls = 'block text-[11px] text-deck-muted mb-1'
 const btnCls = 'w-full bg-deck-accent text-deck-bg-deep rounded-md px-3 py-2 text-sm font-semibold disabled:opacity-50'
@@ -23,6 +37,8 @@ export default function WpisClient() {
   const [rekr, setRekr] = useState({ edycja: '', sezon: 'jesien' as 'jesien' | 'wiosna', rok: new Date().getFullYear(), zgloszenia: '', przyjeci: '' })
   const [koh, setKoh] = useState({ edycja: '', sezon: 'jesien' as 'jesien' | 'wiosna', rok: new Date().getFullYear(), n: '', avg: '', max: '', inProgress: false })
   const [kpi, setKpi] = useState({ kategoria: 'SKS', nazwa: '', okres: '', wartosc: '' })
+  const { dodajProjekt } = useProjekty()
+  const [proj, setProj] = useState(PUSTY_PROJEKT)
 
   /** Seria nie ma identyfikatora — rozpoznajemy ją po parze, tak jak reszta modułu. */
   const kluczSerii = (s: { kategoria: string; nazwa: string }) => `${s.kategoria}|${s.nazwa}`
@@ -101,6 +117,25 @@ export default function WpisClient() {
       setKpi({ kategoria: kpi.kategoria, nazwa: '', okres: kpi.okres, wartosc: '' })
     }, `Pomiar „${kpi.nazwa}" zapisany.`)
 
+  const submitProjekt = () =>
+    run(async () => {
+      await dodajProjekt({
+        projekt: proj.projekt.trim(),
+        edycja: proj.edycja.trim() || latestOkres,
+        obszar: proj.obszar.trim(),
+        budzet_plan: liczba(proj.budzet_plan),
+        budzet_wydany: liczba(proj.budzet_wydany),
+        przedluzenia: liczba(proj.przedluzenia),
+        aplikujacy: liczba(proj.aplikujacy),
+        uczestnicy: liczba(proj.uczestnicy),
+        partnerzy_fin: liczba(proj.partnerzy_fin),
+        partnerzy_barter: liczba(proj.partnerzy_barter),
+        problemy: proj.problemy.trim(),
+      })
+      // Edycja i obszar zostają — wpisując rocznik dodajesz projekty seriami.
+      setProj({ ...PUSTY_PROJEKT, edycja: proj.edycja, obszar: proj.obszar })
+    }, `Projekt „${proj.projekt.trim()}” zapisany.`)
+
   const submitRocznik = () => {
     const payloads = serie
       .filter((s) => rocznikVals[kluczSerii(s)]?.trim())
@@ -120,10 +155,10 @@ export default function WpisClient() {
   return (
     <div className="max-w-2xl space-y-3">
       <div className="flex gap-2 flex-wrap">
-        {(['rekrutacja', 'kohorta', 'kpi', 'rocznik'] as Tab[]).map((t) => (
+        {(['rekrutacja', 'kohorta', 'kpi', 'rocznik', 'projekt'] as Tab[]).map((t) => (
           <button key={t} onClick={() => { setTab(t); setStatus(null) }}
             className={`text-[11px] px-3 py-1 rounded-md border ${tab === t ? 'bg-deck-accent/10 text-deck-accent border-deck-accent/40' : 'text-deck-muted border-deck-border'}`}>
-            {t === 'rekrutacja' ? 'Rekrutacja' : t === 'kohorta' ? 'Kohorta' : t === 'kpi' ? 'Pomiar KPI' : 'Rocznik KPI'}
+            {t === 'rekrutacja' ? 'Rekrutacja' : t === 'kohorta' ? 'Kohorta' : t === 'kpi' ? 'Pomiar KPI' : t === 'rocznik' ? 'Rocznik KPI' : 'Projekt'}
           </button>
         ))}
       </div>
@@ -133,6 +168,7 @@ export default function WpisClient() {
         {tab === 'kohorta' && 'Kohorta: liczebność i retencja (avg/max). Zasili moduł Retencja i krzywe przeżycia.'}
         {tab === 'kpi' && 'Pojedynczy pomiar: kategoria, nazwa, okres i wartość (np. SKS / Listopad / 2025/2026 / 84). Służy też do uzupełniania dziur w historii.'}
         {tab === 'rocznik' && 'Najszybszy sposób na nowy rok: wpisz tegoroczne liczby obok istniejących metryk (poprzednie przenoszą się automatycznie) i zapisz wszystkie naraz.'}
+        {tab === 'projekt' && 'Kondycja projektu w jednej edycji. Wystarczy nazwa i edycja — resztę uzupełnisz później. Puste pole liczy się jako zero i zwykle milczy; wyjątkiem są partnerzy finansowi — zero tam oznacza „brak partnera” i zapala flagę.'}
         {' '}Wypełnij i kliknij „Zapisz" — zmiany od razu widać w modułach.
       </div>
 
@@ -242,6 +278,36 @@ export default function WpisClient() {
               ))
             )}
             <button onClick={submitRocznik} disabled={busy} className={btnCls}>{busy ? 'Zapisywanie…' : `Zapisz rocznik ${rocznikOkres}`}</button>
+          </div>
+        </BentoCard>
+      )}
+
+      {tab === 'projekt' && (
+        <BentoCard title="Kondycja projektu" sub="jeden projekt w jednej edycji">
+          <div className="space-y-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+              <div><label className={labelCls}>Projekt</label><input className={inputCls} placeholder="np. Gala" value={proj.projekt} onChange={(e) => setProj((p) => ({ ...p, projekt: e.target.value }))} /></div>
+              <div><label className={labelCls}>Edycja</label><input className={inputCls} placeholder={latestOkres} value={proj.edycja} onChange={(e) => setProj((p) => ({ ...p, edycja: e.target.value }))} /></div>
+              <div><label className={labelCls}>Obszar</label><input className={inputCls} placeholder="np. Kultura" value={proj.obszar} onChange={(e) => setProj((p) => ({ ...p, obszar: e.target.value }))} /></div>
+            </div>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+              <div><label className={labelCls}>Budżet przyznany (zł)</label><input type="number" className={inputCls} value={proj.budzet_plan} onChange={(e) => setProj((p) => ({ ...p, budzet_plan: e.target.value }))} /></div>
+              <div><label className={labelCls}>Budżet wydany (zł)</label><input type="number" className={inputCls} value={proj.budzet_wydany} onChange={(e) => setProj((p) => ({ ...p, budzet_wydany: e.target.value }))} /></div>
+              <div><label className={labelCls}>Przedłużenia naboru</label><input type="number" className={inputCls} value={proj.przedluzenia} onChange={(e) => setProj((p) => ({ ...p, przedluzenia: e.target.value }))} /></div>
+            </div>
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+              <div><label className={labelCls}>Aplikujący</label><input type="number" className={inputCls} value={proj.aplikujacy} onChange={(e) => setProj((p) => ({ ...p, aplikujacy: e.target.value }))} /></div>
+              <div><label className={labelCls}>Uczestnicy</label><input type="number" className={inputCls} value={proj.uczestnicy} onChange={(e) => setProj((p) => ({ ...p, uczestnicy: e.target.value }))} /></div>
+              <div><label className={labelCls}>Partnerzy fin.</label><input type="number" className={inputCls} value={proj.partnerzy_fin} onChange={(e) => setProj((p) => ({ ...p, partnerzy_fin: e.target.value }))} /></div>
+              <div><label className={labelCls}>Partnerzy barter.</label><input type="number" className={inputCls} value={proj.partnerzy_barter} onChange={(e) => setProj((p) => ({ ...p, partnerzy_barter: e.target.value }))} /></div>
+            </div>
+            <div>
+              <label className={labelCls}>Problemy w tej edycji</label>
+              <textarea rows={3} className={inputCls} placeholder="co poszło nie tak" value={proj.problemy} onChange={(e) => setProj((p) => ({ ...p, problemy: e.target.value }))} />
+            </div>
+            <button onClick={submitProjekt} disabled={busy || !proj.projekt.trim()} className={btnCls}>
+              {busy ? 'Zapisywanie…' : 'Zapisz projekt'}
+            </button>
           </div>
         </BentoCard>
       )}

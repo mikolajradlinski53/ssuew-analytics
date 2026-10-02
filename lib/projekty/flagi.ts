@@ -72,14 +72,16 @@ export function flagiProjektu(b: Projekt, poprzednia: Projekt | null): Flaga[] {
   }
 
   // ─ Porównanie z poprzednią edycją
+  // Pusta komórka przychodzi z arkusza jako 0, więc zero po żadnej stronie
+  // nie jest porównaniem — inaczej niewpisane pole krzyczałoby „spadek do 0”.
   if (poprzednia) {
-    if (poprzednia.aplikujacy > 0 && b.aplikujacy < PROGI.spadek * poprzednia.aplikujacy) {
+    if (b.aplikujacy > 0 && poprzednia.aplikujacy > 0 && b.aplikujacy < PROGI.spadek * poprzednia.aplikujacy) {
       f.push({
         id: 'mniej-chetnych', waga: 'uwaga', tytul: 'Mniej chętnych niż rok temu',
         detal: `${b.aplikujacy} vs ${poprzednia.aplikujacy} w ${poprzednia.edycja}`,
       })
     }
-    if (poprzednia.uczestnicy > 0 && b.uczestnicy < PROGI.spadek * poprzednia.uczestnicy) {
+    if (b.uczestnicy > 0 && poprzednia.uczestnicy > 0 && b.uczestnicy < PROGI.spadek * poprzednia.uczestnicy) {
       f.push({
         id: 'mniej-uczestnikow', waga: 'uwaga', tytul: 'Mniej uczestników niż rok temu',
         detal: `${b.uczestnicy} vs ${poprzednia.uczestnicy} w ${poprzednia.edycja}`,

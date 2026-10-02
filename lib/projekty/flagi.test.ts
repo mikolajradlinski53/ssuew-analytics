@@ -102,6 +102,12 @@ describe('flagiProjektu — porównanie z poprzednią edycją', () => {
     const f = flagiProjektu(p({ aplikujacy: 5 }), p({ edycja: '2024/2025', aplikujacy: 0 }))
     expect(ma(f, 'mniej-chetnych')).toBeUndefined()
   })
+
+  it('niewpisana bieżąca liczba (zero z pustej komórki) nie udaje spadku', () => {
+    const f = flagiProjektu(p({ aplikujacy: 0, uczestnicy: 0 }), stara)
+    expect(ma(f, 'mniej-chetnych')).toBeUndefined()
+    expect(ma(f, 'mniej-uczestnikow')).toBeUndefined()
+  })
 })
 
 describe('kondycjaEdycji', () => {
