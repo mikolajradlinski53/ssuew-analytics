@@ -33,6 +33,13 @@ ręcznie, a [Apps Script](apps-script/README.md) wystawia je jako JSON. Trasy `/
 istnieją po to, żeby robić dwie rzeczy, których przeglądarka zrobić nie może: chronić token
 do skryptu i cache'ować wolne odpowiedzi (Apps Script odpowiada 1–3 s).
 
+### Region funkcji
+
+[`vercel.json`](vercel.json) przypina funkcje serwera do **Frankfurtu (`fra1`)**. Domyślny
+Vercel to Waszyngton (`iad1`): każde kliknięcie leciało wtedy przez Atlantyk i z powrotem,
+a Planer pytał Firestore (`eur3`, Europa) z USA — zmierzone ~230 ms na samo zapytanie
+i ~1 s na obraz Planera. Użytkownicy, Firestore i arkusz są w Europie; serwer też ma być.
+
 ## Uruchomienie
 
 ```bash
