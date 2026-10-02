@@ -208,6 +208,34 @@ struktura arkuszy). Zamiana na plik to cienka warstwa w komponencie. Testujemy f
 
 ## 8. Sesja Operacyjna — naprawa i domknięcie
 
+### Błąd 0a: osoba na kodzie nie wchodzi do kokpitu
+
+Po wpisaniu kodu logowanie przenosi na `/`. Strona kokpitu sprawdza wyłącznie ciasteczko konta
+z hasłem (`deck_session`), więc osobę na kodzie odsyła na `/login` — a tam `useAuth` widzi
+zalogowanego i znów przenosi na `/`. Pętla przekierowań dla całego zarządu na kodzie.
+
+Naprawa: jedna funkcja serwerowa `ktoNaStronie()` w `lib/auth/` rozpoznaje obie drogi wejścia
+(dziś ten kod jest skopiowany w `app/planer/page.tsx`) i obie strony z niej korzystają. Kokpit
+dla osoby na kodzie: rola `board`, w miejscu adresu e-mail — etykieta kodu.
+
+### Błąd 0b: osoba na kodzie widzi pusty Planer i nie wie o sesji
+
+Strona Planera podaje osobom na kodzie `poczatkowe={[]}`, a one nie mają subskrypcji Firestore,
+więc kalendarz jest pusty. Stan sesji czytają wyłącznie konta z subskrypcją, więc u osób na kodzie
+sesja nigdy się nie włącza: nie ma banera ani odpytywania co 15 s.
+
+Naprawa:
+
+- **pierwszy obraz z serwera** — `app/planer/page.tsx` dla osoby na kodzie czyta przez Admin SDK
+  wydarzenia, stan sesji i Skład i podaje je do `PlanerClient`,
+- **`GET /api/planer?semestr=…`** zwraca obiekt `{ wydarzenia, sesja, sklad }` zamiast samej
+  tablicy; jedyny odbiorca to odpytywanie w `PlanerClient`, zmieniane razem,
+- **odpytywanie dla osób na kodzie**: przy włączonej sesji co 15 s pełny obraz (jak w 3b),
+  poza sesją co 60 s **tylko stan sesji** (`?zasob=sesja`, jeden odczyt dokumentu) — żeby
+  zauważyć start sesji bez czytania całego kalendarza co minutę. Wyłącznie przy widocznej karcie.
+
+Koszt: poza sesją 1 odczyt na minutę na osobę; w sesji tyle, co dziś zakładał 3b.
+
 ### Błąd: zarząd w sesji nie może zapisać niczego poza przeciągnięciem
 
 W trakcie sesji `PlanerClient` uznaje zarząd za „piszącego wprost” i woła `zmienWydarzenie` /
@@ -291,6 +319,7 @@ Musi stać przed regułą zamykającą wszystko. Wdrożenie reguł: wklejenie w 
 | `components/planer/Sklad.tsx` | NOWY — edycja Składu |
 | `components/planer/PobierzMiesiac.tsx` | NOWY — przycisk eksportu |
 | `components/planer/PlanerClient.tsx` | ścieżki zapisu zarządu, Skład, eksport |
+| `lib/auth/naStronie.ts` | NOWY — `ktoNaStronie()` dla stron serwerowych |
 | `lib/planer/semestry.ts` | `biezacySemestr(data)` |
 | `components/deck/DeckHub.tsx`, `app/page.tsx` | baner sesji, bieżący semestr |
 | `app/planer/page.tsx` | bieżący semestr zamiast `'2026Z'` |
@@ -302,6 +331,8 @@ Musi stać przed regułą zamykającą wszystko. Wdrożenie reguł: wklejenie w 
 
 Każda faza zostawia działający Planer.
 
+0. **Zarząd na kodzie w ogóle wchodzi** — kokpit dla obu dróg wejścia (błąd 0a), pierwszy obraz
+   i odpytywanie Planera (błąd 0b). Najpierw, bo bez tego reszta nie dociera do większości zarządu.
 1. **Model i logika** — typy, budynki, tłumaczenie, trwanie, kolizje, walidacja. Bez zmian
    w wyglądzie, poza tym, że „Zeb./inne” znika z filtrów.
 2. **Zapis** — akcje serwera dla sesji (naprawa błędu z §8), formularz z nowymi polami, Skład.
@@ -322,6 +353,8 @@ Każda faza zostawia działający Planer.
 | `semestry` | 2026-10-02 → `2026Z`; 2027-02-15 → `2026Z`; 2027-03-01 → `2026L`; 2027-09-01 → `2027Z` |
 | `eksport` | kolejność w komórce po randze; wielodniowe w każdym dniu z „(n/m)”; lista: wielodniowe raz; nazwy dni tygodnia |
 | `POST /api/planer` | zarząd bez sesji: `dodaj`/`zmien` → 403; w sesji → 200; usuwanie przez zarząd → 403 zawsze; błędne dane → 400 |
+| `GET /api/planer` | zwraca `{ wydarzenia, sesja, sklad }`; `zasob=sesja` → sam stan sesji; bez biletu → 401 |
+| `ktoNaStronie` | ciasteczko hasła → rola z adresu; samo ciasteczko kodu → `board` z etykietą; brak obu → `null` |
 | `KartaWydarzenia` | numer rangi dla 1–4, brak dla 5–6; „cały dzień”; „od 18:00”; miejsce „Poza: …” |
 | `WyborOsob` | „Wszyscy” odznacza pojedyncze osoby i odwrotnie; osoba spoza Składu jako szary przycisk |
 | `PanelWydarzenia` | „do dnia” wcześniej niż start zablokowane; „cały dzień” chowa godziny |
