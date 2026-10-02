@@ -17,20 +17,26 @@ export interface Pytajacy {
  *
  * Prawdziwa weryfikacja: podpis, wystawca, odbiorca, termin ważności.
  * Middleware sprawdza jedynie obecność ciasteczka — bezpieczeństwo mieszka tutaj.
+ *
+ * Działa na samych wartościach ciasteczek, więc służy i trasom API (`ktoPyta`),
+ * i stronom serwerowym (`ktoNaStronie`). Gdy strona sprawdzała tylko hasło,
+ * osoba na kodzie krążyła między kokpitem a logowaniem.
  */
-export async function ktoPyta(req: NextRequest): Promise<Pytajacy | null> {
-  const token = req.cookies.get('deck_session')?.value
+export async function ktoZCiasteczek(token?: string, bilet?: string): Promise<Pytajacy | null> {
   if (token) {
     const tozsamosc = await zweryfikujToken(token)
     const rola = tozsamosc ? rolaDla(tozsamosc.email) : null
     if (tozsamosc && rola) return { uid: tozsamosc.uid, email: tozsamosc.email, rola }
   }
 
-  const bilet = req.cookies.get('deck_kod')?.value
   if (bilet) {
     const sesja = await odczytajSesjeKodu(bilet)
     if (sesja) return { uid: `kod:${sesja.kod}`, email: sesja.kod, rola: sesja.rola }
   }
 
   return null
+}
+
+export async function ktoPyta(req: NextRequest): Promise<Pytajacy | null> {
+  return ktoZCiasteczek(req.cookies.get('deck_session')?.value, req.cookies.get('deck_kod')?.value)
 }

@@ -82,4 +82,15 @@ describe('ktoPyta', () => {
     const { ktoPyta } = await import('@/lib/auth/guard')
     expect(await ktoPyta(zada({ deck_kod: 'podrobka' }))).toBeNull()
   })
+
+  it('ktoZCiasteczek rozpoznaje sam bilet kodu — tak wchodzi zarząd bez hasła', async () => {
+    odczytajSesjeKodu.mockResolvedValue({ kod: 'Jula', urzadzenie: 'u1', rola: 'board' })
+    const { ktoZCiasteczek } = await import('@/lib/auth/guard')
+    expect(await ktoZCiasteczek(undefined, 'bilet')).toEqual({ uid: 'kod:Jula', email: 'Jula', rola: 'board' })
+  })
+
+  it('ktoZCiasteczek bez obu ciasteczek zwraca null', async () => {
+    const { ktoZCiasteczek } = await import('@/lib/auth/guard')
+    expect(await ktoZCiasteczek(undefined, undefined)).toBeNull()
+  })
 })
