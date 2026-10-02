@@ -9,7 +9,8 @@
     "lint": "eslint",
     "test": "vitest run",
     "test:watch": "vitest",
-    "gas": "node scripts/gas.mjs"
+    "gas": "node scripts/gas.mjs",
+    "gemini": "node scripts/gemini.mjs"
   },
   "dependencies": {
     "@opentelemetry/api": "^1.9.1",
