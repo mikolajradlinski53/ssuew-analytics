@@ -50,11 +50,16 @@ describe('sprawdzWydarzenie', () => {
     expect(blad({ ...dobre, dni: 0 })).toMatch(/dni/i)
     expect(blad({ ...dobre, dni: 61 })).toMatch(/dni/i)
     expect(blad({ ...dobre, godzina: '25:00' })).toMatch(/GG:MM/)
-    expect(blad({ ...dobre, godzinaDo: '17:00' })).toMatch(/po godzinie „od”/)
+    expect(blad({ ...dobre, godzinaDo: '18:00' })).toMatch(/taka sama jak „od”/)
     expect(blad({ ...dobre, godzina: null })).toMatch(/„od”/)
     expect(blad({ ...dobre, budynek: 'X' })).toMatch(/budynek/i)
     expect(blad({ ...dobre, osoby: 'Jula' })).toMatch(/listą/)
     expect(blad(null)).toMatch(/brak/i)
+  })
+
+  it('„do” wcześniejsze niż „od” to koniec następnego dnia, nie błąd', () => {
+    const w = sprawdzWydarzenie({ ...dobre, godzina: '18:00', godzinaDo: '04:00' })
+    expect(w.ok && w.wydarzenie).toMatchObject({ godzina: '18:00', godzinaDo: '04:00' })
   })
 
   it('„Poza uczelnią” jest poprawnym budynkiem', () => {

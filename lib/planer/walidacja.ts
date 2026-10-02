@@ -1,4 +1,4 @@
-import { dniWMiesiacu, naMinuty } from './daty'
+import { dniWMiesiacu } from './daty'
 import { jestBudynkiem } from './budynki'
 import { jestKategoria, type NoweWydarzenie } from './typy'
 
@@ -51,8 +51,10 @@ export function sprawdzWydarzenie(x: unknown): WynikSprawdzenia {
   const doGodziny = godzina(d.godzinaDo)
   if (od === undefined || doGodziny === undefined) return blad('Godzina w formacie GG:MM')
   if (!calyDzien && doGodziny !== null && od === null) return blad('Podaj godzinę „od”, zanim podasz „do”')
-  if (!calyDzien && od !== null && doGodziny !== null && (naMinuty(doGodziny) as number) <= (naMinuty(od) as number)) {
-    return blad('Godzina „do” musi być po godzinie „od”')
+  // „do” wcześniejsze niż „od” to koniec następnego dnia (impreza 18:00–04:00).
+  // Błędem jest tylko ta sama godzina — nie wiadomo, czy to zero, czy doba.
+  if (!calyDzien && od !== null && od === doGodziny) {
+    return blad('Godzina „do” nie może być taka sama jak „od”')
   }
 
   const budynekWejscie = d.budynek

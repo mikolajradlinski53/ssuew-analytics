@@ -9,6 +9,7 @@ import { dniWMiesiacu } from '@/lib/planer/daty'
 import { BUDYNKI, POZA, etykietaBudynku } from '@/lib/planer/budynki'
 import { dniMiedzy, koniec, naIso, poczatek, zIso } from '@/lib/planer/trwanie'
 import { sprawdzWydarzenie } from '@/lib/planer/walidacja'
+import { przezPolnoc } from '@/lib/planer/opis'
 import { WyborOsob } from './WyborOsob'
 
 type Props = {
@@ -180,6 +181,11 @@ export function PanelWydarzenia({
                 className={pole}
               />
             </label>
+            {przezPolnoc(dane) && (
+              <p className="col-span-2 -mt-1 text-[10.5px] text-deck-muted">
+                Kończy się o {dane.godzinaDo} następnego dnia.
+              </p>
+            )}
           </div>
         )}
 

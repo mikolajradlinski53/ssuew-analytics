@@ -71,11 +71,21 @@ describe('PanelWydarzenia', () => {
     expect(onZapisz).toHaveBeenCalledWith(expect.objectContaining({ calyDzien: true, godzina: null }), 1)
   })
 
-  it('godzina „do” przed „od” blokuje zapis z komunikatem', () => {
+  it('godzina „do” równa „od” blokuje zapis z komunikatem', () => {
     render(<PanelWydarzenia {...wspolne} wydarzenie={w} mozeEdytowac />)
-    fireEvent.change(screen.getByLabelText('Do'), { target: { value: '17:00' } })
-    expect(screen.getByRole('alert')).toHaveTextContent(/po godzinie „od”/)
+    fireEvent.change(screen.getByLabelText('Do'), { target: { value: '18:00' } })
+    expect(screen.getByRole('alert')).toHaveTextContent(/taka sama jak „od”/)
     expect(screen.getByRole('button', { name: /zapisz/i })).toBeDisabled()
+  })
+
+  it('„do” wcześniejsze niż „od” to koniec następnego dnia — z podpowiedzią', () => {
+    const onZapisz = vi.fn()
+    render(<PanelWydarzenia {...wspolne} onZapisz={onZapisz} wydarzenie={w} mozeEdytowac />)
+    fireEvent.change(screen.getByLabelText('Do'), { target: { value: '04:00' } })
+    expect(screen.queryByRole('alert')).toBeNull()
+    expect(screen.getByText(/następnego dnia/i)).toBeInTheDocument()
+    zapisz()
+    expect(onZapisz).toHaveBeenCalledWith(expect.objectContaining({ godzina: '18:00', godzinaDo: '04:00' }), 1)
   })
 
   it('data końca zamienia się na liczbę dni', () => {

@@ -140,3 +140,21 @@ describe('kolizje — przedziały, całe dni, wiele dni', () => {
     expect(k.get(7)).toBeUndefined()
   })
 })
+
+describe('kolizje — przez północ', () => {
+  it('impreza 18:00–04:00 koliduje z wydarzeniem tej osoby o 23:00', () => {
+    const k = kolizjeWMiesiacu([
+      w({ osoby: ['Jula'], godzina: '18:00', godzinaDo: '04:00' }),
+      w({ osoby: ['Jula'], godzina: '23:00', godzinaDo: '23:30' }),
+    ], PAZ)
+    expect(k.get(7)?.osoby[0].twarda).toBe(true)
+  })
+
+  it('impreza 18:00–04:00 nie koliduje z porannym wydarzeniem tego samego dnia', () => {
+    const k = kolizjeWMiesiacu([
+      w({ osoby: ['Jula'], godzina: '18:00', godzinaDo: '04:00' }),
+      w({ osoby: ['Jula'], godzina: '09:00', godzinaDo: '10:00' }),
+    ], PAZ)
+    expect(k.get(7)?.osoby[0].twarda).toBe(false)
+  })
+})

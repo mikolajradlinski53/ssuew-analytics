@@ -30,6 +30,16 @@ function zajmujeCalyDzien(w: Wydarzenie): boolean {
 }
 
 /**
+ * Koniec liczony od północy dnia startu: 04:00 po 18:00 to 28:00. Część po
+ * północy w kolejnym dniu kolizji nie liczymy — to rzadkie, a dzień startu
+ * to ten, w którym ludzie faktycznie planują.
+ */
+function koniecWMinutach(od: number, doMinut: number | null): number | null {
+  if (doMinut === null) return null
+  return doMinut < od ? doMinut + 24 * 60 : doMinut
+}
+
+/**
  * Czy dwa wydarzenia z godziną zderzają się w czasie. Gdy oba mają koniec —
  * nakładanie się przedziałów (stykające się końcem nie kolidują). Gdy któremuś
  * brakuje końca — dotychczasowa reguła: starty bliżej niż 90 minut.
@@ -38,8 +48,8 @@ export function kolidujaWCzasie(a: Wydarzenie, b: Wydarzenie): boolean {
   const aOd = naMinuty(a.godzina)
   const bOd = naMinuty(b.godzina)
   if (aOd === null || bOd === null) return false
-  const aDo = naMinuty(a.godzinaDo)
-  const bDo = naMinuty(b.godzinaDo)
+  const aDo = koniecWMinutach(aOd, naMinuty(a.godzinaDo))
+  const bDo = koniecWMinutach(bOd, naMinuty(b.godzinaDo))
   if (aDo !== null && bDo !== null) return aOd < bDo && bOd < aDo
   return Math.abs(aOd - bOd) < PROG_MINUT
 }
