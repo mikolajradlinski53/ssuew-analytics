@@ -31,6 +31,7 @@ import { nachodziNaMiesiac } from '@/lib/planer/trwanie'
 import { SESJA_WYLACZONA } from '@/lib/planer/stan'
 import { subskrybujSklad, zapiszSklad } from '@/lib/planer/sklad'
 import { Sklad } from './Sklad'
+import { PobierzMiesiac } from './PobierzMiesiac'
 import type { ObrazPlanera } from '@/lib/planer/obraz'
 
 const NAZWY = [
@@ -425,10 +426,13 @@ export function PlanerClient({ semestr, rola, kto, poczatkowy, naZywo }: Props) 
           >
             <ChevronRight size={15} />
           </button>
+          <div className="ml-auto">
+            <PobierzMiesiac wydarzenia={wydarzenia} miesiac={miesiac} />
+          </div>
           <button
             type="button"
             onClick={dodajZPaska}
-            className="deck-button ml-auto flex items-center gap-2 rounded-lg px-3 py-2 text-[12px] font-semibold"
+            className="deck-button flex items-center gap-2 rounded-lg px-3 py-2 text-[12px] font-semibold"
           >
             <Plus size={14} /> {piszeWprost ? 'Dodaj wydarzenie' : 'Zgłoś wydarzenie'}
           </button>
