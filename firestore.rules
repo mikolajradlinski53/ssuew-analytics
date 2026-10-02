@@ -58,6 +58,13 @@ service cloud.firestore {
       }
     }
 
+    // Ustawienia wspolne (Sklad zarzadu): czytaja wszyscy z dostepem, pisze
+    // wlasciciel. Zarzad na kodzie dostaje je przez /api/planer.
+    match /ustawienia/{dokument} {
+      allow read: if maDostep();
+      allow write: if jestWlascicielem();
+    }
+
     // Orbita: prywatna tablica zadan. Dostep ma wylacznie wlasciciel dokumentu,
     // rozpoznawany po identyfikatorze konta Firebase.
     match /users/{uid}/{dokument=**} {

@@ -1,6 +1,6 @@
 'use client'
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { ChevronLeft, ChevronRight, Inbox, Plus, Radio } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Inbox, Plus, Radio, Users } from 'lucide-react'
 import { KLUCZE_KATEGORII, type Kategoria, type Semestr, type Wydarzenie } from '@/lib/planer/typy'
 import {
   dodajWydarzenie, odrzucPropozycje, przyjmijPropozycje, subskrybujPropozycje,
@@ -28,6 +28,8 @@ import { Watek } from './Watek'
 import { dniWMiesiacu } from '@/lib/planer/daty'
 import { terminyCoTydzien } from '@/lib/planer/powtarzanie'
 import { SESJA_WYLACZONA } from '@/lib/planer/stan'
+import { subskrybujSklad, zapiszSklad } from '@/lib/planer/sklad'
+import { Sklad } from './Sklad'
 import type { ObrazPlanera } from '@/lib/planer/obraz'
 
 const NAZWY = [
@@ -64,6 +66,8 @@ export function PlanerClient({ semestr, rola, kto, poczatkowy, naZywo }: Props) 
   const [skrzynkaOtwarta, setSkrzynkaOtwarta] = useState(false)
   const [komentarze, setKomentarze] = useState<Komentarz[]>([])
   const [znaki, setZnaki] = useState<Znak[]>([])
+  const [sklad, setSklad] = useState<string[]>(poczatkowy?.sklad ?? [])
+  const [skladOtwarty, setSkladOtwarty] = useState(false)
 
   useEffect(() => {
     if (!naZywo) return
@@ -76,6 +80,11 @@ export function PlanerClient({ semestr, rola, kto, poczatkowy, naZywo }: Props) 
     if (!naZywo) return
     return subskrybujTrybWspolny(semestr.id, setSesja)
   }, [semestr.id, naZywo])
+
+  useEffect(() => {
+    if (!naZywo) return
+    return subskrybujSklad(setSklad, (e) => setBlad(`Nie udało się pobrać składu: ${e.message}`))
+  }, [naZywo])
 
   useEffect(() => {
     if (!naZywo || !wlascicielem) return
@@ -95,6 +104,7 @@ export function PlanerClient({ semestr, rola, kto, poczatkowy, naZywo }: Props) 
     const d = await r.json()
     if (d.sesja) setSesja(d.sesja)
     if (Array.isArray(d.wydarzenia)) setWydarzenia(d.wydarzenia)
+    if (Array.isArray(d.sklad)) setSklad(d.sklad)
   }, [semestr.id])
 
   // Poza sesją co minutę sprawdzamy wyłącznie, czy się zaczęła; w trakcie
@@ -135,10 +145,13 @@ export function PlanerClient({ semestr, rola, kto, poczatkowy, naZywo }: Props) 
   const miesiac = semestr.miesiace[indeksMiesiaca]
 
   const osoby = useMemo(() => {
-    const zbior = new Set<string>()
-    for (const w of wydarzenia) for (const o of w.osoby) if (o !== 'wszyscy') zbior.add(o)
-    return [...zbior].sort((a, b) => a.localeCompare(b, 'pl'))
-  }, [wydarzenia])
+    const zWydarzen = new Set<string>()
+    for (const w of wydarzenia) for (const o of w.osoby) if (o !== 'wszyscy') zWydarzen.add(o)
+    // Najpierw Skład w jego kolejności, potem osoby spoza Składu ze starszych
+    // wpisów — inaczej starych wydarzeń nie dałoby się dalej filtrować.
+    const spoza = [...zWydarzen].filter((o) => !sklad.includes(o)).sort((a, b) => a.localeCompare(b, 'pl'))
+    return [...sklad, ...spoza]
+  }, [wydarzenia, sklad])
 
   const widoczne = useMemo(
     () =>
@@ -338,6 +351,13 @@ export function PlanerClient({ semestr, rola, kto, poczatkowy, naZywo }: Props) 
               </span>
             )}
           </button>
+          <button
+            type="button"
+            onClick={() => setSkladOtwarty((o) => !o)}
+            className="deck-chip flex items-center gap-2 rounded-lg px-3 py-1.5 text-[11.5px] text-deck-muted transition hover:text-deck-text"
+          >
+            <Users size={13} /> Skład
+          </button>
           {!sesja.wlaczony && (
             <button
               type="button"
@@ -356,6 +376,16 @@ export function PlanerClient({ semestr, rola, kto, poczatkowy, naZywo }: Props) 
           wydarzenia={wydarzenia}
           onPrzyjmij={(p) => przyjmijPropozycje(semestr.id, p)}
           onOdrzuc={(id) => odrzucPropozycje(semestr.id, id)}
+        />
+      )}
+
+      {wlascicielem && skladOtwarty && (
+        <Sklad
+          osoby={sklad}
+          onZmien={(o) => {
+            zapiszSklad(o).catch((e) => setBlad(`Nie udało się zapisać składu: ${(e as Error).message}`))
+          }}
+          onZamknij={() => setSkladOtwarty(false)}
         />
       )}
 
