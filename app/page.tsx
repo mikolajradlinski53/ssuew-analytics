@@ -4,22 +4,18 @@ import { gasList } from '@/lib/gas/client'
 import { computeOverview } from '@/lib/overview'
 import { buildAlerts } from '@/lib/stats'
 import { serieZWierszy, ilorazSerii } from '@/lib/kpi/serie'
-import { DeckHub } from '@/components/deck/DeckHub'
+import { DeckHub, type DaneAnalityki, type DanePlanera } from '@/components/deck/DeckHub'
 import { propozycjeRef } from '@/lib/firebase/admin'
 import { biezacySemestr } from '@/lib/planer/semestry'
 import { stanSesji } from '@/lib/planer/obraz'
 import { SESJA_WYLACZONA } from '@/lib/planer/stan'
+import type { Rola } from '@/lib/auth/role'
 
-export default async function KokpitPage() {
-  // Obie drogi wejścia. Sprawdzanie samego hasła odsyłało osoby na kodzie
-  // na /login, a stamtąd useAuth odsyłał je z powrotem — pętla.
-  const kto = await ktoNaStronie()
-  if (!kto) redirect('/login')
-
-  const semestr = biezacySemestr(new Date())
-
-  // Awaria arkusza nie może zabrać całego kokpitu — kafelek pokaże zera,
-  // a pozostałe moduły dalej działają.
+/**
+ * Liczby z arkusza. Awaria arkusza nie może zabrać kokpitu — kafelek pokaże
+ * zera, a pozostałe moduły dalej działają. Obietnica nigdy nie odrzuca.
+ */
+async function daneAnalityki(): Promise<DaneAnalityki> {
   const [rekrutacje, kohorty, punkty] = await Promise.all([
     gasList('rekrutacje').catch(() => []),
     gasList('kohorty').catch(() => []),
@@ -35,34 +31,47 @@ export default async function KokpitPage() {
       ? (m.lastAccepted / m.lastApplications) * 100
       : 0
 
-  // Odznakę widzi wyłącznie właściciel — dla zarządu liczba nierozpatrzonych
-  // propozycji nic nie znaczy, bo i tak ich nie rozpatrzy.
-  // Awaria Firestore nie może zabrać kokpitu, stąd zero zamiast wyjątku.
-  const propozycje =
-    kto.rola === 'owner'
-      ? await propozycjeRef(semestr.id)
-          .count()
-          .get()
-          .then((s) => s.data().count)
-          .catch(() => 0)
-      : 0
+  return {
+    konwersja,
+    retencja: m.histRetention ?? 0,
+    kpiWzrosty: serie.filter((s) => ilorazSerii(s) > 1).length,
+    kpiRazem: serie.length,
+    alerty: buildAlerts(rekrutacje, kohorty, serie).length,
+  }
+}
 
-  // Awaria Firestore nie może zabrać kokpitu — wtedy po prostu bez baneru.
-  const sesja = await stanSesji(semestr.id).catch(() => SESJA_WYLACZONA)
+/**
+ * Stan z Firestore. Odznakę propozycji widzi wyłącznie właściciel — dla
+ * zarządu ta liczba nic nie znaczy. Awaria Firestore to zero i brak baneru,
+ * nie wyjątek. Oba odczyty równolegle.
+ */
+async function danePlanera(rola: Rola, semestrId: string): Promise<DanePlanera> {
+  const [propozycje, sesja] = await Promise.all([
+    rola === 'owner'
+      ? propozycjeRef(semestrId).count().get().then((s) => s.data().count).catch(() => 0)
+      : Promise.resolve(0),
+    stanSesji(semestrId).catch(() => SESJA_WYLACZONA),
+  ])
+  return { propozycje, sesja }
+}
 
+export default async function KokpitPage() {
+  // Obie drogi wejścia. Sprawdzanie samego hasła odsyłało osoby na kodzie
+  // na /login, a stamtąd useAuth odsyłał je z powrotem — pętla.
+  const kto = await ktoNaStronie()
+  if (!kto) redirect('/login')
+
+  const semestr = biezacySemestr(new Date())
+
+  // Celowo bez `await`: strona idzie do przeglądarki od razu, a liczby
+  // dopływają strumieniem. Czekanie na arkusz (1–3 s przy pustym cache)
+  // i Firestore po kolei dawało kilka sekund pustego ekranu.
   return (
     <DeckHub
       rola={kto.rola}
       email={kto.email}
-      dane={{
-        konwersja,
-        retencja: m.histRetention ?? 0,
-        kpiWzrosty: serie.filter((s) => ilorazSerii(s) > 1).length,
-        kpiRazem: serie.length,
-        alerty: buildAlerts(rekrutacje, kohorty, serie).length,
-        propozycje,
-        sesja,
-      }}
+      analityka={daneAnalityki()}
+      planer={danePlanera(kto.rola, semestr.id)}
     />
   )
 }
