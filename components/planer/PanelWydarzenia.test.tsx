@@ -105,6 +105,15 @@ describe('PanelWydarzenia', () => {
     expect(onZapisz).toHaveBeenCalledWith(expect.objectContaining({ budynek: 'POZA' }), 1)
   })
 
+  it('online to miejsce bez sali — pole pyta o platformę', () => {
+    const onZapisz = vi.fn()
+    render(<PanelWydarzenia {...wspolne} onZapisz={onZapisz} wydarzenie={w} mozeEdytowac />)
+    fireEvent.change(screen.getByLabelText('Budynek'), { target: { value: 'ONLINE' } })
+    expect(screen.getByLabelText('Szczegóły')).toHaveAttribute('placeholder', 'np. Teams, Meet')
+    zapisz()
+    expect(onZapisz).toHaveBeenCalledWith(expect.objectContaining({ budynek: 'ONLINE' }), 1)
+  })
+
   it('powtarzanie widać tylko przy nowym wydarzeniu', () => {
     const { rerender } = render(<PanelWydarzenia {...wspolne} wydarzenie={w} mozeEdytowac />)
     expect(screen.queryByLabelText(/powtórz co tydzień/i)).toBeNull()

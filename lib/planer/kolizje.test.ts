@@ -177,3 +177,13 @@ describe('kolizje — aplikacje', () => {
     expect(k.get(7)).toBeUndefined()
   })
 })
+
+describe('kolizje — miejsca spoza budynków', () => {
+  it('dwa spotkania online o tej samej porze nie kolidują salą', () => {
+    const k = kolizjeWMiesiacu([
+      w({ budynek: 'ONLINE', sala: 'Teams', godzina: '20:00' }),
+      w({ budynek: 'ONLINE', sala: 'Teams', godzina: '20:00' }),
+    ], PAZ)
+    expect(k.get(7)).toBeUndefined()
+  })
+})

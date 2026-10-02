@@ -1,4 +1,4 @@
-import { POZA } from './budynki'
+import { miejsceSpecjalne } from './budynki'
 import { KATEGORIE, type Wydarzenie } from './typy'
 
 /** Koniec przed startem znaczy: kończy się następnego dnia (18:00–04:00). */
@@ -13,9 +13,10 @@ export function opisCzasu(w: Pick<Wydarzenie, 'calyDzien' | 'godzina' | 'godzina
   return w.godzina
 }
 
-/** „B/L 110L”, sam budynek, sama sala ze starszych wpisów albo miejsce poza uczelnią. */
+/** „B/L 110L”, sam budynek, sama sala ze starszych wpisów albo miejsce spoza budynków („Online: Teams”). */
 export function opisMiejsca(w: Pick<Wydarzenie, 'budynek' | 'sala'>): string | null {
-  if (w.budynek === POZA) return w.sala ? `Poza: ${w.sala}` : 'Poza uczelnią'
+  const specjalne = miejsceSpecjalne(w.budynek)
+  if (specjalne) return w.sala ? specjalne.zOpisem(w.sala) : specjalne.etykieta
   if (w.budynek && w.sala) return `${w.budynek} ${w.sala}`
   return w.budynek ?? w.sala
 }

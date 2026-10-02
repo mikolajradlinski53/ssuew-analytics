@@ -6,7 +6,7 @@ import {
   type Miesiac, type NoweWydarzenie, type Wydarzenie,
 } from '@/lib/planer/typy'
 import { dniWMiesiacu } from '@/lib/planer/daty'
-import { BUDYNKI, POZA, etykietaBudynku } from '@/lib/planer/budynki'
+import { BUDYNKI, MIEJSCA_SPECJALNE, miejsceSpecjalne } from '@/lib/planer/budynki'
 import { dniMiedzy, koniec, naIso, poczatek, zIso } from '@/lib/planer/trwanie'
 import { sprawdzWydarzenie } from '@/lib/planer/walidacja'
 import { przezPolnoc } from '@/lib/planer/opis'
@@ -70,7 +70,7 @@ export function PanelWydarzenia({
   }
 
   const wynik = sprawdzWydarzenie(dane)
-  const poza = dane.budynek === POZA
+  const specjalne = miejsceSpecjalne(dane.budynek)
 
   const etykieta = 'mb-1 block text-[11px] text-deck-muted'
   const pole = 'deck-input w-full rounded-lg px-3 py-2 text-sm disabled:opacity-60'
@@ -199,19 +199,25 @@ export function PanelWydarzenia({
               className={pole}
             >
               <option value="">—</option>
-              {BUDYNKI.map((b) => (
-                <option key={b} value={b}>{b}</option>
-              ))}
-              <option value={POZA}>{etykietaBudynku(POZA)}</option>
+              <optgroup label="Budynki UEW">
+                {BUDYNKI.map((b) => (
+                  <option key={b} value={b}>{b}</option>
+                ))}
+              </optgroup>
+              <optgroup label="Inne miejsca">
+                {MIEJSCA_SPECJALNE.map((m) => (
+                  <option key={m.kod} value={m.kod}>{m.etykieta}</option>
+                ))}
+              </optgroup>
             </select>
           </label>
           <label className="block">
-            <span className={etykieta}>{poza ? 'Miejsce' : 'Sala'}</span>
+            <span className={etykieta}>{specjalne ? 'Szczegóły' : 'Sala'}</span>
             <input
               value={dane.sala ?? ''}
               disabled={!mozeEdytowac}
               onChange={(e) => zmien('sala', e.target.value || null)}
-              placeholder={poza ? 'nazwa miejsca' : '110L'}
+              placeholder={specjalne?.podpowiedz ?? '110L'}
               className={pole}
             />
           </label>

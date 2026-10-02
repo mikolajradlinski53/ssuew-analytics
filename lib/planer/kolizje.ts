@@ -1,5 +1,5 @@
 import { naMinuty } from './daty'
-import { POZA } from './budynki'
+import { jestMiejscemSpecjalnym } from './budynki'
 import { dniTrwaniaWMiesiacu } from './trwanie'
 import type { Kategoria, Miesiac, Wydarzenie } from './typy'
 
@@ -68,10 +68,11 @@ function ktorakolwiekPara(lista: Wydarzenie[], warunek: (a: Wydarzenie, b: Wydar
 
 /**
  * Miejsce jako klucz kolizji. Ten sam numer w dwóch budynkach to dwie sale;
- * „Poza uczelnią” to nie jedno miejsce, a sam budynek bez sali to za mało.
+ * online, wyjazd, inne miasto czy „poza uczelnią” to nie jedno pomieszczenie,
+ * a sam budynek bez sali to za mało.
  */
 function miejsce(w: Wydarzenie): string | null {
-  if (!w.sala || w.budynek === POZA) return null
+  if (!w.sala || (w.budynek && jestMiejscemSpecjalnym(w.budynek))) return null
   return w.budynek ? `${w.budynek} ${w.sala}` : w.sala
 }
 
