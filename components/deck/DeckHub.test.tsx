@@ -66,4 +66,20 @@ describe('DeckHub', () => {
     render(<DeckHub rola="owner" email="ja@e.com" dane={{ ...dane, propozycje: 3 }} />)
     expect(screen.getByText('3 do decyzji')).toBeInTheDocument()
   })
+
+  it('pokazuje baner trwającej Sesji Operacyjnej z odnośnikiem do Planera', () => {
+    render(
+      <DeckHub
+        rola="board"
+        email="Jula"
+        dane={{ ...dane, sesja: { wlaczony: true, od: Date.now() - 5 * 60_000, przez: 'ja' } }}
+      />,
+    )
+    expect(screen.getByRole('link', { name: /Sesja Operacyjna trwa/ })).toHaveAttribute('href', '/planer')
+  })
+
+  it('bez sesji baneru nie ma', () => {
+    render(<DeckHub rola="owner" email="ja@example.com" dane={dane} />)
+    expect(screen.queryByText(/Sesja Operacyjna trwa/)).toBeNull()
+  })
 })

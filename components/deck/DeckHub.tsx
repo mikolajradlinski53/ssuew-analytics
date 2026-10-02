@@ -1,6 +1,9 @@
 'use client'
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { LogOut } from 'lucide-react'
+import { LogOut, Radio } from 'lucide-react'
+import { opiszTrwanie, type StanSesjiWspolnej } from '@/lib/planer/stan'
+import { useTeraz } from '@/lib/useTeraz'
 import { AnimatedNumber } from '@/components/ui/AnimatedNumber'
 import { LogoMark } from '@/components/ui/LogoMark'
 import { useAuth } from '@/lib/auth/useAuth'
@@ -17,6 +20,8 @@ export interface DaneKokpitu {
   alerty: number
   /** Propozycje zarządu czekające na decyzję. Liczone tylko dla właściciela. */
   propozycje: number
+  /** Stan Sesji Operacyjnej bieżącego semestru. Brak = nie wiadomo, baneru nie ma. */
+  sesja?: StanSesjiWspolnej
 }
 
 type Props = { rola: Rola; email: string; dane: DaneKokpitu }
@@ -24,6 +29,7 @@ type Props = { rola: Rola; email: string; dane: DaneKokpitu }
 export function DeckHub({ rola, email, dane }: Props) {
   const router = useRouter()
   const { wyloguj } = useAuth()
+  const teraz = useTeraz()
 
   async function wyjdz() {
     await wyloguj()
@@ -76,6 +82,24 @@ export function DeckHub({ rola, email, dane }: Props) {
           <div className="mt-1.5 text-[10.5px] uppercase tracking-[0.12em] text-deck-muted/70">{dzis}</div>
         </div>
       </header>
+
+      {dane.sesja?.wlaczony && (
+        // Sesję wyłącza się ręcznie, więc przypomnienie musi być widać także
+        // spoza Planera — zapomniana sesja to bezterminowy zapis dla zarządu.
+        <Link
+          href="/planer"
+          className="flex items-center gap-3 rounded-lg border border-deck-accent/45 bg-deck-accent/10 px-4 py-3 text-[12.5px] transition hover:bg-deck-accent/15"
+        >
+          <Radio size={15} className="text-deck-accent" />
+          <span className="font-semibold text-deck-text">Sesja Operacyjna trwa</span>
+          {dane.sesja.od !== null && (
+            <span suppressHydrationWarning className="text-deck-muted">
+              {opiszTrwanie(dane.sesja.od, teraz)}
+            </span>
+          )}
+          <span className="ml-auto text-deck-accent">Planer →</span>
+        </Link>
+      )}
 
       <main className="grid flex-1 auto-rows-[minmax(168px,auto)] grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <DeckTile

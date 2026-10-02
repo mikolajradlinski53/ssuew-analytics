@@ -7,6 +7,8 @@ import { serieZWierszy, ilorazSerii } from '@/lib/kpi/serie'
 import { DeckHub } from '@/components/deck/DeckHub'
 import { propozycjeRef } from '@/lib/firebase/admin'
 import { biezacySemestr } from '@/lib/planer/semestry'
+import { stanSesji } from '@/lib/planer/obraz'
+import { SESJA_WYLACZONA } from '@/lib/planer/stan'
 
 export default async function KokpitPage() {
   // Obie drogi wejścia. Sprawdzanie samego hasła odsyłało osoby na kodzie
@@ -45,6 +47,9 @@ export default async function KokpitPage() {
           .catch(() => 0)
       : 0
 
+  // Awaria Firestore nie może zabrać kokpitu — wtedy po prostu bez baneru.
+  const sesja = await stanSesji(semestr.id).catch(() => SESJA_WYLACZONA)
+
   return (
     <DeckHub
       rola={kto.rola}
@@ -56,6 +61,7 @@ export default async function KokpitPage() {
         kpiRazem: serie.length,
         alerty: buildAlerts(rekrutacje, kohorty, serie).length,
         propozycje,
+        sesja,
       }}
     />
   )
