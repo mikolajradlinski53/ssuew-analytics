@@ -1,0 +1,36 @@
+import { POZA } from './budynki'
+import { KATEGORIE, type Wydarzenie } from './typy'
+
+/** „cały dzień”, „18:00–20:00”, „18:00” albo nic, gdy godzina nieustalona. */
+export function opisCzasu(w: Pick<Wydarzenie, 'calyDzien' | 'godzina' | 'godzinaDo'>): string | null {
+  if (w.calyDzien) return 'cały dzień'
+  if (w.godzina && w.godzinaDo) return `${w.godzina}–${w.godzinaDo}`
+  return w.godzina
+}
+
+/** „B/L 110L”, sam budynek, sama sala ze starszych wpisów albo miejsce poza uczelnią. */
+export function opisMiejsca(w: Pick<Wydarzenie, 'budynek' | 'sala'>): string | null {
+  if (w.budynek === POZA) return w.sala ? `Poza: ${w.sala}` : 'Poza uczelnią'
+  if (w.budynek && w.sala) return `${w.budynek} ${w.sala}`
+  return w.budynek ?? w.sala
+}
+
+export function opisOsob(osoby: string[]): string | null {
+  if (!osoby.length) return null
+  return osoby.includes('wszyscy') ? 'wszyscy' : osoby.join(', ')
+}
+
+/** Klucz czasu do sortowania: cały dzień przed godzinami, nieustalona na końcu. */
+const kluczCzasu = (w: Wydarzenie) => (w.calyDzien ? '00:00' : w.godzina ?? '99:99')
+
+/**
+ * Kolejność w kratce i w eksporcie: najpierw ranga kategorii, w obrębie rangi
+ * w kolejności zegara, na końcu tytuł.
+ */
+export function porownajWydarzenia(a: Wydarzenie, b: Wydarzenie): number {
+  return (
+    KATEGORIE[a.kategoria].ranga - KATEGORIE[b.kategoria].ranga
+    || kluczCzasu(a).localeCompare(kluczCzasu(b))
+    || a.tytul.localeCompare(b.tytul, 'pl')
+  )
+}

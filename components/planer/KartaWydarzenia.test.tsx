@@ -38,4 +38,38 @@ describe('KartaWydarzenia', () => {
     rerender(<KartaWydarzenia wydarzenie={w} onOtworz={vi.fn()} przeciagalne={false} maRozmowe />)
     expect(container.querySelector('[data-rozmowa]')).not.toBeNull()
   })
+
+  it('najważniejsze kategorie mają numer rangi, aplikacje — nie', () => {
+    const { container, rerender } = render(<KartaWydarzenia wydarzenie={w} onOtworz={vi.fn()} przeciagalne={false} />)
+    expect(container.querySelector('[data-numer-rangi]')?.textContent).toBe('1')
+    rerender(<KartaWydarzenia wydarzenie={{ ...w, kategoria: 'APLIKACJE' }} onOtworz={vi.fn()} przeciagalne={false} />)
+    expect(container.querySelector('[data-numer-rangi]')).toBeNull()
+  })
+
+  it('pokazuje przedział godzin i miejsce', () => {
+    render(
+      <KartaWydarzenia
+        wydarzenie={{ ...w, godzinaDo: '20:00', budynek: 'B/L', sala: '110L' }}
+        onOtworz={vi.fn()}
+        przeciagalne={false}
+      />,
+    )
+    expect(screen.getByText('18:00–20:00')).toBeInTheDocument()
+    expect(screen.getByText('B/L 110L')).toBeInTheDocument()
+  })
+
+  it('cały dzień zamiast godziny', () => {
+    render(<KartaWydarzenia wydarzenie={{ ...w, calyDzien: true, godzina: null }} onOtworz={vi.fn()} przeciagalne={false} />)
+    expect(screen.getByText('cały dzień')).toBeInTheDocument()
+  })
+
+  it('miejsce poza uczelnią', () => {
+    render(<KartaWydarzenia wydarzenie={{ ...w, budynek: 'POZA', sala: 'Pralnia' }} onOtworz={vi.fn()} przeciagalne={false} />)
+    expect(screen.getByText('Poza: Pralnia')).toBeInTheDocument()
+  })
+
+  it('pokazuje dopisek dnia wydarzenia wielodniowego', () => {
+    render(<KartaWydarzenia wydarzenie={w} onOtworz={vi.fn()} przeciagalne={false} dopisek="2/4" />)
+    expect(screen.getByText('2/4')).toBeInTheDocument()
+  })
 })
