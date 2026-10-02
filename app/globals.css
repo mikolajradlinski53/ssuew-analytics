@@ -733,3 +733,22 @@ body::after {
   from { opacity: 0; transform: translateY(4px); }
   to   { opacity: 1; transform: translateY(0); }
 }
+
+/* Kursor terminala w pasku statusu. */
+.deck-kursor {
+  display: inline-block;
+  width: 7px;
+  height: 12px;
+  margin-left: 5px;
+  background: currentColor;
+  vertical-align: -2px;
+  animation: deck-kursor-mrug 1s steps(1) infinite;
+}
+
+@keyframes deck-kursor-mrug {
+  50% { opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .deck-kursor { animation: none; }
+}
