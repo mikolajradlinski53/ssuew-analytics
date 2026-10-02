@@ -20,7 +20,7 @@ export interface Kohorta {
   max_retention_sem: number   // max obserwowany
   in_progress: boolean        // kohorta jeszcze aktywna
   // Realna krzywa przeżycia: % aktywnych po t semestrach (index = semestr, 0..max).
-  // Liczona z danych per-osoba. Gdy brak — moduł retencji używa aproksymacji.
+  // Liczona z danych per-osoba. Gdy brak - moduł retencji używa aproksymacji.
   survival?: number[]
   created_at: string
 }
@@ -60,7 +60,7 @@ export interface RegressionResult {
   warning: string | null
 }
 
-// Członek kohorty — aktywność per semestr (widok per-osoba). Nazwiska tylko w Supabase.
+// Członek kohorty - aktywność per semestr (widok per-osoba). Nazwiska tylko w Supabase.
 export type CzlonekStatus = 'aktywny' | 'wspierający' | 'alumn' | 'zawieszone' | 'nieaktywny'
 
 export interface Czlonek {
@@ -72,7 +72,7 @@ export interface Czlonek {
   created_at: string
 }
 
-// Jeden pomiar metryki w jednym okresie — dokładnie jeden wiersz zakładki `kpi_punkty`.
+// Jeden pomiar metryki w jednym okresie - dokładnie jeden wiersz zakładki `kpi_punkty`.
 // Format długi: dodanie kolejnego roku to dopisanie wierszy, nie zmiana kodu.
 export interface KpiMetric {
   id: string
@@ -90,7 +90,7 @@ export interface PunktKpi {
   wartosc: number
 }
 
-// Metryka w czasie — jednostka, którą widzi interfejs.
+// Metryka w czasie - jednostka, którą widzi interfejs.
 // Rozpoznawana po parze (kategoria, nazwa); zmiana nazwy rozrywa serię na dwie.
 export interface SeriaKpi {
   kategoria: string
@@ -134,11 +134,11 @@ export interface ExecutiveInsight {
 
 // ─── Kondycja projektów ──────────────────────────────────────────────────────
 
-/** Jeden projekt w jednej edycji — dokładnie jeden wiersz zakładki `projekty`. */
+/** Jeden projekt w jednej edycji - dokładnie jeden wiersz zakładki `projekty`. */
 export interface Projekt {
   id: string
   projekt: string            // 'Gala', 'Adapciak'
-  edycja: string             // '2025/2026' — ten sam format co w KPI
+  edycja: string             // '2025/2026' - ten sam format co w KPI
   obszar: string             // 'Kultura', 'Sport'
   budzet_plan: number        // złotówki przyznane
   budzet_wydany: number      // złotówki wydane
