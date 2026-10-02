@@ -59,4 +59,14 @@ describe('PanelWydarzenia', () => {
     fireEvent.click(screen.getByRole('button', { name: /zapisz/i }))
     expect(onZapisz).toHaveBeenCalledWith(expect.anything(), 4)
   })
+
+  it('bez prawa usuwania nie ma kosza — usuwa wyłącznie właściciel', () => {
+    render(<PanelWydarzenia {...wspolne} wydarzenie={w} mozeEdytowac mozeUsunac={false} />)
+    expect(screen.queryByRole('button', { name: /usuń/i })).toBeNull()
+  })
+
+  it('z prawem usuwania kosz jest', () => {
+    render(<PanelWydarzenia {...wspolne} wydarzenie={w} mozeEdytowac mozeUsunac />)
+    expect(screen.getByRole('button', { name: /usuń/i })).toBeInTheDocument()
+  })
 })

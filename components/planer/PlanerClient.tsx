@@ -10,7 +10,8 @@ import {
   type NoweWydarzenie, type StanSesjiWspolnej,
 } from '@/lib/planer/zapis'
 import {
-  przeniesPrzezSerwer, zglosKomentarz, zglosNowe, zglosObecnosc, zglosPrzeniesienie,
+  dodajPrzezSerwer, przeniesPrzezSerwer, zglosKomentarz, zglosNowe, zglosObecnosc, zglosPrzeniesienie,
+  zmienPrzezSerwer,
 } from '@/lib/planer/serwer'
 import type { Propozycja } from '@/lib/planer/propozycje'
 import { poWydarzeniach, type Komentarz } from '@/lib/planer/komentarze'
@@ -196,32 +197,40 @@ export function PlanerClient({ semestr, rola, kto, poczatkowy, naZywo }: Props) 
   }
 
   async function zapisz(dane: NoweWydarzenie, powtorzenia = 1) {
-    if (!piszeWprost) {
-      // Zarzad poza sesja tylko proponuje NOWE wydarzenia; edycja istniejacego
-      // jest dla niego zablokowana w panelu, wiec tu tylko domykamy furtke.
-      if (wybrane) return
-      // Powtarzanie pomijamy celowo: kazda kopia bylaby osobna decyzja
-      // do rozpatrzenia, a to zasypaloby skrzynke.
-      await zglosNowe(semestr.id, dane)
-      zamknijPanel()
-      return
-    }
-    if (wybrane) {
-      await zmienWydarzenie(semestr.id, wybrane.id, dane)
-    } else {
-      // Powtarzanie tworzy osobne wpisy, a nie powiazana serie — dzieki temu
-      // nie ma pytania "edytujesz to jedno czy wszystkie", a wpisanie
-      // pietnastu zebran zajmuje jeden ruch.
-      const terminy = terminyCoTydzien(
-        { rok: dane.rok, miesiac: dane.miesiac, dzien: dane.dzien },
-        semestr.miesiace,
-        powtorzenia,
-      )
-      for (const t of terminy) {
-        await dodajWydarzenie(semestr.id, { ...dane, ...t })
+    try {
+      if (!piszeWprost) {
+        // Zarząd poza sesją tylko proponuje NOWE wydarzenia; edycja istniejącego
+        // jest dla niego zablokowana w panelu, więc tu tylko domykamy furtkę.
+        if (wybrane) return
+        // Powtarzanie pomijamy celowo: każda kopia byłaby osobną decyzją
+        // do rozpatrzenia, a to zasypałoby skrzynkę.
+        await zglosNowe(semestr.id, dane)
+      } else if (wybrane) {
+        if (wlascicielem) await zmienWydarzenie(semestr.id, wybrane.id, dane)
+        else await zmienPrzezSerwer(semestr.id, wybrane.id, dane)
+      } else {
+        // Powtarzanie tworzy osobne wpisy, a nie powiązaną serię — dzięki temu
+        // nie ma pytania „edytujesz to jedno czy wszystkie”.
+        const terminy = terminyCoTydzien(
+          { rok: dane.rok, miesiac: dane.miesiac, dzien: dane.dzien },
+          semestr.miesiace,
+          powtorzenia,
+        )
+        for (const t of terminy) {
+          // Bezpośredni zapis do Firestore ma wyłącznie właściciel — zarząd
+          // w sesji pisze przez serwer, który sam sprawdza, czy sesja trwa.
+          if (wlascicielem) await dodajWydarzenie(semestr.id, { ...dane, ...t })
+          else await dodajPrzezSerwer(semestr.id, { ...dane, ...t })
+        }
       }
+      // Osoba na kodzie nie ma subskrypcji — bez tego swoją zmianę zobaczy
+      // dopiero przy następnym odpytaniu.
+      if (!naZywo && piszeWprost) await odswiez()
+      setBlad(null)
+      zamknijPanel()
+    } catch (e) {
+      setBlad(`Nie udało się zapisać: ${(e as Error).message}`)
     }
-    zamknijPanel()
   }
 
   async function usun(id: string) {
@@ -257,6 +266,7 @@ export function PlanerClient({ semestr, rola, kto, poczatkowy, naZywo }: Props) 
         await zmienWydarzenie(semestr.id, id, { dzien: naDzien })
       } else if (sesja.wlaczony) {
         await przeniesPrzezSerwer(semestr.id, id, naDzien)
+        if (!naZywo) await odswiez()
       } else {
         await zglosPrzeniesienie(semestr.id, id, w.dzien, naDzien, w.tytul)
       }
@@ -272,7 +282,9 @@ export function PlanerClient({ semestr, rola, kto, poczatkowy, naZywo }: Props) 
     if (!w) return
     const nowy = w.dzien + oDni
     if (nowy < 1 || nowy > dniWMiesiacu(w.rok, w.miesiac)) return
-    await zmienWydarzenie(semestr.id, id, { dzien: nowy })
+    // Ta sama droga co przeciągnięcie: zarząd poza sesją zgłasza propozycję,
+    // w sesji pisze przez serwer. Wprost do Firestore — tylko właściciel.
+    await przenies(id, nowy)
   }
 
   const panelOtwarty = wybrane !== null || dodaje
@@ -429,6 +441,7 @@ export function PlanerClient({ semestr, rola, kto, poczatkowy, naZywo }: Props) 
             // Zarzad wypelnia tylko formularz nowego wydarzenia (zeby je zglosic);
             // istniejacego nie edytuje — moze jedynie proponowac przeniesienie.
             mozeEdytowac={piszeWprost || wybrane === null}
+            mozeUsunac={wlascicielem}
             onZapisz={zapisz}
             onUsun={usun}
             onZamknij={zamknijPanel}

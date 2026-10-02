@@ -12,6 +12,8 @@ type Props = {
   /** Dzień wskazany kliknięciem w kratce; `null` przy dodawaniu z paska. */
   dzienStartowy?: number | null
   mozeEdytowac: boolean
+  /** Usuwanie jest nieodwracalne — ma je wyłącznie właściciel, także w trakcie sesji. */
+  mozeUsunac?: boolean
   /** Wątek pokazujemy tylko przy istniejącym wydarzeniu — nowe nie ma jeszcze o czym rozmawiać. */
   watek?: ReactNode
   /** `powtorzenia` ma znaczenie tylko przy nowym wydarzeniu. */
@@ -34,7 +36,7 @@ function pusty(miesiac: Miesiac, dzien: number | null | undefined): NoweWydarzen
  * niż dopasowywanie po fakcie.
  */
 export function PanelWydarzenia({
-  wydarzenie, miesiac, dzienStartowy, mozeEdytowac, watek, onZapisz, onUsun, onZamknij,
+  wydarzenie, miesiac, dzienStartowy, mozeEdytowac, mozeUsunac = false, watek, onZapisz, onUsun, onZamknij,
 }: Props) {
   const [dane, setDane] = useState<NoweWydarzenie>(() =>
     wydarzenie ? { ...wydarzenie } : pusty(miesiac, dzienStartowy),
@@ -163,7 +165,7 @@ export function PanelWydarzenia({
           >
             Zapisz
           </button>
-          {wydarzenie && (
+          {wydarzenie && mozeUsunac && (
             <button
               type="button"
               onClick={() => onUsun(wydarzenie.id)}
