@@ -16,8 +16,10 @@ type Props = {
   children: ReactNode
 }
 
-const spanClass = { 1: '', 2: 'col-span-2' } as const
-const rowsClass = { 1: '', 2: 'row-span-2' } as const
+// Od `sm` w górę: na telefonie siatka ma jedną kolumnę, a `col-span-2`
+// dorabiało drugą, niewidzialną, i ściskało sąsiedni kafelek do paska.
+const spanClass = { 1: '', 2: 'sm:col-span-2' } as const
+const rowsClass = { 1: '', 2: 'sm:row-span-2' } as const
 
 /**
  * Lekkie przechylenie w stronę kursora - maksymalnie 3°, bo więcej rozmazuje

@@ -20,7 +20,9 @@ const KROPKA: Record<StanKropki, string> = {
   czeka: 'animate-pulse bg-deck-muted/50',
 }
 
-function sekundy(ms: number): string {
+/** Poniżej sekundy w milisekundach - „0,0 s” przy ciepłym cache nic nie mówi. */
+function czas(ms: number): string {
+  if (ms < 1000) return `${ms} ms`
   return `${(ms / 1000).toLocaleString('pl-PL', { minimumFractionDigits: 1, maximumFractionDigits: 1 })} s`
 }
 
@@ -68,7 +70,7 @@ export function PasekStatusu({ kodem, godzina, dane }: { kodem: boolean; godzina
         nazwa="arkusz"
         stan={arkusz}
         etykieta="arkusz"
-        wartosc={!dane ? 'łączę…' : dane.czasArkuszaMs === null ? 'brak' : sekundy(dane.czasArkuszaMs)}
+        wartosc={!dane ? 'łączę…' : dane.czasArkuszaMs === null ? 'brak' : czas(dane.czasArkuszaMs)}
       />
       <Segment
         indeks={1}

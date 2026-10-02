@@ -103,7 +103,7 @@ describe('DeckHub', () => {
 
   it('nie pokazuje odznaki alertów, gdy alertów nie ma', async () => {
     await hub({ analityka: { alerty: 0 } })
-    await screen.findByText('0,4 s')
+    await screen.findByText('420 ms')
     expect(screen.queryByText(/\d+ alerty/)).toBeNull()
   })
 
@@ -145,7 +145,7 @@ describe('DeckHub', () => {
 
   it('bez sesji baneru nie ma', async () => {
     await hub()
-    await screen.findByText('0,4 s')
+    await screen.findByText('420 ms')
     expect(screen.queryByText(/Sesja Operacyjna trwa/)).toBeNull()
   })
 

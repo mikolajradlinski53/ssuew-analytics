@@ -12,7 +12,7 @@ export interface Fakt {
 }
 
 /** 1 propozycja, 2-4 propozycje, 5+ propozycji (z wyjątkiem 12-14). */
-function odmiana(n: number, [jeden, kilka, wiele]: [string, string, string]): string {
+export function odmiana(n: number, [jeden, kilka, wiele]: [string, string, string]): string {
   if (n === 1) return `1 ${jeden}`
   const r = n % 10
   const s = n % 100

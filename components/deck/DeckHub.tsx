@@ -8,7 +8,7 @@ import { LogoMark } from '@/components/ui/LogoMark'
 import { useAuth } from '@/lib/auth/useAuth'
 import { opiszTrwanie, type StanSesjiWspolnej } from '@/lib/planer/stan'
 import { useTeraz } from '@/lib/useTeraz'
-import type { Fakt, NajblizszeWydarzenie } from '@/lib/asystent/fakty'
+import { odmiana, type Fakt, type NajblizszeWydarzenie } from '@/lib/asystent/fakty'
 import type { ZapisanaOdprawa } from '@/lib/asystent/odprawa'
 import type { Rola } from '@/lib/auth/role'
 import { DeckTile } from './DeckTile'
@@ -127,7 +127,9 @@ export function DeckHub({ rola, email, kodem, godzina, analityka, planer, fakty,
           <PanelFaktow fakty={fakty} />
         )}
 
-        <main className="grid flex-1 auto-rows-[minmax(168px,auto)] grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        {/* Bez flex-1: rozciągnięta siatka robiła z kafelków puste płachty
+            na całą wysokość okna. Stopkę na dół dociąga jej mt-auto. */}
+        <main className="grid auto-rows-[minmax(168px,auto)] grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
           {/* Zanim dane odpowiedzą, kafelki są te same, tylko bez liczb -
               da się w nie kliknąć od pierwszej chwili. */}
           <Suspense fallback={<KafelekAnalytics dane={null} />}>
@@ -161,7 +163,7 @@ export function DeckHub({ rola, email, kodem, godzina, analityka, planer, fakty,
           </DeckTile>
         </main>
 
-        <footer>
+        <footer className="mt-auto">
           <PasekZDanymi kodem={kodem} godzina={godzina} analityka={analityka} planer={planer} />
         </footer>
       </div>
@@ -204,9 +206,8 @@ function KafelekAnalytics({ dane }: { dane: DaneAnalityki | null }) {
       href="/analytics"
       etykieta="moduł 01 · analityka"
       tytul="SSUEW Analytics"
-      odznaka={dane && dane.alerty > 0 ? `${dane.alerty} alerty` : undefined}
+      odznaka={dane && dane.alerty > 0 ? odmiana(dane.alerty, ['alert', 'alerty', 'alertów']) : undefined}
       span={2}
-      rows={2}
     >
       <div className="flex h-full flex-col justify-between gap-4">
         <div className="flex items-baseline gap-2.5 tabular-nums">
