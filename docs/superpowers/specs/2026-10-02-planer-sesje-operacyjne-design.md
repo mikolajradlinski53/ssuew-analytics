@@ -121,7 +121,7 @@ dają kolizji sali — „Poza uczelnią” to nie jedno miejsce.
 | 4 UE | cienka linia po lewej, bez tła | `4` |
 | 5–6 Aplikacje, Inne | sam tekst z kropką w kolorze kategorii | — |
 
-Druga linijka karty: czas i miejsce — „18:00–20:00 · B/L 110L”, „od 18:00”, „cały dzień”,
+Druga linijka karty: czas i miejsce — „18:00–20:00 · B/L 110L”, „18:00” (sam start), „cały dzień”,
 „Poza: Klub Pralnia”. Godzina nieustalona — brak części czasowej.
 
 **Kolejność w kratce:** ranga, potem godzina startu, potem tytuł. Nad siatką legenda z rangami.
@@ -194,7 +194,7 @@ Lista dni: wydarzenie wielodniowe pojawia się w każdym swoim dniu jako jedna l
 **Karta „Kalendarz”:** wiersze = tygodnie, kolumny = Pn…Nd. Komórka: numer dnia, pod nim
 wydarzenia w kolejności rangi, każde w osobnej linijce:
 `① 18:00–20:00 Zebranie Zarządu · B/L 110L · Jula, Kuba`.
-Linijka w kolorze kategorii (rich text), Zebrania pogrubione. Wielodniowe w każdym dniu
+Linijka w kolorze kategorii (rich text) — w **ciemniejszej odmianie do druku** (pole  w ), bo kolory interfejsu są dobrane pod ciemne tło i na białym arkuszu żółty byłby nieczytelny. Zebrania pogrubione. Wielodniowe w każdym dniu
 z dopiskiem „(2/4)”. Dni spoza miesiąca — puste, szare tło. Zawijanie tekstu, szerokie kolumny.
 
 **Karta „Lista”:** jeden wiersz na wydarzenie (wielodniowe raz), sortowanie: data, ranga,
