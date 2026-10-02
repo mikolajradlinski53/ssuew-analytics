@@ -6,12 +6,20 @@ const zmienDzien = vi.fn()
 const trybWspolny = vi.fn()
 const dodajKomentarz = vi.fn()
 const zapiszObecnosc = vi.fn()
+const wydarzeniaDocs = vi.fn((): { id: string; data: () => Record<string, unknown> }[] => [])
+const dodajWydarzenie = vi.fn()
+const skladDane = vi.fn((): Record<string, unknown> | undefined => undefined)
 
 vi.mock('@/lib/auth/guard', () => ({ ktoPyta: (...a: unknown[]) => ktoPyta(...a) }))
 vi.mock('@/lib/firebase/admin', () => ({
   propozycjeRef: () => ({ add: (d: unknown) => dodajPropozycje(d) }),
-  wydarzeniaRef: () => ({ doc: (id: string) => ({ update: (d: unknown) => zmienDzien(id, d) }) }),
+  wydarzeniaRef: () => ({
+    doc: (id: string) => ({ update: (d: unknown) => zmienDzien(id, d) }),
+    add: (d: unknown) => dodajWydarzenie(d),
+    get: async () => ({ docs: wydarzeniaDocs() }),
+  }),
   semestrRef: () => ({ get: async () => ({ data: () => ({ trybWspolny: trybWspolny() }) }) }),
+  ustawieniaRef: () => ({ get: async () => ({ data: () => skladDane() }) }),
   komentarzeRef: () => ({ add: (d: unknown) => dodajKomentarz(d) }),
   obecnoscRef: () => ({ doc: (uid: string) => ({ set: (d: unknown) => zapiszObecnosc(uid, d) }) }),
 }))
@@ -34,6 +42,9 @@ describe('POST /api/planer', () => {
     trybWspolny.mockReset().mockReturnValue(false)
     dodajKomentarz.mockReset()
     zapiszObecnosc.mockReset()
+    wydarzeniaDocs.mockReset().mockReturnValue([])
+    dodajWydarzenie.mockReset()
+    skladDane.mockReset().mockReturnValue(undefined)
   })
 
   it('bez sesji odmawia', async () => {
@@ -117,5 +128,42 @@ describe('POST /api/planer', () => {
       'kod:482913',
       expect.objectContaining({ kto: 'Jula', patrzyNa: 'w1' }),
     )
+  })
+})
+
+function pyta(adres: string) {
+  return { nextUrl: new URL(adres, 'http://deck.test') } as never
+}
+
+describe('GET /api/planer', () => {
+  beforeEach(() => {
+    vi.resetModules()
+    ktoPyta.mockReset().mockResolvedValue({ uid: 'kod:482913', email: 'Jula', rola: 'board' })
+    trybWspolny.mockReset().mockReturnValue(true)
+    wydarzeniaDocs.mockReset().mockReturnValue([
+      { id: 'w1', data: () => ({ tytul: 'A', kategoria: 'ZEBRANIA', rok: 2026, miesiac: 10, dzien: 7 }) },
+    ])
+    skladDane.mockReset().mockReturnValue({ osoby: ['Jula', 'Kuba'] })
+  })
+
+  it('bez biletu odmawia', async () => {
+    ktoPyta.mockResolvedValue(null)
+    const { GET } = await import('@/app/api/planer/route')
+    expect((await GET(pyta('/api/planer?semestr=2026Z'))).status).toBe(401)
+  })
+
+  it('zwraca wydarzenia, stan sesji i Skład naraz', async () => {
+    const { GET } = await import('@/app/api/planer/route')
+    const dane = await (await GET(pyta('/api/planer?semestr=2026Z'))).json()
+    expect(dane.wydarzenia[0].id).toBe('w1')
+    expect(dane.sesja.wlaczony).toBe(true)
+    expect(dane.sklad).toEqual(['Jula', 'Kuba'])
+  })
+
+  it('zasob=sesja zwraca sam stan sesji — bez czytania kalendarza', async () => {
+    const { GET } = await import('@/app/api/planer/route')
+    const dane = await (await GET(pyta('/api/planer?semestr=2026Z&zasob=sesja'))).json()
+    expect(dane).toEqual({ sesja: { wlaczony: true, od: null, przez: null } })
+    expect(wydarzeniaDocs).not.toHaveBeenCalled()
   })
 })

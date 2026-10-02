@@ -38,3 +38,7 @@ export function komentarzeRef(semestrId: string) {
 export function obecnoscRef(semestrId: string) {
   return bazaAdmin().collection('semestry').doc(semestrId).collection('obecnosc')
 }
+
+export function ustawieniaRef(nazwa: string) {
+  return bazaAdmin().collection('ustawienia').doc(nazwa)
+}

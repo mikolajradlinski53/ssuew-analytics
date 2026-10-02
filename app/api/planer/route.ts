@@ -1,16 +1,16 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { ktoPyta } from '@/lib/auth/guard'
-import { naWydarzenie } from '@/lib/planer/mapowanie'
+import { obrazPlanera, stanSesji } from '@/lib/planer/obraz'
 import {
-  komentarzeRef, obecnoscRef, propozycjeRef, semestrRef, wydarzeniaRef,
+  komentarzeRef, obecnoscRef, propozycjeRef, wydarzeniaRef,
 } from '@/lib/firebase/admin'
 
 export const runtime = 'nodejs'
 
 /**
- * Odczyt kalendarza dla osób wchodzących kodem: nie mają konta Firebase, więc
- * reguły Firestore ich nie wpuszczą. Konta z hasłem czytają bazę bezpośrednio
- * i tej trasy nie potrzebują.
+ * Odczyt Planera dla osób wchodzących kodem: nie mają konta Firebase, więc
+ * reguły Firestore ich nie wpuszczą. `zasob=sesja` to tani odczyt jednego
+ * dokumentu — odpytujemy nim poza sesją, żeby zauważyć jej start.
  */
 export async function GET(req: NextRequest) {
   const kto = await ktoPyta(req)
@@ -20,8 +20,10 @@ export async function GET(req: NextRequest) {
   if (!semestrId) return NextResponse.json({ error: 'Brak semestru' }, { status: 400 })
 
   try {
-    const zrzut = await wydarzeniaRef(semestrId).get()
-    return NextResponse.json(zrzut.docs.map((d) => naWydarzenie(d.id, d.data())))
+    if (req.nextUrl.searchParams.get('zasob') === 'sesja') {
+      return NextResponse.json({ sesja: await stanSesji(semestrId) })
+    }
+    return NextResponse.json(await obrazPlanera(semestrId))
   } catch (e) {
     return NextResponse.json({ error: (e as Error).message }, { status: 500 })
   }
@@ -29,8 +31,7 @@ export async function GET(req: NextRequest) {
 
 /** Czy zarząd może w tej chwili zapisywać wprost. Rozstrzyga serwer, nie klient. */
 async function trybWspolnyWlaczony(semestrId: string): Promise<boolean> {
-  const zrzut = await semestrRef(semestrId).get()
-  return zrzut.data()?.trybWspolny === true
+  return (await stanSesji(semestrId)).wlaczony
 }
 
 /**
