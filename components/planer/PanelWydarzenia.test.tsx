@@ -9,7 +9,14 @@ const w: Wydarzenie = {
   ...POLA_DOMYSLNE,
 }
 
-const wspolne = { onZapisz: vi.fn(), onUsun: vi.fn(), onZamknij: vi.fn(), miesiac: { m: 10, y: 2026 } }
+const wspolne = {
+  onZapisz: vi.fn(), onUsun: vi.fn(), onZamknij: vi.fn(),
+  miesiac: { m: 10, y: 2026 }, sklad: ['Jula', 'Kuba', 'Daria'], mozeUsunac: true,
+}
+
+function zapisz() {
+  fireEvent.click(screen.getByRole('button', { name: /zapisz/i }))
+}
 
 describe('PanelWydarzenia', () => {
   it('pokazuje dane wydarzenia', () => {
@@ -24,25 +31,68 @@ describe('PanelWydarzenia', () => {
     expect(screen.queryByRole('button', { name: /usuń/i })).toBeNull()
   })
 
-  it('z uprawnieniami zapisuje zmieniony tytuł', () => {
+  it('zapisuje zmieniony tytuł bez identyfikatora w danych', () => {
     const onZapisz = vi.fn()
     render(<PanelWydarzenia {...wspolne} onZapisz={onZapisz} wydarzenie={w} mozeEdytowac />)
     fireEvent.change(screen.getByDisplayValue('ZEBRANIE ZARZĄDU'), { target: { value: 'ZEBRANIE SKS' } })
-    fireEvent.click(screen.getByRole('button', { name: /zapisz/i }))
+    zapisz()
     expect(onZapisz).toHaveBeenCalledWith(expect.objectContaining({ tytul: 'ZEBRANIE SKS' }), 1)
+    expect(onZapisz.mock.calls[0][0]).not.toHaveProperty('id')
   })
 
-  it('w trybie nowego wydarzenia startuje z pustymi polami', () => {
+  it('nowe wydarzenie startuje z pustym tytułem i nie da się go zapisać bez tytułu', () => {
     render(<PanelWydarzenia {...wspolne} wydarzenie={null} mozeEdytowac />)
     expect(screen.getByLabelText(/tytuł/i)).toHaveValue('')
+    expect(screen.getByRole('button', { name: /zapisz/i })).toBeDisabled()
   })
 
-  it('osoby rozdziela po przecinku i przycina spacje', () => {
+  it('kategorię wybiera się przyciskiem', () => {
     const onZapisz = vi.fn()
     render(<PanelWydarzenia {...wspolne} onZapisz={onZapisz} wydarzenie={w} mozeEdytowac />)
-    fireEvent.change(screen.getByDisplayValue('Jula, Kuba'), { target: { value: ' Jula ,Daria, ' } })
-    fireEvent.click(screen.getByRole('button', { name: /zapisz/i }))
-    expect(onZapisz).toHaveBeenCalledWith(expect.objectContaining({ osoby: ['Jula', 'Daria'] }), 1)
+    fireEvent.click(screen.getByRole('button', { name: 'Projekty' }))
+    zapisz()
+    expect(onZapisz).toHaveBeenCalledWith(expect.objectContaining({ kategoria: 'PROJEKTY' }), 1)
+  })
+
+  it('osoby wybiera się przyciskami ze Składu', () => {
+    const onZapisz = vi.fn()
+    render(<PanelWydarzenia {...wspolne} onZapisz={onZapisz} wydarzenie={w} mozeEdytowac />)
+    fireEvent.click(screen.getByRole('button', { name: 'Daria' }))
+    zapisz()
+    expect(onZapisz).toHaveBeenCalledWith(expect.objectContaining({ osoby: ['Jula', 'Kuba', 'Daria'] }), 1)
+  })
+
+  it('cały dzień chowa godziny i zapisuje je jako puste', () => {
+    const onZapisz = vi.fn()
+    render(<PanelWydarzenia {...wspolne} onZapisz={onZapisz} wydarzenie={w} mozeEdytowac />)
+    fireEvent.click(screen.getByLabelText('Cały dzień'))
+    expect(screen.queryByLabelText('Od')).toBeNull()
+    zapisz()
+    expect(onZapisz).toHaveBeenCalledWith(expect.objectContaining({ calyDzien: true, godzina: null }), 1)
+  })
+
+  it('godzina „do” przed „od” blokuje zapis z komunikatem', () => {
+    render(<PanelWydarzenia {...wspolne} wydarzenie={w} mozeEdytowac />)
+    fireEvent.change(screen.getByLabelText('Do'), { target: { value: '17:00' } })
+    expect(screen.getByRole('alert')).toHaveTextContent(/po godzinie „od”/)
+    expect(screen.getByRole('button', { name: /zapisz/i })).toBeDisabled()
+  })
+
+  it('data końca zamienia się na liczbę dni', () => {
+    const onZapisz = vi.fn()
+    render(<PanelWydarzenia {...wspolne} onZapisz={onZapisz} wydarzenie={w} mozeEdytowac />)
+    fireEvent.change(screen.getByLabelText(/do dnia/i), { target: { value: '2026-10-09' } })
+    zapisz()
+    expect(onZapisz).toHaveBeenCalledWith(expect.objectContaining({ dni: 3 }), 1)
+  })
+
+  it('budynek z listy, a przy „Poza uczelnią” pole pyta o nazwę miejsca', () => {
+    const onZapisz = vi.fn()
+    render(<PanelWydarzenia {...wspolne} onZapisz={onZapisz} wydarzenie={w} mozeEdytowac />)
+    fireEvent.change(screen.getByLabelText('Budynek'), { target: { value: 'POZA' } })
+    expect(screen.getByPlaceholderText('nazwa miejsca')).toBeInTheDocument()
+    zapisz()
+    expect(onZapisz).toHaveBeenCalledWith(expect.objectContaining({ budynek: 'POZA' }), 1)
   })
 
   it('powtarzanie widać tylko przy nowym wydarzeniu', () => {
@@ -55,8 +105,9 @@ describe('PanelWydarzenia', () => {
   it('wybrana liczba powtórzeń jedzie do zapisu', () => {
     const onZapisz = vi.fn()
     render(<PanelWydarzenia {...wspolne} onZapisz={onZapisz} wydarzenie={null} mozeEdytowac />)
+    fireEvent.change(screen.getByLabelText(/tytuł/i), { target: { value: 'SKS' } })
     fireEvent.change(screen.getByLabelText(/powtórz co tydzień/i), { target: { value: '4' } })
-    fireEvent.click(screen.getByRole('button', { name: /zapisz/i }))
+    zapisz()
     expect(onZapisz).toHaveBeenCalledWith(expect.anything(), 4)
   })
 
@@ -66,7 +117,7 @@ describe('PanelWydarzenia', () => {
   })
 
   it('z prawem usuwania kosz jest', () => {
-    render(<PanelWydarzenia {...wspolne} wydarzenie={w} mozeEdytowac mozeUsunac />)
+    render(<PanelWydarzenia {...wspolne} wydarzenie={w} mozeEdytowac />)
     expect(screen.getByRole('button', { name: /usuń/i })).toBeInTheDocument()
   })
 })

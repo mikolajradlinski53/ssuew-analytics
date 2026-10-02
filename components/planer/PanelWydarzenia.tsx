@@ -1,9 +1,15 @@
 'use client'
 import { useState, type ReactNode } from 'react'
 import { Trash2, X } from 'lucide-react'
-import { KLUCZE_KATEGORII, KATEGORIE, POLA_DOMYSLNE, type Kategoria, type Miesiac, type Wydarzenie } from '@/lib/planer/typy'
+import {
+  KATEGORIE, KLUCZE_KATEGORII, POLA_DOMYSLNE,
+  type Miesiac, type NoweWydarzenie, type Wydarzenie,
+} from '@/lib/planer/typy'
 import { dniWMiesiacu } from '@/lib/planer/daty'
-import type { NoweWydarzenie } from '@/lib/planer/zapis'
+import { BUDYNKI, POZA, etykietaBudynku } from '@/lib/planer/budynki'
+import { dniMiedzy, koniec, naIso, poczatek, zIso } from '@/lib/planer/trwanie'
+import { sprawdzWydarzenie } from '@/lib/planer/walidacja'
+import { WyborOsob } from './WyborOsob'
 
 type Props = {
   /** `null` znaczy: formularz nowego wydarzenia. */
@@ -14,9 +20,11 @@ type Props = {
   mozeEdytowac: boolean
   /** Usuwanie jest nieodwracalne — ma je wyłącznie właściciel, także w trakcie sesji. */
   mozeUsunac?: boolean
+  /** Osoby do wyboru — Skład zarządu. */
+  sklad: string[]
   /** Wątek pokazujemy tylko przy istniejącym wydarzeniu — nowe nie ma jeszcze o czym rozmawiać. */
   watek?: ReactNode
-  /** `powtorzenia` ma znaczenie tylko przy nowym wydarzeniu. */
+  /** Dostaje dane już sprawdzone i znormalizowane. `powtorzenia` ma znaczenie tylko przy nowym. */
   onZapisz: (dane: NoweWydarzenie, powtorzenia?: number) => void
   onUsun: (id: string) => void
   onZamknij: () => void
@@ -29,23 +37,39 @@ function pusty(miesiac: Miesiac, dzien: number | null | undefined): NoweWydarzen
   }
 }
 
+function bezId({ id: _id, ...reszta }: Wydarzenie): NoweWydarzenie {
+  return reszta
+}
+
 /**
  * Formularz nie synchronizuje się z `wydarzenie` przez efekt — rodzic
  * przemontowuje go przez `key`, gdy zmienia się wybrane wydarzenie.
- * To zalecany przez Reacta sposób resetowania stanu i o jeden render tańszy
- * niż dopasowywanie po fakcie.
  */
 export function PanelWydarzenia({
-  wydarzenie, miesiac, dzienStartowy, mozeEdytowac, mozeUsunac = false, watek, onZapisz, onUsun, onZamknij,
+  wydarzenie, miesiac, dzienStartowy, mozeEdytowac, mozeUsunac = false, sklad, watek,
+  onZapisz, onUsun, onZamknij,
 }: Props) {
   const [dane, setDane] = useState<NoweWydarzenie>(() =>
-    wydarzenie ? { ...wydarzenie } : pusty(miesiac, dzienStartowy),
+    wydarzenie ? bezId(wydarzenie) : pusty(miesiac, dzienStartowy),
   )
   const [powtorzenia, setPowtorzenia] = useState(1)
 
   function zmien<K extends keyof NoweWydarzenie>(pole: K, wartosc: NoweWydarzenie[K]) {
     setDane((d) => ({ ...d, [pole]: wartosc }))
   }
+
+  /** Wpisuje się datę końca, bo tak myśli człowiek; zapisuje liczbę dni. */
+  function zmienKoniec(iso: string) {
+    const d = zIso(iso)
+    zmien('dni', d ? Math.max(1, dniMiedzy(poczatek(dane), d)) : 1)
+  }
+
+  function zmienCalyDzien(wlaczony: boolean) {
+    setDane((d) => ({ ...d, calyDzien: wlaczony, ...(wlaczony ? { godzina: null, godzinaDo: null } : {}) }))
+  }
+
+  const wynik = sprawdzWydarzenie(dane)
+  const poza = dane.budynek === POZA
 
   const etykieta = 'mb-1 block text-[11px] text-deck-muted'
   const pole = 'deck-input w-full rounded-lg px-3 py-2 text-sm disabled:opacity-60'
@@ -72,20 +96,32 @@ export function PanelWydarzenia({
           />
         </label>
 
+        <div>
+          <span className={etykieta}>Kategoria</span>
+          <div role="group" aria-label="Kategoria" className="flex flex-wrap gap-1.5">
+            {KLUCZE_KATEGORII.map((k) => {
+              const s = KATEGORIE[k]
+              const wybrana = dane.kategoria === k
+              return (
+                <button
+                  key={k}
+                  type="button"
+                  aria-pressed={wybrana}
+                  disabled={!mozeEdytowac}
+                  onClick={() => zmien('kategoria', k)}
+                  style={wybrana ? { background: s.tlo, borderColor: s.obrys } : undefined}
+                  className={`rounded-md border px-2 py-1 text-[11px] transition disabled:opacity-60 ${
+                    wybrana ? 'text-deck-text' : 'border-white/10 text-deck-muted hover:text-deck-text'
+                  }`}
+                >
+                  {s.etykieta}
+                </button>
+              )
+            })}
+          </div>
+        </div>
+
         <div className="grid grid-cols-2 gap-3">
-          <label className="block">
-            <span className={etykieta}>Kategoria</span>
-            <select
-              value={dane.kategoria}
-              disabled={!mozeEdytowac}
-              onChange={(e) => zmien('kategoria', e.target.value as Kategoria)}
-              className={pole}
-            >
-              {KLUCZE_KATEGORII.map((k) => (
-                <option key={k} value={k}>{KATEGORIE[k].etykieta}</option>
-              ))}
-            </select>
-          </label>
           <label className="block">
             <span className={etykieta}>Dzień</span>
             <select
@@ -99,40 +135,91 @@ export function PanelWydarzenia({
               ))}
             </select>
           </label>
-        </div>
-
-        <div className="grid grid-cols-2 gap-3">
           <label className="block">
-            <span className={etykieta}>Godzina</span>
+            <span className={etykieta}>Do dnia (opcjonalnie)</span>
             <input
-              type="time"
-              value={dane.godzina ?? ''}
+              type="date"
+              value={dane.dni > 1 ? naIso(koniec(dane)) : ''}
+              min={naIso(poczatek(dane))}
               disabled={!mozeEdytowac}
-              onChange={(e) => zmien('godzina', e.target.value || null)}
+              onChange={(e) => zmienKoniec(e.target.value)}
               className={pole}
             />
           </label>
+        </div>
+
+        <label className="flex items-center gap-2 text-[12px] text-deck-text">
+          <input
+            type="checkbox"
+            checked={dane.calyDzien}
+            disabled={!mozeEdytowac}
+            onChange={(e) => zmienCalyDzien(e.target.checked)}
+          />
+          Cały dzień
+        </label>
+
+        {!dane.calyDzien && (
+          <div className="grid grid-cols-2 gap-3">
+            <label className="block">
+              <span className={etykieta}>Od</span>
+              <input
+                type="time"
+                value={dane.godzina ?? ''}
+                disabled={!mozeEdytowac}
+                onChange={(e) => zmien('godzina', e.target.value || null)}
+                className={pole}
+              />
+            </label>
+            <label className="block">
+              <span className={etykieta}>Do</span>
+              <input
+                type="time"
+                value={dane.godzinaDo ?? ''}
+                disabled={!mozeEdytowac}
+                onChange={(e) => zmien('godzinaDo', e.target.value || null)}
+                className={pole}
+              />
+            </label>
+          </div>
+        )}
+
+        <div className="grid grid-cols-2 gap-3">
           <label className="block">
-            <span className={etykieta}>Sala</span>
+            <span className={etykieta}>Budynek</span>
+            <select
+              value={dane.budynek ?? ''}
+              disabled={!mozeEdytowac}
+              onChange={(e) => zmien('budynek', e.target.value || null)}
+              className={pole}
+            >
+              <option value="">—</option>
+              {BUDYNKI.map((b) => (
+                <option key={b} value={b}>{b}</option>
+              ))}
+              <option value={POZA}>{etykietaBudynku(POZA)}</option>
+            </select>
+          </label>
+          <label className="block">
+            <span className={etykieta}>{poza ? 'Miejsce' : 'Sala'}</span>
             <input
               value={dane.sala ?? ''}
               disabled={!mozeEdytowac}
               onChange={(e) => zmien('sala', e.target.value || null)}
-              placeholder="9J"
+              placeholder={poza ? 'nazwa miejsca' : '110L'}
               className={pole}
             />
           </label>
         </div>
 
-        <label className="block">
-          <span className={etykieta}>Osoby (po przecinku, „wszyscy" = cały zarząd)</span>
-          <input
-            value={dane.osoby.join(', ')}
-            disabled={!mozeEdytowac}
-            onChange={(e) => zmien('osoby', e.target.value.split(',').map((o) => o.trim()).filter(Boolean))}
-            className={pole}
+        <div>
+          <span className={etykieta}>Osoby</span>
+          <WyborOsob
+            sklad={sklad}
+            wybrane={dane.osoby}
+            onZmien={(o) => zmien('osoby', o)}
+            zablokowane={!mozeEdytowac}
           />
-        </label>
+        </div>
       </div>
 
       {mozeEdytowac && !wydarzenie && (
@@ -157,25 +244,35 @@ export function PanelWydarzenia({
       )}
 
       {mozeEdytowac && (
-        <div className="mt-5 flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => onZapisz(dane, powtorzenia)}
-            className="deck-button flex-1 rounded-lg px-4 py-2.5 text-sm font-semibold"
-          >
-            Zapisz
-          </button>
-          {wydarzenie && mozeUsunac && (
+        <>
+          {/* Pusty tytuł blokuje przycisk bez komunikatu — krzyczenie „wpisz
+              tytuł”, zanim ktokolwiek zaczął pisać, byłoby szumem. */}
+          {!wynik.ok && dane.tytul.trim() !== '' && (
+            <p role="alert" className="mt-3 text-[11px] text-deck-danger">{wynik.blad}</p>
+          )}
+          <div className="mt-5 flex items-center gap-2">
             <button
               type="button"
-              onClick={() => onUsun(wydarzenie.id)}
-              aria-label="Usuń"
-              className="grid h-10 w-10 place-items-center rounded-lg border border-deck-danger-border text-deck-danger transition hover:bg-deck-danger-bg/60"
+              disabled={!wynik.ok}
+              onClick={() => {
+                if (wynik.ok) onZapisz(wynik.wydarzenie, powtorzenia)
+              }}
+              className="deck-button flex-1 rounded-lg px-4 py-2.5 text-sm font-semibold disabled:opacity-50"
             >
-              <Trash2 size={15} />
+              Zapisz
             </button>
-          )}
-        </div>
+            {wydarzenie && mozeUsunac && (
+              <button
+                type="button"
+                onClick={() => onUsun(wydarzenie.id)}
+                aria-label="Usuń"
+                className="grid h-10 w-10 place-items-center rounded-lg border border-deck-danger-border text-deck-danger transition hover:bg-deck-danger-bg/60"
+              >
+                <Trash2 size={15} />
+              </button>
+            )}
+          </div>
+        </>
       )}
       {wydarzenie && watek}
     </aside>

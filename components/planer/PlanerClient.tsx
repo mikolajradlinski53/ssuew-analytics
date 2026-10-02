@@ -472,6 +472,7 @@ export function PlanerClient({ semestr, rola, kto, poczatkowy, naZywo }: Props) 
             // istniejacego nie edytuje — moze jedynie proponowac przeniesienie.
             mozeEdytowac={piszeWprost || wybrane === null}
             mozeUsunac={wlascicielem}
+            sklad={sklad}
             onZapisz={zapisz}
             onUsun={usun}
             onZamknij={zamknijPanel}
