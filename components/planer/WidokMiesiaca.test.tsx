@@ -1,11 +1,11 @@
 import { render, screen, fireEvent, within } from '@testing-library/react'
 import { describe, it, expect, vi } from 'vitest'
 import { WidokMiesiaca } from '@/components/planer/WidokMiesiaca'
-import type { Wydarzenie } from '@/lib/planer/typy'
+import { POLA_DOMYSLNE, type Wydarzenie } from '@/lib/planer/typy'
 
 const wydarzenia: Wydarzenie[] = [
-  { id: '1', tytul: 'ZEBRANIE', kategoria: 'ZEBRANIA', rok: 2026, miesiac: 10, dzien: 7, godzina: '18:00', sala: null, osoby: ['Jula'] },
-  { id: '2', tytul: 'REKRUTACJA', kategoria: 'SSUEW', rok: 2026, miesiac: 10, dzien: 7, godzina: '18:30', sala: null, osoby: ['Jula'] },
+  { id: '1', tytul: 'ZEBRANIE', kategoria: 'ZEBRANIA', rok: 2026, miesiac: 10, dzien: 7, godzina: '18:00', sala: null, osoby: ['Jula'], ...POLA_DOMYSLNE },
+  { id: '2', tytul: 'REKRUTACJA', kategoria: 'SSUEW', rok: 2026, miesiac: 10, dzien: 7, godzina: '18:30', sala: null, osoby: ['Jula'], ...POLA_DOMYSLNE },
 ]
 
 const wspolne = {

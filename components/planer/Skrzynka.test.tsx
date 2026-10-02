@@ -2,11 +2,12 @@ import { render, screen, fireEvent } from '@testing-library/react'
 import { describe, it, expect, vi } from 'vitest'
 import { Skrzynka } from '@/components/planer/Skrzynka'
 import type { Propozycja } from '@/lib/planer/propozycje'
-import type { Wydarzenie } from '@/lib/planer/typy'
+import { POLA_DOMYSLNE, type Wydarzenie } from '@/lib/planer/typy'
 
 const wydarzenie: Wydarzenie = {
   id: 'w1', tytul: 'ZEBRANIE', kategoria: 'ZEBRANIA',
   rok: 2026, miesiac: 10, dzien: 7, godzina: null, sala: null, osoby: [],
+  ...POLA_DOMYSLNE,
 }
 
 const p: Propozycja = {

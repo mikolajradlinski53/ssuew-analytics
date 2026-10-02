@@ -4,37 +4,43 @@ import { naWydarzenie } from '@/lib/planer/mapowanie'
 describe('naWydarzenie', () => {
   it('składa wydarzenie z dokumentu Firestore', () => {
     const w = naWydarzenie('abc', {
-      tytul: 'ZEBRANIE ZARZĄDU',
-      kategoria: 'ZEBRANIA',
-      rok: 2026, miesiac: 10, dzien: 7,
-      godzina: '18:00', sala: '9J', osoby: ['Jula'],
+      tytul: 'ZEBRANIE ZARZĄDU', kategoria: 'ZEBRANIA',
+      rok: 2026, miesiac: 10, dzien: 7, dni: 2, calyDzien: false,
+      godzina: '18:00', godzinaDo: '20:00', budynek: 'B/L', sala: '110L', osoby: ['Jula'],
     })
     expect(w).toEqual({
-      id: 'abc',
-      tytul: 'ZEBRANIE ZARZĄDU',
-      kategoria: 'ZEBRANIA',
-      rok: 2026, miesiac: 10, dzien: 7,
-      godzina: '18:00', sala: '9J', osoby: ['Jula'],
+      id: 'abc', tytul: 'ZEBRANIE ZARZĄDU', kategoria: 'ZEBRANIA',
+      rok: 2026, miesiac: 10, dzien: 7, dni: 2, calyDzien: false,
+      godzina: '18:00', godzinaDo: '20:00', budynek: 'B/L', sala: '110L', osoby: ['Jula'],
     })
   })
 
-  it('uzupełnia braki bezpiecznymi wartościami', () => {
-    // Dokument może przyjść niekompletny — ręcznie dopisany w konsoli Firebase
-    // albo zapisany starszą wersją aplikacji. Jedno takie wydarzenie nie może
-    // wysadzić całego kalendarza.
-    const w = naWydarzenie('x', { tytul: 'Coś' })
-    expect(w).toMatchObject({ osoby: [], godzina: null, sala: null, kategoria: 'INNE' })
+  it('stary dokument bez nowych pól dostaje wartości domyślne', () => {
+    // Dokumenty zapisane przed Sesjami Operacyjnymi nie mają dni, godziny
+    // końca ani budynku. Bez migracji — tłumaczymy przy odczycie.
+    const w = naWydarzenie('x', { tytul: 'Coś', kategoria: 'SSUEW', rok: 2026, miesiac: 10, dzien: 1, sala: '9J' })
+    expect(w).toMatchObject({ dni: 1, calyDzien: false, godzinaDo: null, budynek: null, sala: '9J' })
   })
 
-  it('odrzuca nieznaną kategorię na rzecz INNE', () => {
+  it('dawne „Zeb./inne” trafia do Zebrań, nie do Innych', () => {
+    expect(naWydarzenie('x', { kategoria: 'ZEBRANIA/INNE' }).kategoria).toBe('ZEBRANIA')
+  })
+
+  it('nieznana kategoria to INNE', () => {
     expect(naWydarzenie('x', { kategoria: 'WYCIECZKA' }).kategoria).toBe('INNE')
+    expect(naWydarzenie('x', { kategoria: 'toString' }).kategoria).toBe('INNE')
   })
 
-  it('pustą godzinę i salę zamienia na null, nie na pusty napis', () => {
-    // Pusty napis przeszedłby przez `if (w.godzina)` jako fałsz, ale w Firestore
-    // zajmowałby pole i mylił przy ręcznym przeglądaniu bazy.
-    const w = naWydarzenie('x', { godzina: '', sala: '' })
+  it('nieznany budynek i błędna liczba dni wracają do wartości bezpiecznych', () => {
+    const w = naWydarzenie('x', { budynek: 'X', dni: 0 })
+    expect(w.budynek).toBeNull()
+    expect(w.dni).toBe(1)
+  })
+
+  it('puste napisy zamienia na null', () => {
+    const w = naWydarzenie('x', { godzina: '', godzinaDo: '', sala: '' })
     expect(w.godzina).toBeNull()
+    expect(w.godzinaDo).toBeNull()
     expect(w.sala).toBeNull()
   })
 })

@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { kolizjeWMiesiacu } from '@/lib/planer/kolizje'
-import type { Wydarzenie } from '@/lib/planer/typy'
+import { POLA_DOMYSLNE, type Wydarzenie } from '@/lib/planer/typy'
 
 function w(nadpisz: Partial<Wydarzenie> = {}): Wydarzenie {
   return {
@@ -13,6 +13,7 @@ function w(nadpisz: Partial<Wydarzenie> = {}): Wydarzenie {
     godzina: null,
     sala: null,
     osoby: [],
+    ...POLA_DOMYSLNE,
     ...nadpisz,
   }
 }

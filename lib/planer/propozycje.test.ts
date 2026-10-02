@@ -1,11 +1,12 @@
 import { describe, it, expect } from 'vitest'
 import { stanPropozycji, opiszPropozycje } from '@/lib/planer/propozycje'
 import type { Propozycja } from '@/lib/planer/propozycje'
-import type { Wydarzenie } from '@/lib/planer/typy'
+import { POLA_DOMYSLNE, type Wydarzenie } from '@/lib/planer/typy'
 
 const wydarzenie: Wydarzenie = {
   id: 'w1', tytul: 'ZEBRANIE ZARZĄDU', kategoria: 'ZEBRANIA',
   rok: 2026, miesiac: 10, dzien: 7, godzina: '18:00', sala: '9J', osoby: ['Jula'],
+  ...POLA_DOMYSLNE,
 }
 
 const przeniesienie: Propozycja = {
@@ -18,6 +19,7 @@ const nowe: Propozycja = {
   wydarzenie: {
     tytul: 'SZKOLENIE', kategoria: 'INNE', rok: 2026, miesiac: 11,
     dzien: 12, godzina: null, sala: null, osoby: [],
+    ...POLA_DOMYSLNE,
   },
 }
 

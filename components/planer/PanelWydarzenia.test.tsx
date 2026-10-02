@@ -1,11 +1,12 @@
 import { render, screen, fireEvent } from '@testing-library/react'
 import { describe, it, expect, vi } from 'vitest'
 import { PanelWydarzenia } from '@/components/planer/PanelWydarzenia'
-import type { Wydarzenie } from '@/lib/planer/typy'
+import { POLA_DOMYSLNE, type Wydarzenie } from '@/lib/planer/typy'
 
 const w: Wydarzenie = {
   id: '1', tytul: 'ZEBRANIE ZARZĄDU', kategoria: 'ZEBRANIA',
   rok: 2026, miesiac: 10, dzien: 7, godzina: '18:00', sala: '9J', osoby: ['Jula', 'Kuba'],
+  ...POLA_DOMYSLNE,
 }
 
 const wspolne = { onZapisz: vi.fn(), onUsun: vi.fn(), onZamknij: vi.fn(), miesiac: { m: 10, y: 2026 } }

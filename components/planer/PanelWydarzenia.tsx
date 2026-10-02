@@ -1,7 +1,7 @@
 'use client'
 import { useState, type ReactNode } from 'react'
 import { Trash2, X } from 'lucide-react'
-import { KLUCZE_KATEGORII, KATEGORIE, type Kategoria, type Miesiac, type Wydarzenie } from '@/lib/planer/typy'
+import { KLUCZE_KATEGORII, KATEGORIE, POLA_DOMYSLNE, type Kategoria, type Miesiac, type Wydarzenie } from '@/lib/planer/typy'
 import { dniWMiesiacu } from '@/lib/planer/daty'
 import type { NoweWydarzenie } from '@/lib/planer/zapis'
 
@@ -23,7 +23,7 @@ type Props = {
 function pusty(miesiac: Miesiac, dzien: number | null | undefined): NoweWydarzenie {
   return {
     tytul: '', kategoria: 'ZEBRANIA', rok: miesiac.y, miesiac: miesiac.m,
-    dzien: dzien ?? 1, godzina: null, sala: null, osoby: [],
+    dzien: dzien ?? 1, godzina: null, sala: null, osoby: [], ...POLA_DOMYSLNE,
   }
 }
 
