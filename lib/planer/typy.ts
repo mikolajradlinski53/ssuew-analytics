@@ -1,4 +1,4 @@
-export type Kategoria = 'ZEBRANIA' | 'SSUEW' | 'PROJEKTY' | 'UE' | 'APLIKACJE' | 'INNE'
+export type Kategoria = 'ZEBRANIA' | 'KOMISJE' | 'SSUEW' | 'PROJEKTY' | 'UE' | 'APLIKACJE' | 'INNE'
 
 export interface Miesiac {
   m: number
@@ -51,14 +51,19 @@ interface StylKategorii {
   druk: string
 }
 
-/** Kolejność ważności ustalona na Sesji Operacyjnej: Zebrania → … → Inne. */
+/**
+ * Kolejność ważności ustalona na Sesji Operacyjnej: Zebrania → Komisje → …
+ * → Inne. Wygląd karty zależy od rangi, nie od kategorii — dopisanie
+ * kategorii przesuwa wygląd tych poniżej.
+ */
 export const KATEGORIE: Record<Kategoria, StylKategorii> = {
   ZEBRANIA:  { etykieta: 'Zebrania',      ranga: 1, obrys: '#60a5fa', tlo: 'rgba(96, 165, 250, 0.14)',  druk: '#1d4ed8' },
-  SSUEW:     { etykieta: 'SSUEW',         ranga: 2, obrys: '#2dd4bf', tlo: 'rgba(45, 212, 191, 0.14)',  druk: '#0f766e' },
-  PROJEKTY:  { etykieta: 'Projekty',      ranga: 3, obrys: '#fbbf24', tlo: 'rgba(251, 191, 36, 0.14)',  druk: '#b45309' },
-  UE:        { etykieta: 'Wydarzenia UE', ranga: 4, obrys: '#818cf8', tlo: 'rgba(129, 140, 248, 0.14)', druk: '#4338ca' },
-  APLIKACJE: { etykieta: 'Aplikacje',     ranga: 5, obrys: '#fb7185', tlo: 'rgba(251, 113, 133, 0.14)', druk: '#be123c' },
-  INNE:      { etykieta: 'Inne',          ranga: 6, obrys: '#a78bfa', tlo: 'rgba(167, 139, 250, 0.14)', druk: '#6d28d9' },
+  KOMISJE:   { etykieta: 'Komisje',       ranga: 2, obrys: '#a3e635', tlo: 'rgba(163, 230, 53, 0.14)',  druk: '#4d7c0f' },
+  SSUEW:     { etykieta: 'SSUEW',         ranga: 3, obrys: '#2dd4bf', tlo: 'rgba(45, 212, 191, 0.14)',  druk: '#0f766e' },
+  PROJEKTY:  { etykieta: 'Projekty',      ranga: 4, obrys: '#fbbf24', tlo: 'rgba(251, 191, 36, 0.14)',  druk: '#b45309' },
+  UE:        { etykieta: 'Wydarzenia UE', ranga: 5, obrys: '#818cf8', tlo: 'rgba(129, 140, 248, 0.14)', druk: '#4338ca' },
+  APLIKACJE: { etykieta: 'Aplikacje',     ranga: 6, obrys: '#fb7185', tlo: 'rgba(251, 113, 133, 0.14)', druk: '#be123c' },
+  INNE:      { etykieta: 'Inne',          ranga: 7, obrys: '#a78bfa', tlo: 'rgba(167, 139, 250, 0.14)', druk: '#6d28d9' },
 }
 
 export const KLUCZE_KATEGORII = (Object.keys(KATEGORIE) as Kategoria[]).sort(
@@ -69,7 +74,7 @@ export function jestKategoria(nazwa: string): nazwa is Kategoria {
   return (KLUCZE_KATEGORII as string[]).includes(nazwa)
 }
 
-/** Numer rangi na karcie. Aplikacje i Inne go nie mają — tam byłby szumem. */
+/** Numer rangi na karcie — tylko cztery najważniejsze; niżej byłby szumem. */
 export function numerRangi(k: Kategoria): number | null {
   const r = KATEGORIE[k].ranga
   return r <= 4 ? r : null

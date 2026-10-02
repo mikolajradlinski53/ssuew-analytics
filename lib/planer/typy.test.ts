@@ -2,8 +2,8 @@ import { describe, it, expect } from 'vitest'
 import { KATEGORIE, KLUCZE_KATEGORII, jestKategoria, numerRangi } from '@/lib/planer/typy'
 
 describe('kategorie', () => {
-  it('sześć kategorii w kolejności ważności', () => {
-    expect(KLUCZE_KATEGORII).toEqual(['ZEBRANIA', 'SSUEW', 'PROJEKTY', 'UE', 'APLIKACJE', 'INNE'])
+  it('siedem kategorii w kolejności ważności — Komisje zaraz po Zebraniach', () => {
+    expect(KLUCZE_KATEGORII).toEqual(['ZEBRANIA', 'KOMISJE', 'SSUEW', 'PROJEKTY', 'UE', 'APLIKACJE', 'INNE'])
   })
 
   it('każda ma etykietę, rangę, kolor obrysu, tło i kolor do druku', () => {
@@ -18,7 +18,9 @@ describe('kategorie', () => {
 
   it('numer rangi mają tylko cztery najważniejsze kategorie', () => {
     expect(numerRangi('ZEBRANIA')).toBe(1)
-    expect(numerRangi('UE')).toBe(4)
+    expect(numerRangi('KOMISJE')).toBe(2)
+    expect(numerRangi('PROJEKTY')).toBe(4)
+    expect(numerRangi('UE')).toBeNull()
     expect(numerRangi('APLIKACJE')).toBeNull()
     expect(numerRangi('INNE')).toBeNull()
   })

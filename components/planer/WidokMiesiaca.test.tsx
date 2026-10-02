@@ -107,7 +107,7 @@ describe('WidokMiesiaca', () => {
     const rangi = [...container.querySelectorAll('[data-widok="siatka"] [data-ranga]')].map(
       (e) => (e as HTMLElement).dataset.ranga,
     )
-    expect(rangi).toEqual(['1', '5'])
+    expect(rangi).toEqual(['1', '6'])
   })
 
   it('pasek ze startem w poprzednim miesiącu nie jest przeciągalny', () => {

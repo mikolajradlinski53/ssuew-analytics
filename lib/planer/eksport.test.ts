@@ -43,7 +43,7 @@ describe('budujEksport', () => {
 
   it('wielodniowe jest w każdym dniu z numerem dnia', () => {
     const ostatni = e.kalendarz.flat().find((k) => k.dzien === 31)!
-    expect(ostatni.linie[0].tekst).toBe('③ cały dzień Wyjazd (2/4)')
+    expect(ostatni.linie[0].tekst).toBe('④ cały dzień Wyjazd (2/4)')
   })
 
   it('lista ma jeden wiersz na wydarzenie, po dacie i randze', () => {
