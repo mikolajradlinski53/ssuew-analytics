@@ -194,7 +194,7 @@ Lista dni: wydarzenie wielodniowe pojawia się w każdym swoim dniu jako jedna l
 **Karta „Kalendarz”:** wiersze = tygodnie, kolumny = Pn…Nd. Komórka: numer dnia, pod nim
 wydarzenia w kolejności rangi, każde w osobnej linijce:
 `① 18:00–20:00 Zebranie Zarządu · B/L 110L · Jula, Kuba`.
-Linijka w kolorze kategorii (rich text) — w **ciemniejszej odmianie do druku** (pole  w ), bo kolory interfejsu są dobrane pod ciemne tło i na białym arkuszu żółty byłby nieczytelny. Zebrania pogrubione. Wielodniowe w każdym dniu
+Linijka w kolorze kategorii (rich text) — w **ciemniejszej odmianie do druku** (pole `druk` w `KATEGORIE`), bo kolory interfejsu są dobrane pod ciemne tło i na białym arkuszu żółty byłby nieczytelny. Zebrania pogrubione. Wielodniowe w każdym dniu
 z dopiskiem „(2/4)”. Dni spoza miesiąca — puste, szare tło. Zawijanie tekstu, szerokie kolumny.
 
 **Karta „Lista”:** jeden wiersz na wydarzenie (wielodniowe raz), sortowanie: data, ranga,
@@ -355,7 +355,7 @@ Każda faza zostawia działający Planer.
 | `POST /api/planer` | zarząd bez sesji: `dodaj`/`zmien` → 403; w sesji → 200; usuwanie przez zarząd → 403 zawsze; błędne dane → 400 |
 | `GET /api/planer` | zwraca `{ wydarzenia, sesja, sklad }`; `zasob=sesja` → sam stan sesji; bez biletu → 401 |
 | `ktoNaStronie` | ciasteczko hasła → rola z adresu; samo ciasteczko kodu → `board` z etykietą; brak obu → `null` |
-| `KartaWydarzenia` | numer rangi dla 1–4, brak dla 5–6; „cały dzień”; „od 18:00”; miejsce „Poza: …” |
+| `KartaWydarzenia` | numer rangi dla 1–4, brak dla 5–6; „cały dzień”; „18:00–20:00”; miejsce „Poza: …” |
 | `WyborOsob` | „Wszyscy” odznacza pojedyncze osoby i odwrotnie; osoba spoza Składu jako szary przycisk |
 | `PanelWydarzenia` | „do dnia” wcześniej niż start zablokowane; „cały dzień” chowa godziny |
 
