@@ -1,17 +1,20 @@
 import { naMinuty } from './daty'
-import type { Wydarzenie } from './typy'
+import { POZA } from './budynki'
+import { dniTrwaniaWMiesiacu } from './trwanie'
+import type { Miesiac, Wydarzenie } from './typy'
 
-/** Poniżej tylu minut dwa wydarzenia uznajemy za nachodzące na siebie. */
+/** Bez godziny końca: starty bliżej niż tyle minut uznajemy za nachodzące. */
 const PROG_MINUT = 90
 
 export interface KolizjaOsoby {
   osoba: string
   ile: number
-  /** Twarda znaczy: obie mają godzinę i dzieli je mniej niż 90 minut. */
+  /** Twarda: wydarzenia naprawdę zderzają się w czasie albo któreś zajmuje cały dzień. */
   twarda: boolean
 }
 
 export interface KolizjaSali {
+  /** Miejsce czytelne dla człowieka: „B/L 110L” albo sama sala ze starszych wpisów. */
   sala: string
   godziny: string[]
 }
@@ -21,9 +24,42 @@ export interface KolizjeDnia {
   sale: KolizjaSali[]
 }
 
-function ktorekolwiekBlisko(minuty: number[]): boolean {
-  const posortowane = [...minuty].sort((a, b) => a - b)
-  return posortowane.some((m, i) => i > 0 && m - posortowane[i - 1] < PROG_MINUT)
+/** Osoba jest zajęta przez cały dzień. */
+function zajmujeCalyDzien(w: Wydarzenie): boolean {
+  return w.calyDzien || w.dni > 1
+}
+
+/**
+ * Czy dwa wydarzenia z godziną zderzają się w czasie. Gdy oba mają koniec —
+ * nakładanie się przedziałów (stykające się końcem nie kolidują). Gdy któremuś
+ * brakuje końca — dotychczasowa reguła: starty bliżej niż 90 minut.
+ */
+export function kolidujaWCzasie(a: Wydarzenie, b: Wydarzenie): boolean {
+  const aOd = naMinuty(a.godzina)
+  const bOd = naMinuty(b.godzina)
+  if (aOd === null || bOd === null) return false
+  const aDo = naMinuty(a.godzinaDo)
+  const bDo = naMinuty(b.godzinaDo)
+  if (aDo !== null && bDo !== null) return aOd < bDo && bOd < aDo
+  return Math.abs(aOd - bOd) < PROG_MINUT
+}
+
+function ktorakolwiekPara(lista: Wydarzenie[], warunek: (a: Wydarzenie, b: Wydarzenie) => boolean): boolean {
+  for (let i = 0; i < lista.length; i++) {
+    for (let j = i + 1; j < lista.length; j++) {
+      if (warunek(lista[i], lista[j])) return true
+    }
+  }
+  return false
+}
+
+/**
+ * Miejsce jako klucz kolizji. Ten sam numer w dwóch budynkach to dwie sale;
+ * „Poza uczelnią” to nie jedno miejsce, a sam budynek bez sali to za mało.
+ */
+function miejsce(w: Wydarzenie): string | null {
+  if (!w.sala || w.budynek === POZA) return null
+  return w.budynek ? `${w.budynek} ${w.sala}` : w.sala
 }
 
 function grupuj<T>(elementy: T[], klucz: (e: T) => string[]): Map<string, T[]> {
@@ -39,33 +75,45 @@ function grupuj<T>(elementy: T[], klucz: (e: T) => string[]): Map<string, T[]> {
 }
 
 /**
- * Zwraca kolizje w rozbiciu na dni miesiąca. Dzień bez kolizji nie ma wpisu,
- * więc `mapa.get(dzien)` zwraca `undefined` — widok sprawdza samą obecność.
+ * Kolizje w rozbiciu na dni miesiąca `miesiac`. Wydarzenie wielodniowe liczy się
+ * w każdym dniu, w którym trwa — także gdy wystartowało w poprzednim miesiącu.
+ * Dzień bez kolizji nie ma wpisu.
  */
-export function kolizjeWMiesiacu(wydarzenia: Wydarzenie[]): Map<number, KolizjeDnia> {
-  const wynik = new Map<number, KolizjeDnia>()
-  const poDniach = grupuj(wydarzenia, (e) => [String(e.dzien)])
+export function kolizjeWMiesiacu(wydarzenia: Wydarzenie[], miesiac: Miesiac): Map<number, KolizjeDnia> {
+  const poDniach = new Map<number, Wydarzenie[]>()
+  for (const w of wydarzenia) {
+    for (const d of dniTrwaniaWMiesiacu(w, miesiac)) {
+      const lista = poDniach.get(d) ?? []
+      lista.push(w)
+      poDniach.set(d, lista)
+    }
+  }
 
+  const wynik = new Map<number, KolizjeDnia>()
   for (const [dzien, lista] of poDniach) {
     const osoby: KolizjaOsoby[] = []
     const sale: KolizjaSali[] = []
 
-    // 'wszyscy' celowo pomijamy — patrz komentarz w teście.
+    // 'wszyscy' celowo pomijamy — inaczej każde zebranie zarządu kolidowałoby
+    // z każdym wydarzeniem tego dnia i ostrzeżenia straciłyby sens.
     for (const [osoba, jej] of grupuj(lista, (e) => e.osoby.filter((o) => o !== 'wszyscy'))) {
       if (jej.length < 2) continue
-      const minuty = jej.map((e) => naMinuty(e.godzina)).filter((m): m is number => m !== null)
-      osoby.push({ osoba, ile: jej.length, twarda: ktorekolwiekBlisko(minuty) })
+      const twarda = jej.some(zajmujeCalyDzien) || ktorakolwiekPara(jej, kolidujaWCzasie)
+      osoby.push({ osoba, ile: jej.length, twarda })
     }
 
-    for (const [sala, wSali] of grupuj(lista, (e) => (e.sala ? [e.sala] : []))) {
+    for (const [sala, wSali] of grupuj(lista, (e) => {
+      const m = miejsce(e)
+      return m ? [m] : []
+    })) {
+      // Bez godzin nie da się orzec konfliktu sali.
       const zGodzina = wSali.filter((e) => e.godzina)
       if (zGodzina.length < 2) continue
-      const minuty = zGodzina.map((e) => naMinuty(e.godzina) as number)
-      if (!ktorekolwiekBlisko(minuty)) continue
+      if (!ktorakolwiekPara(zGodzina, kolidujaWCzasie)) continue
       sale.push({ sala, godziny: zGodzina.map((e) => e.godzina as string) })
     }
 
-    if (osoby.length || sale.length) wynik.set(Number(dzien), { osoby, sale })
+    if (osoby.length || sale.length) wynik.set(dzien, { osoby, sale })
   }
 
   return wynik

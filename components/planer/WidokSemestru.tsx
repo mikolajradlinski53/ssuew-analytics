@@ -1,6 +1,7 @@
 'use client'
 import { AlertTriangle } from 'lucide-react'
 import { kolizjeWMiesiacu } from '@/lib/planer/kolizje'
+import { nachodziNaMiesiac } from '@/lib/planer/trwanie'
 import type { Miesiac, Wydarzenie } from '@/lib/planer/typy'
 
 const NAZWY = [
@@ -36,8 +37,8 @@ export function WidokSemestru({ miesiace, wydarzenia, onWejdz }: Props) {
   return (
     <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
       {miesiace.map((m) => {
-        const wMiesiacu = wydarzenia.filter((w) => w.miesiac === m.m && w.rok === m.y)
-        const kolizje = kolizjeWMiesiacu(wMiesiacu)
+        const wMiesiacu = wydarzenia.filter((w) => nachodziNaMiesiac(w, m))
+        const kolizje = kolizjeWMiesiacu(wMiesiacu, m)
         return (
           <button
             key={`${m.y}-${m.m}`}

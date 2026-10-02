@@ -29,7 +29,7 @@ function opiszKolizje(k: KolizjeDnia): string {
   const czesci = [
     ...k.osoby.map((o) =>
       o.twarda
-        ? `${o.osoba}: ${o.ile} wydarzenia w odstępie krótszym niż 90 minut`
+        ? `${o.osoba}: ${o.ile} wydarzenia nakładają się w czasie`
         : `${o.osoba}: ${o.ile} wydarzenia tego dnia`,
     ),
     ...k.sale.map((s) => `sala ${s.sala}: ${s.godziny.join(', ')}`),
@@ -46,7 +46,7 @@ export function WidokMiesiaca({
 
   const ile = dniWMiesiacu(miesiac.y, miesiac.m)
   const przesuniecie = pierwszyDzienTygodnia(miesiac.y, miesiac.m)
-  const kolizje = useMemo(() => kolizjeWMiesiacu(wydarzenia), [wydarzenia])
+  const kolizje = useMemo(() => kolizjeWMiesiacu(wydarzenia, miesiac), [wydarzenia, miesiac])
 
   const poDniach = useMemo(() => {
     const mapa = new Map<number, Wydarzenie[]>()

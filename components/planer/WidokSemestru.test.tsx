@@ -34,4 +34,12 @@ describe('WidokSemestru', () => {
     render(<WidokSemestru miesiace={miesiaceSemestru(2026, 'Z')} wydarzenia={wydarzenia} onWejdz={vi.fn()} />)
     expect(screen.getByText(/1 dzień z kolizją/)).toBeInTheDocument()
   })
+  it('wyjazd przez przełom miesięcy liczy się w obu', () => {
+    const wyjazd: Wydarzenie = {
+      id: 'x', tytul: 'Wyjazd', kategoria: 'PROJEKTY', rok: 2026, miesiac: 10, dzien: 30,
+      godzina: null, sala: null, osoby: [], ...POLA_DOMYSLNE, dni: 4,
+    }
+    render(<WidokSemestru miesiace={miesiaceSemestru(2026, 'Z')} wydarzenia={[wyjazd]} onWejdz={vi.fn()} />)
+    expect(screen.getAllByText('1 wydarzenie')).toHaveLength(2)
+  })
 })
