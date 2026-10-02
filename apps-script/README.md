@@ -124,7 +124,33 @@ Czego nie robić: nie usuwaj ani nie zmieniaj nazw nagłówków. Brakujący nag�
 a nie ciche zero — celowo, bo zera w kolumnie „zgłoszenia" dałyby wykresy, które wyglądają
 wiarygodnie i są nieprawdziwe.
 
-## Aktualizacja skryptu w działającym arkuszu
+## Z terminala (zalecane)
+
+Wszystko poniżej da się zrobić bez edytora — [`scripts/gas.mjs`](../scripts/gas.mjs) czyta
+`GAS_URL` i `GAS_TOKEN` z `.env.local`, a wysyłkę kodu robi przez
+[clasp](https://github.com/google/clasp), oficjalne CLI Google.
+
+| Komenda | Co robi |
+|---|---|
+| `npm run gas -- ping` | jakie zakładki zna wdrożony skrypt |
+| `npm run gas -- status` | które pliki poszłyby do Google (tylko `Kod.gs` i manifest) |
+| `npm run gas -- wdroz` | wysyła `Kod.gs`, tworzy nową wersję i podpina ją pod **ten sam** `/exec` |
+| `npm run gas -- setup` | zakłada brakujące zakładki |
+| `npm run gas -- migruj-kpi` | migracja `kpi` → `kpi_punkty`; odmawia, gdy `kpi_punkty` już jest |
+
+`setup` i `migruj-kpi` idą przez `doPost` z operacją `_admin` i tym samym tokenem co zapis
+danych. Działają tylko na dwóch wymienionych funkcjach — skrypt nie wywoła niczego po nazwie.
+
+**Jednorazowo, przed pierwszym `wdroz`:**
+
+1. Włącz *Google Apps Script API* na <https://script.google.com/home/usersettings>.
+2. `npx clasp login` — otwiera przeglądarkę, logujesz się kontem właściciela arkusza.
+3. W `apps-script/` muszą być `.clasp.json` (`{"scriptId": "…"}` — *Ustawienia projektu →
+   Identyfikator skryptu*) oraz `appsscript.json` pobrany z istniejącego projektu
+   (`npx clasp clone <scriptId>` do pustego katalogu i przeniesienie samego manifestu —
+   nie klonuj prosto do `apps-script/`, bo nadpisałbyś `Kod.gs` wersją z Google).
+
+## Aktualizacja skryptu w działającym arkuszu (ręcznie)
 
 **Samo zapisanie kodu niczego nie zmienia w aplikacji.** Adres `/exec` serwuje wersję
 zamrożoną w chwili wdrożenia — dopóki nie wydasz nowej wersji, DECK rozmawia ze starym kodem.

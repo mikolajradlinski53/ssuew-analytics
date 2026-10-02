@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "eslint",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "gas": "node scripts/gas.mjs"
   },
   "dependencies": {
     "@opentelemetry/api": "^1.9.1",
@@ -24,6 +25,7 @@
     "recharts": "^3.8.1"
   },
   "devDependencies": {
+    "@google/clasp": "^3.4.1",
     "@tailwindcss/postcss": "^4",
     "@testing-library/dom": "^10.4.1",
     "@testing-library/jest-dom": "^6.9.1",

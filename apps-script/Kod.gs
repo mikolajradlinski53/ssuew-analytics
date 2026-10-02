@@ -167,6 +167,11 @@ function doPost(e) {
     const body = JSON.parse((e && e.postData && e.postData.contents) || '{}');
     sprawdzToken(body.token);
 
+    if (body.op === '_admin') {
+      if (!lock.tryLock(20000)) throw new Odmowa(503, 'Arkusz zajety, sprobuj ponownie');
+      return json({ ok: true, wynik: admin_(body.akcja) });
+    }
+
     const tabela = wezSchemat(body.t);
     const op = body.op;
     const wiersze = Array.isArray(body.rows) ? body.rows : (body.row ? [body.row] : []);
@@ -195,6 +200,25 @@ function doPost(e) {
   } finally {
     try { lock.releaseLock(); } catch (ignored) {}
   }
+}
+
+/**
+ * Funkcje utrzymaniowe wolane z terminala (npm run gas:setup / gas:migruj-kpi),
+ * zeby aktualizacja nie wymagala klikania w edytorze. Tylko z listy — zadnego
+ * wolania dowolnej funkcji po nazwie.
+ */
+function admin_(akcja) {
+  if (akcja === 'setup') return setup();
+  if (akcja === 'migrujKpi') {
+    // migrujKpi czysci kpi_punkty. Zdalnie wolno ja puscic tylko raz — inaczej
+    // jedno przypadkowe wywolanie skasowaloby pomiary dopisane od czasu migracji.
+    // Swiadome powtorzenie: recznie, z edytora.
+    if (SpreadsheetApp.getActiveSpreadsheet().getSheetByName('kpi_punkty')) {
+      throw new Odmowa(409, 'kpi_punkty juz istnieje — migracja byla zrobiona. Powtorzenie tylko recznie z edytora.');
+    }
+    return migrujKpi();
+  }
+  throw new Odmowa(400, 'Nieznana akcja: ' + akcja);
 }
 
 /* ─── Autoryzacja ────────────────────────────────────────── */
@@ -493,6 +517,7 @@ function teraz() {
 function setup() {
   const plik = SpreadsheetApp.getActiveSpreadsheet();
   const wlasciwosci = PropertiesService.getScriptProperties();
+  const utworzone = [];
 
   Object.keys(SCHEMAT).forEach(function (nazwa) {
     let ark = plik.getSheetByName(nazwa);
@@ -520,6 +545,7 @@ function setup() {
     }
     ark.autoResizeColumns(1, klucze.length);
     Logger.log('Utworzono zakladke "' + nazwa + '" (' + nasiona.length + ' wierszy).');
+    utworzone.push(nazwa);
   });
 
   // Domyslny pusty arkusz z nowego pliku tylko przeszkadza.
@@ -533,6 +559,7 @@ function setup() {
     Logger.log('Wygenerowano nowy token.');
   }
   Logger.log('Gotowe. Uruchom pokazToken(), zeby go odczytac.');
+  return utworzone.length ? 'Utworzono: ' + utworzone.join(', ') : 'Wszystkie zakladki juz istnialy.';
 }
 
 /** Wypisuje token do dziennika — stad kopiujesz go do zmiennych Vercela. */
