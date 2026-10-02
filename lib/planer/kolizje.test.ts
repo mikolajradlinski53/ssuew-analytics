@@ -158,3 +158,22 @@ describe('kolizje — przez północ', () => {
     expect(k.get(7)?.osoby[0].twarda).toBe(false)
   })
 })
+
+describe('kolizje — aplikacje', () => {
+  it('nabór aplikacji nie koliduje z wydarzeniem tej samej osoby', () => {
+    // Aplikacje to termin, nie spotkanie — nikt nie siedzi na nich w sali.
+    const k = kolizjeWMiesiacu([
+      w({ osoby: ['Jula'], kategoria: 'APLIKACJE', calyDzien: true }),
+      w({ osoby: ['Jula'], godzina: '18:00' }),
+    ], PAZ)
+    expect(k.get(7)).toBeUndefined()
+  })
+
+  it('aplikacje nie zajmują sali', () => {
+    const k = kolizjeWMiesiacu([
+      w({ kategoria: 'APLIKACJE', budynek: 'B/L', sala: '110L', godzina: '17:00' }),
+      w({ budynek: 'B/L', sala: '110L', godzina: '17:00' }),
+    ], PAZ)
+    expect(k.get(7)).toBeUndefined()
+  })
+})

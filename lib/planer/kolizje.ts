@@ -1,10 +1,13 @@
 import { naMinuty } from './daty'
 import { POZA } from './budynki'
 import { dniTrwaniaWMiesiacu } from './trwanie'
-import type { Miesiac, Wydarzenie } from './typy'
+import type { Kategoria, Miesiac, Wydarzenie } from './typy'
 
 /** Bez godziny końca: starty bliżej niż tyle minut uznajemy za nachodzące. */
 const PROG_MINUT = 90
+
+/** Kategorie, które nie zajmują ani osób, ani sal. */
+const BEZ_KOLIZJI = new Set<Kategoria>(['APLIKACJE'])
 
 export interface KolizjaOsoby {
   osoba: string
@@ -92,6 +95,9 @@ function grupuj<T>(elementy: T[], klucz: (e: T) => string[]): Map<string, T[]> {
 export function kolizjeWMiesiacu(wydarzenia: Wydarzenie[], miesiac: Miesiac): Map<number, KolizjeDnia> {
   const poDniach = new Map<number, Wydarzenie[]>()
   for (const w of wydarzenia) {
+    // Aplikacje to termin naboru, nie spotkanie — nikogo nie zajmują i nie
+    // stoją w żadnej sali. Liczone, zapalałyby ostrzeżenia przy każdym naborze.
+    if (BEZ_KOLIZJI.has(w.kategoria)) continue
     for (const d of dniTrwaniaWMiesiacu(w, miesiac)) {
       const lista = poDniach.get(d) ?? []
       lista.push(w)
