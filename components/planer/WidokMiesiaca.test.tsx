@@ -25,6 +25,15 @@ function siatka(container: HTMLElement) {
   return within(container.querySelector('[data-widok="siatka"]') as HTMLElement)
 }
 
+const wyjazd: Wydarzenie = {
+  id: '3', tytul: 'WYJAZD', kategoria: 'PROJEKTY', rok: 2026, miesiac: 10, dzien: 8,
+  godzina: null, sala: null, osoby: [], ...POLA_DOMYSLNE, dni: 3,
+}
+
+function lista(container: HTMLElement) {
+  return within(container.querySelector('[data-widok="lista"]') as HTMLElement)
+}
+
 describe('WidokMiesiaca', () => {
   it('rysuje kratkę dla każdego dnia miesiąca', () => {
     render(<WidokMiesiaca {...wspolne} wydarzenia={[]} />)
@@ -75,5 +84,44 @@ describe('WidokMiesiaca', () => {
     expect(onPrzesun).toHaveBeenCalledWith('1', 1)
     fireEvent.keyDown(karta, { key: 'ArrowDown' })
     expect(onPrzesun).toHaveBeenCalledWith('1', 7)
+  })
+
+  it('wydarzenie wielodniowe to jeden pasek, nie kopie w kratkach', () => {
+    const { container } = render(<WidokMiesiaca {...wspolne} wydarzenia={[wyjazd]} />)
+    expect(container.querySelectorAll('[data-widok="siatka"] [data-pasek]')).toHaveLength(1)
+    expect(siatka(container).getAllByText('WYJAZD')).toHaveLength(1)
+  })
+
+  it('na telefonie wielodniowe jest w każdym dniu z dopiskiem', () => {
+    const { container } = render(<WidokMiesiaca {...wspolne} wydarzenia={[wyjazd]} />)
+    expect(lista(container).getByText('1/3')).toBeInTheDocument()
+    expect(lista(container).getByText('3/3')).toBeInTheDocument()
+  })
+
+  it('w kratce najważniejsze na górze, mimo późniejszej godziny', () => {
+    const dzien: Wydarzenie[] = [
+      { ...wydarzenia[0], id: 'a', kategoria: 'APLIKACJE', godzina: '08:00', osoby: [], dzien: 9 },
+      { ...wydarzenia[0], id: 'z', kategoria: 'ZEBRANIA', godzina: '20:00', osoby: [], dzien: 9 },
+    ]
+    const { container } = render(<WidokMiesiaca {...wspolne} wydarzenia={dzien} />)
+    const rangi = [...container.querySelectorAll('[data-widok="siatka"] [data-ranga]')].map(
+      (e) => (e as HTMLElement).dataset.ranga,
+    )
+    expect(rangi).toEqual(['1', '5'])
+  })
+
+  it('pasek ze startem w poprzednim miesiącu nie jest przeciągalny', () => {
+    const zPazdziernika: Wydarzenie = { ...wyjazd, dzien: 30, dni: 4 }
+    const { container } = render(
+      <WidokMiesiaca {...wspolne} miesiac={{ m: 11, y: 2026 }} mozeEdytowac wydarzenia={[zPazdziernika]} />,
+    )
+    const pasek = container.querySelector('[data-widok="siatka"] [data-pasek]')
+    expect(pasek).not.toBeNull()
+    expect(pasek?.getAttribute('draggable')).toBeNull()
+  })
+
+  it('pokazuje legendę rang', () => {
+    const { container } = render(<WidokMiesiaca {...wspolne} wydarzenia={[]} />)
+    expect(container.querySelector('[data-legenda]')?.textContent).toMatch(/1Zebrania/)
   })
 })

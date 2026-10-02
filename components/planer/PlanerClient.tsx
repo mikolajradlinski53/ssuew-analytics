@@ -27,6 +27,7 @@ import { Obecnosc } from './Obecnosc'
 import { Watek } from './Watek'
 import { dniWMiesiacu } from '@/lib/planer/daty'
 import { terminyCoTydzien } from '@/lib/planer/powtarzanie'
+import { nachodziNaMiesiac } from '@/lib/planer/trwanie'
 import { SESJA_WYLACZONA } from '@/lib/planer/stan'
 import { subskrybujSklad, zapiszSklad } from '@/lib/planer/sklad'
 import { Sklad } from './Sklad'
@@ -164,8 +165,10 @@ export function PlanerClient({ semestr, rola, kto, poczatkowy, naZywo }: Props) 
     [wydarzenia, aktywne, osoba],
   )
 
+  // Do miesiąca trafia wszystko, co na niego nachodzi — także wielodniowe
+  // ze startem w poprzednim miesiącu.
   const wMiesiacu = useMemo(
-    () => widoczne.filter((w) => w.miesiac === miesiac.m && w.rok === miesiac.y),
+    () => widoczne.filter((w) => nachodziNaMiesiac(w, miesiac)),
     [widoczne, miesiac],
   )
 
