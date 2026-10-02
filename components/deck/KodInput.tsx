@@ -1,6 +1,7 @@
 'use client'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { ANIMACJE } from '@/lib/deck/animacjeKodu'
+import { CyfraDekodowana } from './CyfraDekodowana'
 
 export const MOTYWY = ['orbita', 'obwod', 'elektron'] as const
 export type Motyw = (typeof MOTYWY)[number]
@@ -33,6 +34,12 @@ export function KodInput({ onKomplet, stan, motyw }: Props) {
 
   const aktywnyMotyw = motyw ?? wylosowany
   const [cyfry, setCyfry] = useState<string[]>(() => Array(DLUGOSC_KODU).fill(''))
+  // Numer wpisania w każdej kratce - nowy numer to nowy `key`, czyli animacja
+  // od początku, także gdy w to samo miejsce wpada ta sama cyfra.
+  const [wpisania, setWpisania] = useState<number[]>(() => Array(DLUGOSC_KODU).fill(0))
+  const oznaczWpisane = useCallback((indeksy: number[]) => {
+    setWpisania((poprzednie) => poprzednie.map((n, i) => (indeksy.includes(i) ? n + 1 : n)))
+  }, [])
   const pola = useRef<(HTMLInputElement | null)[]>([])
   const wyslano = useRef(false)
 
@@ -83,6 +90,7 @@ export function KodInput({ onKomplet, stan, motyw }: Props) {
     const cyfra = wartosc.replace(/\D/g, '').slice(-1)
     if (!cyfra) return
     ustaw(i, cyfra)
+    oznaczWpisane([i])
     pola.current[i + 1]?.focus()
   }
 
@@ -108,6 +116,7 @@ export function KodInput({ onKomplet, stan, motyw }: Props) {
     const nowe = Array(DLUGOSC_KODU).fill('')
     wklejone.split('').forEach((z, idx) => (nowe[idx] = z))
     setCyfry(nowe)
+    oznaczWpisane(wklejone.split('').map((_, idx) => idx))
     pola.current[Math.min(wklejone.length, DLUGOSC_KODU - 1)]?.focus()
   }
 
@@ -141,6 +150,11 @@ export function KodInput({ onKomplet, stan, motyw }: Props) {
               className="kod__pole"
             />
             <span className="kod__ramka" aria-hidden="true" />
+            {/* Pole ma przezroczysty tekst - cyfrę widać tutaj, z animacją.
+                Musi stać za ramką: `.kod__pole:focus + .kod__ramka` wymaga sąsiedztwa. */}
+            <span className="kod__cyfra" aria-hidden="true">
+              {cyfra && <CyfraDekodowana key={wpisania[i]} cyfra={cyfra} />}
+            </span>
             {/* viewBox w proporcjach kratki (46x58). Kwadratowy rozciągany
                 przez preserveAspectRatio="none" zamieniał zaokrąglone rogi
                 w elipsy i wyglądało to na zepsute. */}

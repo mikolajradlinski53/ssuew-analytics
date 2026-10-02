@@ -445,13 +445,42 @@ body::before {
   font-family: var(--font-mono, ui-monospace, monospace);
   font-size: 24px;
   font-weight: 600;
-  color: var(--lod);
+  /* Cyfrę rysuje .kod__cyfra nad polem - z animacją dekodowania. */
+  color: transparent;
   caret-color: transparent;
   outline: none;
 }
 
 .kod__pole:disabled {
   opacity: 1;
+}
+
+.kod__pole::selection {
+  background: transparent;
+}
+
+/* Cyfra nad polem: pole zostaje do wpisywania, a to widać. */
+.kod__cyfra {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 24px;
+  font-weight: 600;
+  color: var(--lod);
+}
+
+@media (max-width: 400px) {
+  .kod__cyfra { font-size: 20px; }
+}
+
+.kod__znak--dekoduje {
+  color: var(--dobrze);
+  text-shadow: 0 0 12px rgba(46, 230, 168, 0.55);
+  opacity: 0.85;
 }
 
 .kod__ramka {
@@ -603,7 +632,7 @@ body::before {
   box-shadow: 0 0 0 1px var(--dobrze), 0 0 26px rgba(46, 230, 168, 0.28);
 }
 
-.kod--ok .kod__pole {
+.kod--ok .kod__cyfra {
   color: var(--dobrze);
 }
 
@@ -612,7 +641,7 @@ body::before {
   box-shadow: 0 0 0 1px var(--zle), 0 0 26px rgba(255, 77, 106, 0.24);
 }
 
-.kod--blad .kod__pole {
+.kod--blad .kod__cyfra {
   color: var(--zle);
 }
 
