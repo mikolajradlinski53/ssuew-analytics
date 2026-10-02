@@ -1,18 +1,12 @@
 'use client'
 import { Radio } from 'lucide-react'
 import type { StanSesjiWspolnej } from '@/lib/planer/zapis'
+import { opiszTrwanie } from '@/lib/planer/stan'
 
 type Props = {
   stan: StanSesjiWspolnej
   mozeWylaczyc: boolean
   onWylacz: () => void
-}
-
-function trwanie(od: number): string {
-  const minuty = Math.max(0, Math.floor((Date.now() - od) / 60000))
-  const h = Math.floor(minuty / 60)
-  const m = minuty % 60
-  return h > 0 ? `${h} h ${m} min` : `${m} min`
 }
 
 /**
@@ -29,7 +23,7 @@ export function BanerSesji({ stan, mozeWylaczyc, onWylacz }: Props) {
       <span className="text-[12px] font-semibold text-deck-text">Sesja Operacyjna trwa</span>
       <span className="text-[11.5px] text-deck-muted">
         wszyscy zapisują na żywo
-        {stan.od !== null && ` · ${trwanie(stan.od)}`}
+        {stan.od !== null && ` · ${opiszTrwanie(stan.od, Date.now())}`}
       </span>
       {mozeWylaczyc && (
         <button

@@ -8,6 +8,9 @@ import type { NoweWydarzenie, Wydarzenie } from './typy'
 import type { Propozycja } from './propozycje'
 import type { Komentarz } from './komentarze'
 import type { Znak } from './obecnosc'
+import { naStanSesji, type StanSesjiWspolnej } from './stan'
+
+export type { StanSesjiWspolnej }
 
 // Reeksport, zeby nie ruszac miejsc, ktore importuja ten typ stad.
 export type { NoweWydarzenie }
@@ -71,26 +74,13 @@ export function subskrybujPropozycje(
   )
 }
 
-export interface StanSesjiWspolnej {
-  wlaczony: boolean
-  od: number | null
-  przez: string | null
-}
-
 export function subskrybujTrybWspolny(
   semestrId: string,
   gdyZmiana: (s: StanSesjiWspolnej) => void,
 ): () => void {
   // Brak dokumentu semestru to normalny stan przed pierwszym włączeniem sesji,
   // więc błąd tu oznacza wyłącznie problem z uprawnieniami — logujemy i milczymy.
-  return onSnapshot(semestrDoc(semestrId), (zrzut) => {
-    const d = zrzut.data()
-    gdyZmiana({
-      wlaczony: d?.trybWspolny === true,
-      od: typeof d?.trybWspolnyOd === 'number' ? d.trybWspolnyOd : null,
-      przez: typeof d?.trybWspolnyPrzez === 'string' ? d.trybWspolnyPrzez : null,
-    })
-  })
+  return onSnapshot(semestrDoc(semestrId), (zrzut) => gdyZmiana(naStanSesji(zrzut.data())))
 }
 
 /** `setDoc` z `merge`, bo dokument semestru mógł jeszcze nie powstać — w 3a go nie tworzyliśmy. */
