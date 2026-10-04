@@ -7,7 +7,7 @@ import { POLA_DOMYSLNE, type Wydarzenie } from '@/lib/planer/typy'
 
 const zebranie: Wydarzenie = {
   id: 'z', tytul: 'Zebranie', kategoria: 'ZEBRANIA', rok: 2026, miesiac: 10, dzien: 7,
-  godzina: '18:00', sala: '110L', osoby: ['Jula'], ...POLA_DOMYSLNE, budynek: 'B/L',
+  godzina: '18:00', sala: '110', osoby: ['Jula'], ...POLA_DOMYSLNE, budynek: 'B/L',
 }
 const rekrutacja: Wydarzenie = {
   ...zebranie, id: 'r', tytul: 'Rekrutacja', kategoria: 'SSUEW', dzien: 1, dni: 16,
@@ -41,7 +41,7 @@ describe('PobierzMiesiac', () => {
     // 7.10 to wiersz 9 (dwa wiersze nagłówka), Zebrania to kolumna F.
     expect(a.getCell('A9').value).toBe(7)
     expect(a.getCell('B9').value).toBe('środa')
-    expect(a.getCell('F9').value).toBe('Zebranie - 18:00 - 110L')
+    expect(a.getCell('F9').value).toBe('Zebranie - 18:00 - 110 B/L')
     expect(tlo(a, 'F9')).toBe('FFF4CCCC')
     expect(a.getCell('J9').value).toBe('Marcel, Jula')
   })
@@ -69,7 +69,7 @@ describe('PobierzMiesiac', () => {
     const kal = ponownie.getWorksheet('Kalendarz')!
     // Wiersz 1 to tytuł, 2 nagłówki dni, 3 pierwszy tydzień; 7.10.2026 to środa drugiego tygodnia.
     const komorka = kal.getRow(4).getCell(3).value as { richText: { text: string }[] }
-    expect(komorka.richText.map((r) => r.text).join('')).toContain('① 18:00 Zebranie · B/L 110L · Jula')
-    expect(ponownie.getWorksheet('Lista')!.getCell('F9').value).toBe('Zebranie - 18:00 - 110L')
+    expect(komorka.richText.map((r) => r.text).join('')).toContain('① 18:00 Zebranie · B/L 110 · Jula')
+    expect(ponownie.getWorksheet('Lista')!.getCell('F9').value).toBe('Zebranie - 18:00 - 110 B/L')
   })
 })

@@ -97,10 +97,11 @@ function linia(w: Wydarzenie, dzien: Data): LiniaKomorki {
   }
 }
 
-/** Miejsce jak w arkuszu: sama sala („9J”), budynek albo miejsce spoza uczelni. */
+/** Miejsce w Liście: sala i po spacji budynek („110 B/L”), sam budynek albo miejsce spoza uczelni. */
 function miejsceListy(w: Wydarzenie): string | null {
   if (miejsceSpecjalne(w.budynek)) return opisMiejsca(w)
-  return w.sala ?? (w.budynek ? etykietaBudynku(w.budynek) : null)
+  const budynek = w.budynek ? etykietaBudynku(w.budynek) : null
+  return [w.sala, budynek].filter(Boolean).join(' ') || null
 }
 
 /** „PROMKA - 18:00 - 9J”; cały dzień bez godziny. */

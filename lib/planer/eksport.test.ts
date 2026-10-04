@@ -65,16 +65,18 @@ describe('budujEksport - Lista jak arkusz Sesji', () => {
     expect(e.lista[0].komorki.every((k) => k.tekst === '' && k.tlo === null && k.wierszy === 1)).toBe(true)
   })
 
-  it('tekst: tytuł - godzina - sala', () => {
+  it('tekst: tytuł - godzina - sala i po spacji budynek', () => {
     const e = budujEksport([
-      w({ id: 'p', tytul: 'PROMKA', kategoria: 'KOMISJE', dzien: 6, godzina: '18:00', budynek: 'B/J', sala: '9J' }),
-      w({ id: 's', tytul: 'SKS', kategoria: 'ZEBRANIA', dzien: 13, godzina: '18:00', godzinaDo: '20:00', budynek: 'A', sala: '120 A' }),
+      w({ id: 'p', tytul: 'PROMKA', kategoria: 'KOMISJE', dzien: 6, godzina: '18:00', budynek: 'B/L', sala: '110' }),
+      w({ id: 's', tytul: 'SKS', kategoria: 'ZEBRANIA', dzien: 13, godzina: '18:00', godzinaDo: '20:00', budynek: 'A', sala: '120' }),
       w({ id: 'b', tytul: 'Targi', kategoria: 'UE', dzien: 15, budynek: 'A' }),
+      w({ id: 'c', tytul: 'DIJK', kategoria: 'KOMISJE', dzien: 16, sala: '9J' }),
       w({ id: 'o', tytul: 'Zjazd', kategoria: 'SSUEW', dzien: 17, budynek: 'MIASTO', sala: 'Warszawa' }),
     ], PAZ)
-    expect(komorka(e, 6, 'KOMISJE').tekst).toBe('PROMKA - 18:00 - 9J')
+    expect(komorka(e, 6, 'KOMISJE').tekst).toBe('PROMKA - 18:00 - 110 B/L')
     expect(komorka(e, 13, 'ZEBRANIA').tekst).toBe('SKS - 18:00-20:00 - 120 A')
     expect(komorka(e, 15, 'UE').tekst).toBe('Targi - A')
+    expect(komorka(e, 16, 'KOMISJE').tekst).toBe('DIJK - 9J')
     expect(komorka(e, 17, 'SSUEW').tekst).toBe('Zjazd - Warszawa')
   })
 
