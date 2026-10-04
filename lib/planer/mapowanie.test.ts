@@ -12,6 +12,7 @@ describe('naWydarzenie', () => {
       id: 'abc', tytul: 'ZEBRANIE ZARZĄDU', kategoria: 'ZEBRANIA',
       rok: 2026, miesiac: 10, dzien: 7, dni: 2, calyDzien: false,
       godzina: '18:00', godzinaDo: '20:00', budynek: 'B/L', sala: '110L', osoby: ['Jula'],
+      dzienWolny: false,
     })
   })
 
@@ -19,7 +20,11 @@ describe('naWydarzenie', () => {
     // Dokumenty zapisane przed Sesjami Operacyjnymi nie mają dni, godziny
     // końca ani budynku. Bez migracji - tłumaczymy przy odczycie.
     const w = naWydarzenie('x', { tytul: 'Coś', kategoria: 'SSUEW', rok: 2026, miesiac: 10, dzien: 1, sala: '9J' })
-    expect(w).toMatchObject({ dni: 1, calyDzien: false, godzinaDo: null, budynek: null, sala: '9J' })
+    expect(w).toMatchObject({ dni: 1, calyDzien: false, godzinaDo: null, budynek: null, sala: '9J', dzienWolny: false })
+  })
+
+  it('czyta dzień wolny', () => {
+    expect(naWydarzenie('x', { tytul: 'Dzień Rektorski', dzienWolny: true }).dzienWolny).toBe(true)
   })
 
   it('dawne „Zeb./inne” trafia do Zebrań, nie do Innych', () => {

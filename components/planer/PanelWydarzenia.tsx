@@ -159,6 +159,17 @@ export function PanelWydarzenia({
           Cały dzień
         </label>
 
+        <label className="flex items-center gap-2 text-[12px] text-deck-text">
+          <input
+            type="checkbox"
+            checked={dane.dzienWolny}
+            disabled={!mozeEdytowac}
+            onChange={(e) => zmien('dzienWolny', e.target.checked)}
+          />
+          Dzień wolny od zajęć
+          <span className="text-[11px] text-deck-muted">- w eksporcie na zielono</span>
+        </label>
+
         {!dane.calyDzien && (
           <div className="grid grid-cols-2 gap-3">
             <label className="block">

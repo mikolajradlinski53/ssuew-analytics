@@ -30,6 +30,8 @@ export interface Wydarzenie {
   sala: string | null
   /** 'wszyscy' znaczy cały zarząd i nie bierze udziału w liczeniu kolizji. */
   osoby: string[]
+  /** Dzień wolny od zajęć (np. Dzień Rektorski) - w eksporcie na zielono. */
+  dzienWolny: boolean
 }
 
 export interface Semestr {
@@ -81,11 +83,12 @@ export function numerRangi(k: Kategoria): number | null {
 }
 
 /** Wartości pól, których nie było przed Sesjami Operacyjnymi. */
-export const POLA_DOMYSLNE: Pick<Wydarzenie, 'dni' | 'calyDzien' | 'godzinaDo' | 'budynek'> = {
+export const POLA_DOMYSLNE: Pick<Wydarzenie, 'dni' | 'calyDzien' | 'godzinaDo' | 'budynek' | 'dzienWolny'> = {
   dni: 1,
   calyDzien: false,
   godzinaDo: null,
   budynek: null,
+  dzienWolny: false,
 }
 
 /** Wydarzenie bez identyfikatora - tyle, ile trzeba, żeby je utworzyć. */

@@ -71,6 +71,14 @@ describe('PanelWydarzenia', () => {
     expect(onZapisz).toHaveBeenCalledWith(expect.objectContaining({ calyDzien: true, godzina: null }), 1)
   })
 
+  it('dzień wolny od zajęć zaznacza się przy wydarzeniu', () => {
+    const onZapisz = vi.fn()
+    render(<PanelWydarzenia {...wspolne} onZapisz={onZapisz} wydarzenie={w} mozeEdytowac />)
+    fireEvent.click(screen.getByLabelText(/Dzień wolny od zajęć/))
+    zapisz()
+    expect(onZapisz).toHaveBeenCalledWith(expect.objectContaining({ dzienWolny: true }), 1)
+  })
+
   it('godzina „do” równa „od” blokuje zapis z komunikatem', () => {
     render(<PanelWydarzenia {...wspolne} wydarzenie={w} mozeEdytowac />)
     fireEvent.change(screen.getByLabelText('Do'), { target: { value: '18:00' } })

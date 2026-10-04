@@ -82,6 +82,7 @@ export function sprawdzWydarzenie(x: unknown): WynikSprawdzenia {
       godzina: calyDzien ? null : od,
       godzinaDo: calyDzien ? null : doGodziny,
       budynek, sala, osoby,
+      dzienWolny: d.dzienWolny === true,
     },
   }
 }

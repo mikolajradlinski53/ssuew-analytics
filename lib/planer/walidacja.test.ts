@@ -22,7 +22,7 @@ describe('sprawdzWydarzenie', () => {
   it('zwraca wyłącznie znane pola - reszta treści żądania nie trafia do bazy', () => {
     const w = sprawdzWydarzenie({ ...dobre, id: 'podrobione', zmienione: 1, admin: true })
     expect(w.ok && Object.keys(w.wydarzenie).sort()).toEqual([
-      'budynek', 'calyDzien', 'dni', 'dzien', 'godzina', 'godzinaDo',
+      'budynek', 'calyDzien', 'dni', 'dzien', 'dzienWolny', 'godzina', 'godzinaDo',
       'kategoria', 'miesiac', 'osoby', 'rok', 'sala', 'tytul',
     ])
   })
@@ -30,7 +30,16 @@ describe('sprawdzWydarzenie', () => {
   it('braki nowych pól uzupełnia jak przy starym dokumencie', () => {
     const { dni: _d, calyDzien: _c, godzinaDo: _g, budynek: _b, ...stare } = dobre
     const w = sprawdzWydarzenie(stare)
-    expect(w.ok && w.wydarzenie).toMatchObject({ dni: 1, calyDzien: false, godzinaDo: null, budynek: null })
+    expect(w.ok && w.wydarzenie).toMatchObject({
+      dni: 1, calyDzien: false, godzinaDo: null, budynek: null, dzienWolny: false,
+    })
+  })
+
+  it('dzień wolny przyjmuje tylko prawdziwe true', () => {
+    const tak = sprawdzWydarzenie({ ...dobre, dzienWolny: true })
+    const napis = sprawdzWydarzenie({ ...dobre, dzienWolny: 'tak' })
+    expect(tak.ok && tak.wydarzenie.dzienWolny).toBe(true)
+    expect(napis.ok && napis.wydarzenie.dzienWolny).toBe(false)
   })
 
   it('przycina tytuł, salę i osoby', () => {

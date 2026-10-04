@@ -40,5 +40,6 @@ export function naWydarzenie(id: string, dane: Record<string, unknown>): Wydarze
     budynek: typeof dane.budynek === 'string' && jestBudynkiem(dane.budynek) ? dane.budynek : null,
     sala: tekstLubNull(dane.sala),
     osoby: Array.isArray(dane.osoby) ? dane.osoby.map(String) : [],
+    dzienWolny: dane.dzienWolny === true,
   }
 }
