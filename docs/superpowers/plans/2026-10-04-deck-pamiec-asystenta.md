@@ -1815,7 +1815,7 @@ Commit: `feat(kokpit): rozmowy i notatki asystenta w panelu Zapytaj D.E.C.K.`
 
 ## Zadanie 9: Wdrożenie i sprawdzenie
 
-- [ ] **Krok 1:** `npx next build` (zielony), skan długich myślników w zmienionych plikach (`node -e` z `/[—–]/`).
+- [ ] **Krok 1:** `npx next build` (zielony), skan długich myślników w zmienionych plikach (`node -e` z `/[\u2014\u2013]/`).
 - [ ] **Krok 2:** `git push origin main`; poczekaj na READY (`vercel inspect` albo MCP `list_deployments`).
 - [ ] **Krok 3 (użytkownik):** w kokpicie jako właściciel - pytanie z ustaleniem („Cel retencji tej kadencji to 3,5 semestru”), zapis proponowanej notatki, zakładka Notatki, zakładka Wątki, odświeżenie strony (rozmowa wraca), drugie urządzenie (ta sama lista wątków).
 - [ ] **Krok 4:** przy problemach - MCP `get_runtime_logs` dla projektu `ssuew-analytics`.
