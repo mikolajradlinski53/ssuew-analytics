@@ -41,7 +41,7 @@ describe('POST /api/asystent/czat', () => {
 
   it('odpowiedź z obrazem projektu w rozmowie', async () => {
     ktoPyta.mockResolvedValue(WLASCICIEL)
-    zapytajGemini.mockResolvedValue('Retencja spada.')
+    zapytajGemini.mockResolvedValue({ tekst: 'Retencja spada.', model: 'gemini-3.8-flash' })
     const res = await POST(zadanie(PYTANIE))
     expect(res.status).toBe(200)
     expect(await res.json()).toEqual({ odpowiedz: 'Retencja spada.' })

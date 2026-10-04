@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach } from 'vitest'
-import { zapytajGemini, BladAsystenta, komunikatBledu, bezDlugichMyslnikow, DOMYSLNY_MODEL } from '@/lib/asystent/gemini'
+import { zapytajGemini, BladAsystenta, komunikatBledu, bezDlugichMyslnikow, MODELE_DOMYSLNE } from '@/lib/asystent/gemini'
 
 function odpowiedz(status: number, body: unknown) {
   const f = vi.fn(async () => new Response(JSON.stringify(body), { status }))
@@ -27,10 +27,11 @@ describe('zapytajGemini', () => {
     vi.stubEnv('GEMINI_API_KEY', 'klucz')
     vi.stubEnv('GEMINI_MODEL', '')
     const f = odpowiedz(200, OK)
-    const tekst = await zapytajGemini({ instrukcja: 'Jesteś D.E.C.K.', wiadomosci: [{ rola: 'user', tekst: 'Co z retencją?' }] })
+    const { tekst, model } = await zapytajGemini({ instrukcja: 'Jesteś D.E.C.K.', wiadomosci: [{ rola: 'user', tekst: 'Co z retencją?' }] })
     expect(tekst).toBe('Retencja - spada')
+    expect(model).toBe(MODELE_DOMYSLNE[0])
     const [url, init] = f.mock.calls[0] as unknown as [string, RequestInit]
-    expect(url).toContain(`models/${DOMYSLNY_MODEL}:generateContent`)
+    expect(url).toContain(`models/${MODELE_DOMYSLNE[0]}:generateContent`)
     expect((init.headers as Record<string, string>)['x-goog-api-key']).toBe('klucz')
     const body = JSON.parse(init.body as string)
     expect(body.systemInstruction.parts[0].text).toBe('Jesteś D.E.C.K.')
@@ -71,6 +72,58 @@ describe('zapytajGemini', () => {
     vi.stubEnv('GEMINI_API_KEY', 'klucz')
     odpowiedz(200, { candidates: [{ finishReason: 'STOP', content: { parts: [] } }] })
     await expect(zapytajGemini({ instrukcja: 'x', wiadomosci: [{ rola: 'user', tekst: 'y' }] })).rejects.toMatchObject({ kod: 'format' })
+  })
+})
+
+describe('zapytajGemini - modele zapasowe', () => {
+  const PYTANIE = { instrukcja: 'x', wiadomosci: [{ rola: 'user' as const, tekst: 'y' }] }
+  const kolejno = (...statusy: number[]) => {
+    const f = vi.fn()
+    for (const s of statusy) f.mockResolvedValueOnce(new Response(JSON.stringify(s === 200 ? OK : { error: { message: 'x' } }), { status: s }))
+    vi.stubGlobal('fetch', f)
+    return f
+  }
+  const modelZ = (f: ReturnType<typeof vi.fn>, i: number) => (f.mock.calls[i] as unknown as [string])[0]
+
+  it('przeciążony model (503) - odpowiada następny z listy', async () => {
+    vi.stubEnv('GEMINI_API_KEY', 'klucz')
+    vi.stubEnv('GEMINI_MODEL', 'model-a, model-b')
+    const f = kolejno(503, 200)
+    const wynik = await zapytajGemini(PYTANIE)
+    expect(wynik.model).toBe('model-b')
+    expect(modelZ(f, 0)).toContain('models/model-a:')
+    expect(modelZ(f, 1)).toContain('models/model-b:')
+  })
+
+  it('limit na jednym modelu - próbuje kolejnego', async () => {
+    vi.stubEnv('GEMINI_API_KEY', 'klucz')
+    vi.stubEnv('GEMINI_MODEL', 'model-a,model-b')
+    kolejno(429, 200)
+    expect((await zapytajGemini(PYTANIE)).model).toBe('model-b')
+  })
+
+  it('domyślnie trzy modele, a gdy wszystkie przeciążone - błąd sieci', async () => {
+    vi.stubEnv('GEMINI_API_KEY', 'klucz')
+    vi.stubEnv('GEMINI_MODEL', '')
+    const f = kolejno(503, 503, 503)
+    await expect(zapytajGemini(PYTANIE)).rejects.toMatchObject({ kod: 'siec' })
+    expect(MODELE_DOMYSLNE).toHaveLength(3)
+    MODELE_DOMYSLNE.forEach((m, i) => expect(modelZ(f, i)).toContain(`models/${m}:`))
+  })
+
+  it('wszystkie na limicie - limit', async () => {
+    vi.stubEnv('GEMINI_API_KEY', 'klucz')
+    vi.stubEnv('GEMINI_MODEL', 'model-a,model-b')
+    kolejno(429, 503)
+    await expect(zapytajGemini(PYTANIE)).rejects.toMatchObject({ kod: 'limit' })
+  })
+
+  it('błędne zapytanie (400) nie przełącza modelu', async () => {
+    vi.stubEnv('GEMINI_API_KEY', 'klucz')
+    vi.stubEnv('GEMINI_MODEL', 'model-a,model-b')
+    const f = kolejno(400, 200)
+    await expect(zapytajGemini(PYTANIE)).rejects.toMatchObject({ kod: 'siec' })
+    expect(f).toHaveBeenCalledTimes(1)
   })
 })
 

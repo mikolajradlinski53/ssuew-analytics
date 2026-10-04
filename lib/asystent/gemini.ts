@@ -3,9 +3,16 @@
  * z serwera: klucz nigdy nie trafia do przeglądarki.
  */
 
-export const DOMYSLNY_MODEL = 'gemini-3.8-flash'
+/**
+ * Kolejność prób. Darmowy poziom bywa przeciążony (503) albo wyczerpany (429)
+ * na pojedynczym modelu - wtedy pytamy następny, zamiast gasić odprawę.
+ */
+export const MODELE_DOMYSLNE = ['gemini-3.8-flash', 'gemini-3-flash-preview', 'gemini-flash-lite-latest']
 const ADRES = 'https://generativelanguage.googleapis.com/v1beta/models'
+/** Na wszystkie próby razem - trasy mają 60 s, a strona nie może czekać w nieskończoność. */
 const LIMIT_CZASU_MS = 25_000
+/** Statusy, przy których warto spróbować innego modelu. */
+const PRZEJSCIOWE = new Set([429, 500, 503, 504])
 
 export type KodBledu = 'brak-klucza' | 'limit' | 'odmowa' | 'siec' | 'format'
 
@@ -23,8 +30,16 @@ export interface WiadomoscGemini {
   tekst: string
 }
 
-export function modelGemini(): string {
-  return process.env.GEMINI_MODEL || DOMYSLNY_MODEL
+/** `GEMINI_MODEL` może podać jeden model albo listę po przecinku. */
+export function modeleGemini(): string[] {
+  const z = (process.env.GEMINI_MODEL ?? '').split(',').map((m) => m.trim()).filter(Boolean)
+  return z.length ? z : MODELE_DOMYSLNE
+}
+
+export interface OdpowiedzGemini {
+  tekst: string
+  /** Model, który faktycznie odpowiedział. */
+  model: string
 }
 
 /** Użytkownik nie chce długich myślników - instrukcja to mówi, a to pilnuje. */
@@ -39,41 +54,64 @@ export async function zapytajGemini(o: {
   wiadomosci: WiadomoscGemini[]
   /** Schemat odpowiedzi (format Gemini `Schema`). Bez niego - zwykły tekst. */
   schemat?: object
-}): Promise<string> {
+}): Promise<OdpowiedzGemini> {
   const klucz = process.env.GEMINI_API_KEY
   if (!klucz) throw new BladAsystenta('brak-klucza', 'Brak GEMINI_API_KEY')
 
+  const tresc = JSON.stringify({
+    systemInstruction: { parts: [{ text: o.instrukcja }] },
+    contents: o.wiadomosci.map((w) => ({ role: w.rola, parts: [{ text: w.tekst }] })),
+    generationConfig: o.schemat ? { responseMimeType: 'application/json', responseSchema: o.schemat } : {},
+  })
+
   const przerwij = new AbortController()
   const zegar = setTimeout(() => przerwij.abort(), LIMIT_CZASU_MS)
-  let res: Response
+  let ostatni: BladAsystenta | null = null
+  let wyczerpany = false
   try {
-    res = await fetch(`${ADRES}/${modelGemini()}:generateContent`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'x-goog-api-key': klucz },
-      body: JSON.stringify({
-        systemInstruction: { parts: [{ text: o.instrukcja }] },
-        contents: o.wiadomosci.map((w) => ({ role: w.rola, parts: [{ text: w.tekst }] })),
-        generationConfig: o.schemat ? { responseMimeType: 'application/json', responseSchema: o.schemat } : {},
-      }),
-      signal: przerwij.signal,
-    })
-  } catch (e) {
-    const przerwane = e instanceof Error && e.name === 'AbortError'
-    throw new BladAsystenta('siec', przerwane ? 'Gemini nie odpowiedział w 25 s' : 'Nie udało się połączyć z Gemini')
+    for (const model of modeleGemini()) {
+      let res: Response
+      try {
+        res = await fetch(`${ADRES}/${model}:generateContent`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'x-goog-api-key': klucz },
+          body: tresc,
+          signal: przerwij.signal,
+        })
+      } catch (e) {
+        const przerwane = e instanceof Error && e.name === 'AbortError'
+        throw new BladAsystenta('siec', przerwane ? 'Gemini nie odpowiedział w 25 s' : 'Nie udało się połączyć z Gemini')
+      }
+
+      const dane = await res.json().catch(() => null)
+      if (PRZEJSCIOWE.has(res.status)) {
+        if (res.status === 429) wyczerpany = true
+        ostatni = new BladAsystenta('siec', dane?.error?.message ?? `Gemini (${model}) odpowiedział ${res.status}`)
+        continue
+      }
+      if (!res.ok) throw new BladAsystenta('siec', dane?.error?.message ?? `Gemini odpowiedział ${res.status}`)
+      return { tekst: odczytaj(dane), model }
+    }
   } finally {
     clearTimeout(zegar)
   }
+  // Każdy model odmówił chwilowo. Gdy któryś miał wyczerpany limit, to on jest
+  // najbardziej użyteczną informacją - przeciążenie mija samo, limit nie.
+  if (wyczerpany) throw new BladAsystenta('limit', 'Limit zapytań Gemini wyczerpany')
+  throw ostatni ?? new BladAsystenta('siec', 'Brak modelu Gemini do zapytania')
+}
 
-  if (res.status === 429) throw new BladAsystenta('limit', 'Limit zapytań Gemini wyczerpany')
-  const dane = await res.json().catch(() => null)
-  if (!res.ok) throw new BladAsystenta('siec', dane?.error?.message ?? `Gemini odpowiedział ${res.status}`)
+/** Tekst z odpowiedzi albo nazwany błąd: blokada, pusta odpowiedź. */
+function odczytaj(dane: {
+  promptFeedback?: { blockReason?: string }
+  candidates?: { finishReason?: string; content?: { parts?: { text?: string }[] } }[]
+} | null): string {
   if (dane?.promptFeedback?.blockReason) throw new BladAsystenta('odmowa', `Zablokowane: ${dane.promptFeedback.blockReason}`)
-
   const kandydat = dane?.candidates?.[0]
-  if (kandydat && ZABLOKOWANE.has(kandydat.finishReason)) {
+  if (kandydat?.finishReason && ZABLOKOWANE.has(kandydat.finishReason)) {
     throw new BladAsystenta('odmowa', `Zablokowane: ${kandydat.finishReason}`)
   }
-  const tekst = ((kandydat?.content?.parts ?? []) as { text?: string }[]).map((p) => p.text ?? '').join('')
+  const tekst = (kandydat?.content?.parts ?? []).map((p) => p.text ?? '').join('')
   if (!tekst.trim()) throw new BladAsystenta('format', 'Gemini zwrócił pustą odpowiedź')
   return bezDlugichMyslnikow(tekst)
 }

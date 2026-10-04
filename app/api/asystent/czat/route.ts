@@ -23,7 +23,7 @@ export async function POST(req: NextRequest) {
   try {
     const [a, p] = await Promise.all([pobierzArkusz(), pobierzPlaner(semestr.id, kto.rola)])
     const k = zbudujKontekst(daneProjektu(a, p, { id: semestr.id, nazwa: semestr.nazwa }), dzisWarszawa(teraz))
-    const odpowiedz = await zapytajGemini({ instrukcja: INSTRUKCJA_CZATU, wiadomosci: rozmowaDlaGemini(k, rozmowa) })
+    const { tekst: odpowiedz } = await zapytajGemini({ instrukcja: INSTRUKCJA_CZATU, wiadomosci: rozmowaDlaGemini(k, rozmowa) })
     return NextResponse.json({ odpowiedz })
   } catch (e) {
     const { status, error } = komunikatBledu(e)

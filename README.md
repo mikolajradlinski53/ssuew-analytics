@@ -48,7 +48,7 @@ Widzi je wyłącznie właściciel; zarząd ma w tym miejscu panel faktów bez AI
 | Zmienna | Gdzie | Co |
 |---|---|---|
 | `GEMINI_API_KEY` | `.env.local` i zmienne Vercela (Production) | klucz z Google AI Studio |
-| `GEMINI_MODEL` | opcjonalnie | domyślnie `gemini-3.8-flash` |
+| `GEMINI_MODEL` | opcjonalnie | model albo lista po przecinku, próbowane po kolei; domyślnie `gemini-3.8-flash,gemini-3-flash-preview,gemini-flash-lite-latest` |
 
 - `npm run gemini -- modele` - modele dostępne na kluczu; `npm run gemini -- proba` - jedno zapytanie ze schematem i czas odpowiedzi.
 - Odprawa jest w Firestore `asystent/odprawa` (czyta i pisze tylko serwer; reguły klienta jej nie wpuszczają).

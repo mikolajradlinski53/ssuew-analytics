@@ -8,7 +8,7 @@ import type { Czlonek, Kohorta, KpiMetric, Projekt, Rekrutacja } from '@/types'
 import type { Rola } from '@/lib/auth/role'
 import { zbudujKontekst, type DaneProjektu, type KontekstProjektu } from './kontekst'
 import { INSTRUKCJA_ODPRAWY, SCHEMAT_ODPRAWY, sprawdzOdprawe, wiadomoscOdprawy, type ZapisanaOdprawa } from './odprawa'
-import { BladAsystenta, modelGemini, zapytajGemini } from './gemini'
+import { BladAsystenta, zapytajGemini } from './gemini'
 import { czyOdswiezyc, sladKontekstu } from './odswiezanie'
 
 export interface DaneArkusza {
@@ -77,7 +77,7 @@ export async function czytajOdprawe(): Promise<ZapisanaOdprawa | null> {
 
 /** Pyta Gemini, sprawdza odpowiedź i zapisuje. Rzuca `BladAsystenta`. */
 export async function generujOdprawe(k: KontekstProjektu, teraz = Date.now()): Promise<ZapisanaOdprawa> {
-  const tekst = await zapytajGemini({
+  const { tekst, model } = await zapytajGemini({
     instrukcja: INSTRUKCJA_ODPRAWY,
     wiadomosci: [{ rola: 'user', tekst: wiadomoscOdprawy(k) }],
     schemat: SCHEMAT_ODPRAWY,
@@ -90,7 +90,7 @@ export async function generujOdprawe(k: KontekstProjektu, teraz = Date.now()): P
   }
   const odprawa = sprawdzOdprawe(surowe)
   if (!odprawa) throw new BladAsystenta('format', 'Odprawa niezgodna ze schematem')
-  const zapis: ZapisanaOdprawa = { slad: sladKontekstu(k), dzien: k.meta.data, utworzono: teraz, model: modelGemini(), odprawa }
+  const zapis: ZapisanaOdprawa = { slad: sladKontekstu(k), dzien: k.meta.data, utworzono: teraz, model, odprawa }
   await odprawaRef().set(zapis)
   return zapis
 }
