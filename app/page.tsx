@@ -79,7 +79,7 @@ export default async function KokpitPage() {
     const zapisana = czytajOdprawe().catch(() => null)
     odprawa = zapisana
     after(() => odswiezOdpraweWTle({
-      arkusz, planer, zapisana, semestr: { id: semestr.id, nazwa: semestr.nazwa }, teraz,
+      arkusz, planer, zapisana, notatki: Promise.resolve([]), semestr: { id: semestr.id, nazwa: semestr.nazwa }, teraz,
     }))
   }
 

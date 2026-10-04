@@ -22,7 +22,7 @@ export async function POST(req: NextRequest) {
   const semestr = biezacySemestr(teraz)
   try {
     const [a, p] = await Promise.all([pobierzArkusz(), pobierzPlaner(semestr.id, kto.rola)])
-    const k = zbudujKontekst(daneProjektu(a, p, { id: semestr.id, nazwa: semestr.nazwa }), dzisWarszawa(teraz))
+    const k = zbudujKontekst(daneProjektu(a, p, { id: semestr.id, nazwa: semestr.nazwa }, []), dzisWarszawa(teraz))
     const { tekst: odpowiedz } = await zapytajGemini({ instrukcja: INSTRUKCJA_CZATU, wiadomosci: rozmowaDlaGemini(k, rozmowa) })
     return NextResponse.json({ odpowiedz })
   } catch (e) {

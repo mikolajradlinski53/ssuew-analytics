@@ -60,10 +60,15 @@ export async function pobierzPlaner(semestrId: string, rola: Rola): Promise<Stan
   return { ...obraz, propozycje }
 }
 
-export function daneProjektu(a: DaneArkusza, p: StanPlanera, semestr: { id: string; nazwa: string }): DaneProjektu {
+export function daneProjektu(
+  a: DaneArkusza,
+  p: StanPlanera,
+  semestr: { id: string; nazwa: string },
+  notatki: string[],
+): DaneProjektu {
   return {
     rekrutacje: a.rekrutacje, kohorty: a.kohorty, punkty: a.punkty, projekty: a.projekty, czlonkowie: a.czlonkowie,
-    semestr, wydarzenia: p.wydarzenia, sesja: p.sesja, sklad: p.sklad, propozycje: p.propozycje,
+    semestr, wydarzenia: p.wydarzenia, sesja: p.sesja, sklad: p.sklad, propozycje: p.propozycje, notatki,
   }
 }
 
@@ -104,15 +109,16 @@ export async function odswiezOdpraweWTle(w: {
   arkusz: Promise<DaneArkusza>
   planer: Promise<StanPlanera>
   zapisana: Promise<ZapisanaOdprawa | null>
+  notatki: Promise<string[]>
   semestr: { id: string; nazwa: string }
   teraz: Date
 }): Promise<void> {
   if (!process.env.GEMINI_API_KEY) return
   try {
-    const [a, p, zapisana] = await Promise.all([w.arkusz, w.planer, w.zapisana])
+    const [a, p, zapisana, notatki] = await Promise.all([w.arkusz, w.planer, w.zapisana, w.notatki])
     // Odprawa z pustego arkusza albo bez Planera byłaby o niczym - poczekamy.
     if (a.czasMs === null || !p.ok) return
-    const k = zbudujKontekst(daneProjektu(a, p, w.semestr), dzisWarszawa(w.teraz))
+    const k = zbudujKontekst(daneProjektu(a, p, w.semestr, notatki), dzisWarszawa(w.teraz))
     if (!czyOdswiezyc(zapisana, sladKontekstu(k), k.meta.data, w.teraz.getTime())) return
     await generujOdprawe(k, w.teraz.getTime())
   } catch (e) {

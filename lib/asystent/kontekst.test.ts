@@ -15,7 +15,7 @@ function dane(nadpisz: Partial<DaneProjektu> = {}): DaneProjektu {
   return {
     rekrutacje: [], kohorty: [], punkty: [], projekty: [], czlonkowie: [],
     semestr: { id: '2026Z', nazwa: 'Zimowy 2026/2027' },
-    wydarzenia: [], sesja: { wlaczony: false, od: null, przez: null }, sklad: [], propozycje: 0,
+    wydarzenia: [], sesja: { wlaczony: false, od: null, przez: null }, sklad: [], propozycje: 0, notatki: [],
     ...nadpisz,
   }
 }
@@ -54,6 +54,11 @@ describe('zbudujKontekst', () => {
       ],
     }), DZIS)
     expect(k.kpi[0]).toMatchObject({ nazwa: 'Listopad', wartosc: 30, rokDoRoku: 0.6, kierunek: 'spadek' })
+  })
+
+  it('notatki trafiają do obrazu jako pewne ustalenia', () => {
+    const k = zbudujKontekst(dane({ notatki: ['Zebrania zarządu w środy'] }), DZIS)
+    expect(k.notatki).toEqual(['Zebrania zarządu w środy'])
   })
 
   it('członkowie liczeni po statusach w kohortach', () => {

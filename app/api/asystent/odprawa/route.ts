@@ -18,7 +18,7 @@ export async function POST(req: NextRequest) {
   const semestr = biezacySemestr(teraz)
   try {
     const [a, p] = await Promise.all([pobierzArkusz(), pobierzPlaner(semestr.id, kto.rola)])
-    const k = zbudujKontekst(daneProjektu(a, p, { id: semestr.id, nazwa: semestr.nazwa }), dzisWarszawa(teraz))
+    const k = zbudujKontekst(daneProjektu(a, p, { id: semestr.id, nazwa: semestr.nazwa }, []), dzisWarszawa(teraz))
     return NextResponse.json(await generujOdprawe(k, teraz.getTime()))
   } catch (e) {
     const { status, error } = komunikatBledu(e)

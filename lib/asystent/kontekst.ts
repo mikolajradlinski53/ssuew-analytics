@@ -21,6 +21,8 @@ export interface DaneProjektu {
   sesja: StanSesjiWspolnej
   sklad: string[]
   propozycje: number
+  /** Ustalenia zatwierdzone przez właściciela - asystent traktuje je jak fakty. */
+  notatki: string[]
 }
 
 /** Ile dni Planera widzi asystent. */
@@ -149,6 +151,7 @@ export function zbudujKontekst(d: DaneProjektu, dzis: Data) {
       kolizje,
     },
     czlonkowie,
+    notatki: d.notatki,
   }
 }
 
