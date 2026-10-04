@@ -16,6 +16,7 @@ import {
   type DaneArkusza,
 } from '@/lib/asystent/dane'
 import type { ZapisanaOdprawa } from '@/lib/asystent/odprawa'
+import { tresciNotatek } from '@/lib/asystent/pamiecDane'
 
 /** Zapas na odprawę generowaną w tle po wysłaniu strony (Gemini do 25 s). */
 export const maxDuration = 60
@@ -79,7 +80,7 @@ export default async function KokpitPage() {
     const zapisana = czytajOdprawe().catch(() => null)
     odprawa = zapisana
     after(() => odswiezOdpraweWTle({
-      arkusz, planer, zapisana, notatki: Promise.resolve([]), semestr: { id: semestr.id, nazwa: semestr.nazwa }, teraz,
+      arkusz, planer, zapisana, notatki: tresciNotatek().catch(() => []), semestr: { id: semestr.id, nazwa: semestr.nazwa }, teraz,
     }))
   }
 

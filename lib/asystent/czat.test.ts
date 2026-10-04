@@ -1,35 +1,29 @@
 import { describe, it, expect } from 'vitest'
-import { sprawdzRozmowe, rozmowaDlaGemini, LIMIT_HISTORII, LIMIT_ZNAKOW, INSTRUKCJA_CZATU } from '@/lib/asystent/czat'
+import { sprawdzZapytanie, rozmowaDlaGemini, LIMIT_HISTORII, LIMIT_ZNAKOW, INSTRUKCJA_CZATU } from '@/lib/asystent/czat'
 
-const K = { meta: { data: '02.10.2026', dzienTygodnia: 'piątek' } } as never
+const K = { meta: { data: '02.10.2026', dzienTygodnia: 'piątek' }, notatki: ['Zebrania w środy'] } as never
+const ODPRAWA = { podsumowanie: 'Retencja słabnie.', zagrozenia: [], dzis: [] }
 
-describe('sprawdzRozmowe', () => {
-  it('przyjmuje rozmowę kończącą się pytaniem', () => {
-    expect(sprawdzRozmowe({ wiadomosci: [{ rola: 'ja', tresc: ' Co z KPI? ' }] })).toEqual([{ rola: 'ja', tresc: 'Co z KPI?' }])
+describe('sprawdzZapytanie', () => {
+  it('nowa rozmowa, kolejne pytanie i ponowienie', () => {
+    expect(sprawdzZapytanie({ pytanie: ' Co z KPI? ' })).toEqual({ rozmowaId: null, pytanie: 'Co z KPI?', ponow: false })
+    expect(sprawdzZapytanie({ rozmowaId: 'abc_1', pytanie: 'Dalej', ponow: true })).toEqual({ rozmowaId: 'abc_1', pytanie: 'Dalej', ponow: true })
   })
 
-  it('odrzuca pustą, z nieznaną rolą i bez pytania na końcu', () => {
-    expect(sprawdzRozmowe({ wiadomosci: [] })).toBeNull()
-    expect(sprawdzRozmowe({ wiadomosci: [{ rola: 'system', tresc: 'x' }] })).toBeNull()
-    expect(sprawdzRozmowe({ wiadomosci: [{ rola: 'ja', tresc: '   ' }] })).toBeNull()
-    expect(sprawdzRozmowe({ wiadomosci: [{ rola: 'ja', tresc: 'a' }, { rola: 'deck', tresc: 'b' }] })).toBeNull()
-    expect(sprawdzRozmowe(null)).toBeNull()
-  })
-
-  it('przycina historię i za długie wiadomości', () => {
-    const dluga = Array.from({ length: 30 }, (_, i) => ({ rola: i % 2 ? 'deck' : 'ja', tresc: `w${i}` }))
-    dluga.push({ rola: 'ja', tresc: 'x'.repeat(LIMIT_ZNAKOW + 50) })
-    const r = sprawdzRozmowe({ wiadomosci: dluga })!
-    expect(r).toHaveLength(LIMIT_HISTORII)
-    expect(r[r.length - 1].tresc).toHaveLength(LIMIT_ZNAKOW)
+  it('odrzuca puste pytanie i dziwny identyfikator, przycina długie', () => {
+    expect(sprawdzZapytanie({ pytanie: '   ' })).toBeNull()
+    expect(sprawdzZapytanie({ rozmowaId: '../x', pytanie: 'a' })).toBeNull()
+    expect(sprawdzZapytanie(null)).toBeNull()
+    expect(sprawdzZapytanie({ pytanie: 'x'.repeat(LIMIT_ZNAKOW + 5) })!.pytanie).toHaveLength(LIMIT_ZNAKOW)
   })
 })
 
 describe('rozmowaDlaGemini', () => {
-  it('najpierw obraz projektu, potem rozmowa w rolach Gemini', () => {
-    const r = rozmowaDlaGemini(K, [{ rola: 'ja', tresc: 'Pytanie' }, { rola: 'deck', tresc: 'Odpowiedź' }, { rola: 'ja', tresc: 'Dalej' }])
+  it('najpierw obraz projektu z notatkami i ostatnią odprawą, potem rozmowa', () => {
+    const r = rozmowaDlaGemini(K, [{ rola: 'ja', tresc: 'Pytanie' }, { rola: 'deck', tresc: 'Odpowiedź' }, { rola: 'ja', tresc: 'Dalej' }], ODPRAWA)
     expect(r[0].rola).toBe('user')
-    expect(r[0].tekst).toContain('"02.10.2026"')
+    expect(r[0].tekst).toContain('Zebrania w środy')
+    expect(r[0].tekst).toContain('Retencja słabnie.')
     expect(r[1].rola).toBe('model')
     expect(r.slice(2)).toEqual([
       { rola: 'user', tekst: 'Pytanie' },
@@ -38,17 +32,26 @@ describe('rozmowaDlaGemini', () => {
     ])
   })
 
-  it('historia ucięta w połowie zaczyna się od pytania, nie od odpowiedzi', () => {
-    const r = rozmowaDlaGemini(K, [{ rola: 'deck', tresc: 'stara odpowiedź' }, { rola: 'ja', tresc: 'Pytanie' }])
-    expect(r.slice(2)).toEqual([{ rola: 'user', tekst: 'Pytanie' }])
+  it('bez odprawy też działa', () => {
+    expect(rozmowaDlaGemini(K, [{ rola: 'ja', tresc: 'A' }], null)[0].tekst).not.toContain('Ostatnia odprawa')
+  })
+
+  it('bierze tylko ostatnie wiadomości i zaczyna od pytania', () => {
+    const dluga = Array.from({ length: 31 }, (_, i) => ({ rola: (i % 2 ? 'deck' : 'ja') as 'ja' | 'deck', tresc: `w${i}` }))
+    const r = rozmowaDlaGemini(K, dluga, null).slice(2)
+    expect(r.length).toBeLessThanOrEqual(LIMIT_HISTORII)
+    expect(r[0].rola).toBe('user')
+    expect(r[r.length - 1].tekst).toBe('w30')
   })
 
   it('dwa pytania z rzędu skleja w jedno', () => {
-    const r = rozmowaDlaGemini(K, [{ rola: 'ja', tresc: 'A' }, { rola: 'ja', tresc: 'B' }])
+    const r = rozmowaDlaGemini(K, [{ rola: 'ja', tresc: 'A' }, { rola: 'ja', tresc: 'B' }], null)
     expect(r.slice(2)).toEqual([{ rola: 'user', tekst: 'A\n\nB' }])
   })
 
-  it('instrukcja zakazuje długich myślników', () => {
+  it('instrukcja: notatki jako fakty, propozycja tylko przy ustaleniu, bez długich myślników', () => {
+    expect(INSTRUKCJA_CZATU).toMatch(/propozycjaNotatki/)
+    expect(INSTRUKCJA_CZATU).toMatch(/notatki/)
     expect(INSTRUKCJA_CZATU).toMatch(/„-”/)
   })
 })

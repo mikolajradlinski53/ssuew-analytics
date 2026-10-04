@@ -1,32 +1,64 @@
 import { NextResponse, type NextRequest } from 'next/server'
-import { ktoPyta } from '@/lib/auth/guard'
 import { biezacySemestr } from '@/lib/planer/semestry'
 import { dzisWarszawa } from '@/lib/czas'
-import { komunikatBledu, zapytajGemini } from '@/lib/asystent/gemini'
-import { INSTRUKCJA_CZATU, rozmowaDlaGemini, sprawdzRozmowe } from '@/lib/asystent/czat'
-import { daneProjektu, pobierzArkusz, pobierzPlaner, zbudujKontekst } from '@/lib/asystent/dane'
+import { BladAsystenta, komunikatBledu, zapytajGemini } from '@/lib/asystent/gemini'
+import { INSTRUKCJA_CZATU, rozmowaDlaGemini, sprawdzZapytanie } from '@/lib/asystent/czat'
+import { czytajOdprawe, daneProjektu, pobierzArkusz, pobierzPlaner, zbudujKontekst } from '@/lib/asystent/dane'
+import { czytajRozmowe, tresciNotatek, zapiszRozmowe } from '@/lib/asystent/pamiecDane'
+import { dopiszPytanie, odczytajOdpowiedzCzatu, SCHEMAT_CZATU, tytulRozmowy } from '@/lib/asystent/pamiec'
+import { tylkoWlasciciel } from '@/lib/asystent/tylkoWlasciciel'
 
 export const runtime = 'nodejs'
 export const maxDuration = 60
 
-/** Czat „Zapytaj D.E.C.K.” - tylko właściciel. Historia żyje w przeglądarce. */
+/**
+ * Czat „Zapytaj D.E.C.K.”. Rozmowa żyje w bazie: pytanie zapisujemy przed
+ * wołaniem Gemini, żeby nie zginęło, gdy model zawiedzie - wtedy przeglądarka
+ * ponawia z `ponow: true` i pytanie się nie dubluje.
+ */
 export async function POST(req: NextRequest) {
-  const kto = await ktoPyta(req)
-  if (!kto) return NextResponse.json({ error: 'Wymagane logowanie' }, { status: 401 })
-  if (kto.rola !== 'owner') return NextResponse.json({ error: 'Asystent jest tylko dla właściciela' }, { status: 403 })
+  const { kto, odmowa } = await tylkoWlasciciel(req)
+  if (odmowa) return odmowa
 
-  const rozmowa = sprawdzRozmowe(await req.json().catch(() => null))
-  if (!rozmowa) return NextResponse.json({ error: 'Pusta albo niepoprawna rozmowa' }, { status: 400 })
+  const z = sprawdzZapytanie(await req.json().catch(() => null))
+  if (!z) return NextResponse.json({ error: 'Puste albo niepoprawne pytanie' }, { status: 400 })
 
-  const teraz = new Date()
-  const semestr = biezacySemestr(teraz)
+  const teraz = Date.now()
+  const rozmowa = z.rozmowaId ? await czytajRozmowe(z.rozmowaId) : null
+  if (z.rozmowaId && !rozmowa) return NextResponse.json({ error: 'Nie ma takiej rozmowy' }, { status: 404 })
+
+  const wiadomosci = dopiszPytanie(rozmowa?.wiadomosci ?? [], z.pytanie, teraz, z.ponow)
+  if (!wiadomosci) {
+    return NextResponse.json({ error: 'Ta rozmowa jest pełna - zacznij nową.', rozmowaId: z.rozmowaId }, { status: 409 })
+  }
+  const naglowek = { tytul: rozmowa?.tytul ?? tytulRozmowy(z.pytanie), utworzono: rozmowa?.utworzono ?? teraz }
+  const rozmowaId = await zapiszRozmowe({ ...naglowek, zmieniono: teraz, wiadomosci }, z.rozmowaId ?? undefined)
+
+  const semestr = biezacySemestr(new Date(teraz))
   try {
-    const [a, p] = await Promise.all([pobierzArkusz(), pobierzPlaner(semestr.id, kto.rola)])
-    const k = zbudujKontekst(daneProjektu(a, p, { id: semestr.id, nazwa: semestr.nazwa }, []), dzisWarszawa(teraz))
-    const { tekst: odpowiedz } = await zapytajGemini({ instrukcja: INSTRUKCJA_CZATU, wiadomosci: rozmowaDlaGemini(k, rozmowa) })
-    return NextResponse.json({ odpowiedz })
+    const [a, p, notatki, zapisana] = await Promise.all([
+      pobierzArkusz(),
+      pobierzPlaner(semestr.id, kto.rola),
+      tresciNotatek().catch(() => []),
+      czytajOdprawe().catch(() => null),
+    ])
+    const k = zbudujKontekst(daneProjektu(a, p, { id: semestr.id, nazwa: semestr.nazwa }, notatki), dzisWarszawa(new Date(teraz)))
+    const { tekst } = await zapytajGemini({
+      instrukcja: INSTRUKCJA_CZATU,
+      wiadomosci: rozmowaDlaGemini(k, wiadomosci, zapisana?.odprawa ?? null),
+      schemat: SCHEMAT_CZATU,
+    })
+    const wynik = odczytajOdpowiedzCzatu(tekst)
+    if (!wynik) throw new BladAsystenta('format', 'Odpowiedź czatu niezgodna ze schematem')
+
+    const kiedy = Date.now()
+    await zapiszRozmowe(
+      { ...naglowek, zmieniono: kiedy, wiadomosci: [...wiadomosci, { rola: 'deck', tresc: wynik.odpowiedz, kiedy }] },
+      rozmowaId,
+    )
+    return NextResponse.json({ rozmowaId, odpowiedz: wynik.odpowiedz, propozycja: wynik.propozycja })
   } catch (e) {
     const { status, error } = komunikatBledu(e)
-    return NextResponse.json({ error }, { status })
+    return NextResponse.json({ error, rozmowaId }, { status })
   }
 }
