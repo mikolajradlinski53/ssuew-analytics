@@ -1,10 +1,11 @@
 import { naMinuty } from './daty'
 import { jestMiejscemSpecjalnym } from './budynki'
-import { dniTrwaniaWMiesiacu } from './trwanie'
+import { dniTrwaniaWMiesiacu, dniWydarzenia, poczatek, przesunDate, type Data } from './trwanie'
 import type { Kategoria, Miesiac, Wydarzenie } from './typy'
 
-/** Bez godziny końca: starty bliżej niż tyle minut uznajemy za nachodzące. */
+/** Sam start bez końca: tyle minut uznajemy za zajęte. */
 const PROG_MINUT = 90
+const DOBA = 24 * 60
 
 /** Kategorie, które nie zajmują ani osób, ani sal. */
 const BEZ_KOLIZJI = new Set<Kategoria>(['APLIKACJE'])
@@ -12,7 +13,10 @@ const BEZ_KOLIZJI = new Set<Kategoria>(['APLIKACJE'])
 export interface KolizjaOsoby {
   osoba: string
   ile: number
-  /** Twarda: wydarzenia naprawdę zderzają się w czasie albo któreś zajmuje cały dzień. */
+  /**
+   * Twarda: godziny naprawdę się nakładają. Miękka: któreś wydarzenie nie ma
+   * godziny, więc nie da się orzec - warto sprawdzić.
+   */
   twarda: boolean
 }
 
@@ -27,36 +31,67 @@ export interface KolizjeDnia {
   sale: KolizjaSali[]
 }
 
-/** Osoba jest zajęta przez cały dzień. */
-function zajmujeCalyDzien(w: Wydarzenie): boolean {
-  return w.calyDzien || w.dni > 1
+/** Zajęty kawałek jednego dnia, w minutach od północy: [od, do). */
+interface Przedzial {
+  data: Data
+  od: number
+  do: number
 }
 
 /**
- * Koniec liczony od północy dnia startu: 04:00 po 18:00 to 28:00. Część po
- * północy w kolejnym dniu kolizji nie liczymy - to rzadkie, a dzień startu
- * to ten, w którym ludzie faktycznie planują.
+ * Kiedy wydarzenie naprawdę zajmuje ludzi i sale, dzień po dniu. `null` znaczy
+ * „godzina nieustalona” - wiadomo, który to dzień, ale nie kiedy.
+ *
+ * Koniec leży w ostatnim dniu wydarzenia; przy jednodniowym z końcem przed
+ * startem (18:00-04:00) - następnego dnia. Dlatego impreza do 4:00 zajmuje
+ * kolejny dzień tylko do 4:00, a nie cały.
  */
-function koniecWMinutach(od: number, doMinut: number | null): number | null {
-  if (doMinut === null) return null
-  return doMinut < od ? doMinut + 24 * 60 : doMinut
+function przedzialy(w: Wydarzenie): Przedzial[] | null {
+  const caleDni = () => dniWydarzenia(w).map((data) => ({ data, od: 0, do: DOBA }))
+  if (w.calyDzien) return caleDni()
+
+  const dni = Math.max(1, w.dni)
+  const od = naMinuty(w.godzina)
+  if (od === null) return dni > 1 ? caleDni() : null
+
+  const doMinut = naMinuty(w.godzinaDo)
+  let dzienKonca = dni - 1
+  let koniec = DOBA
+  if (doMinut !== null) {
+    koniec = doMinut
+    if (dni === 1 && doMinut <= od) dzienKonca = 1
+  } else if (dni === 1) {
+    koniec = Math.min(DOBA, od + PROG_MINUT)
+  }
+
+  const wynik: Przedzial[] = []
+  for (let i = 0; i <= dzienKonca; i++) {
+    const p = { data: przesunDate(poczatek(w), i), od: i === 0 ? od : 0, do: i === dzienKonca ? koniec : DOBA }
+    if (p.do > p.od) wynik.push(p)
+  }
+  return wynik
 }
+
+/** Wpis dnia: zajęty przedział albo wydarzenie bez ustalonej godziny. */
+interface Zajecie {
+  w: Wydarzenie
+  od: number | null
+  do: number | null
+}
+
+const calaDoba = (z: Zajecie) => z.od === 0 && z.do === DOBA
 
 /**
- * Czy dwa wydarzenia z godziną zderzają się w czasie. Gdy oba mają koniec -  * nakładanie się przedziałów (stykające się końcem nie kolidują). Gdy któremuś
- * brakuje końca - dotychczasowa reguła: starty bliżej niż 90 minut.
+ * Czy dwa zajęcia na pewno się zderzają. Wydarzenie bez godziny zderza się
+ * tylko z czymś, co trwa całą dobę - wtedy pora nie ma znaczenia.
  */
-export function kolidujaWCzasie(a: Wydarzenie, b: Wydarzenie): boolean {
-  const aOd = naMinuty(a.godzina)
-  const bOd = naMinuty(b.godzina)
-  if (aOd === null || bOd === null) return false
-  const aDo = koniecWMinutach(aOd, naMinuty(a.godzinaDo))
-  const bDo = koniecWMinutach(bOd, naMinuty(b.godzinaDo))
-  if (aDo !== null && bDo !== null) return aOd < bDo && bOd < aDo
-  return Math.abs(aOd - bOd) < PROG_MINUT
+function nakladajaSie(a: Zajecie, b: Zajecie): boolean {
+  if (a.w.id === b.w.id) return false
+  if (a.od === null || a.do === null || b.od === null || b.do === null) return calaDoba(a) || calaDoba(b)
+  return a.od < b.do && b.od < a.do
 }
 
-function ktorakolwiekPara(lista: Wydarzenie[], warunek: (a: Wydarzenie, b: Wydarzenie) => boolean): boolean {
+function ktorakolwiekPara<T>(lista: T[], warunek: (a: T, b: T) => boolean): boolean {
   for (let i = 0; i < lista.length; i++) {
     for (let j = i + 1; j < lista.length; j++) {
       if (warunek(lista[i], lista[j])) return true
@@ -88,20 +123,30 @@ function grupuj<T>(elementy: T[], klucz: (e: T) => string[]): Map<string, T[]> {
 }
 
 /**
- * Kolizje w rozbiciu na dni miesiąca `miesiac`. Wydarzenie wielodniowe liczy się
- * w każdym dniu, w którym trwa - także gdy wystartowało w poprzednim miesiącu.
- * Dzień bez kolizji nie ma wpisu.
+ * Kolizje w rozbiciu na dni miesiąca `miesiac`. Kolizja to realne nałożenie
+ * godzin - dwa spotkania tej samej osoby o różnych porach to zwykły dzień,
+ * nie ostrzeżenie. Część nocy po północy liczy się w kolejnym dniu, także
+ * gdy ten wypada w następnym miesiącu. Dzień bez kolizji nie ma wpisu.
  */
 export function kolizjeWMiesiacu(wydarzenia: Wydarzenie[], miesiac: Miesiac): Map<number, KolizjeDnia> {
-  const poDniach = new Map<number, Wydarzenie[]>()
+  const poDniach = new Map<number, Zajecie[]>()
+  const dodaj = (dzien: number, z: Zajecie) => {
+    const lista = poDniach.get(dzien) ?? []
+    lista.push(z)
+    poDniach.set(dzien, lista)
+  }
+
   for (const w of wydarzenia) {
     // Aplikacje to termin naboru, nie spotkanie - nikogo nie zajmują i nie
     // stoją w żadnej sali. Liczone, zapalałyby ostrzeżenia przy każdym naborze.
     if (BEZ_KOLIZJI.has(w.kategoria)) continue
-    for (const d of dniTrwaniaWMiesiacu(w, miesiac)) {
-      const lista = poDniach.get(d) ?? []
-      lista.push(w)
-      poDniach.set(d, lista)
+    const p = przedzialy(w)
+    if (p === null) {
+      for (const d of dniTrwaniaWMiesiacu(w, miesiac)) dodaj(d, { w, od: null, do: null })
+      continue
+    }
+    for (const x of p) {
+      if (x.data.rok === miesiac.y && x.data.miesiac === miesiac.m) dodaj(x.data.dzien, { w, od: x.od, do: x.do })
     }
   }
 
@@ -112,21 +157,21 @@ export function kolizjeWMiesiacu(wydarzenia: Wydarzenie[], miesiac: Miesiac): Ma
 
     // 'wszyscy' celowo pomijamy - inaczej każde zebranie zarządu kolidowałoby
     // z każdym wydarzeniem tego dnia i ostrzeżenia straciłyby sens.
-    for (const [osoba, jej] of grupuj(lista, (e) => e.osoby.filter((o) => o !== 'wszyscy'))) {
-      if (jej.length < 2) continue
-      const twarda = jej.some(zajmujeCalyDzien) || ktorakolwiekPara(jej, kolidujaWCzasie)
-      osoby.push({ osoba, ile: jej.length, twarda })
+    for (const [osoba, jej] of grupuj(lista, (z) => z.w.osoby.filter((o) => o !== 'wszyscy'))) {
+      const ile = new Set(jej.map((z) => z.w.id)).size
+      if (ile < 2) continue
+      if (ktorakolwiekPara(jej, nakladajaSie)) osoby.push({ osoba, ile, twarda: true })
+      else if (jej.some((z) => z.od === null)) osoby.push({ osoba, ile, twarda: false })
     }
 
-    for (const [sala, wSali] of grupuj(lista, (e) => {
-      const m = miejsce(e)
+    for (const [sala, wSali] of grupuj(lista, (z) => {
+      const m = miejsce(z.w)
       return m ? [m] : []
     })) {
       // Bez godzin nie da się orzec konfliktu sali.
-      const zGodzina = wSali.filter((e) => e.godzina)
-      if (zGodzina.length < 2) continue
-      if (!ktorakolwiekPara(zGodzina, kolidujaWCzasie)) continue
-      sale.push({ sala, godziny: zGodzina.map((e) => e.godzina as string) })
+      const zGodzina = wSali.filter((z) => z.od !== null)
+      if (!ktorakolwiekPara(zGodzina, nakladajaSie)) continue
+      sale.push({ sala, godziny: [...new Set(zGodzina.map((z) => z.w.godzina ?? ''))].filter(Boolean) })
     }
 
     if (osoby.length || sale.length) wynik.set(dzien, { osoby, sale })

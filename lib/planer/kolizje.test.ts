@@ -34,12 +34,28 @@ describe('kolizje osób', () => {
     expect(k.get(7)?.osoby[0].twarda).toBe(true)
   })
 
-  it('godziny w odstępie 120 minut nie są twarde', () => {
+  it('godziny w odstępie 120 minut to nie kolizja - osoba zdąży', () => {
     const k = kolizjeWMiesiacu([
       w({ osoby: ['Jula'], godzina: '16:00' }),
       w({ osoby: ['Jula'], godzina: '18:00' }),
     ], PAZ)
-    expect(k.get(7)?.osoby[0].twarda).toBe(false)
+    expect(k.get(7)).toBeUndefined()
+  })
+
+  it('jedno wydarzenie bez godziny i drugie tego dnia - miękka, bo nie wiadomo', () => {
+    const k = kolizjeWMiesiacu([
+      w({ osoby: ['Jula'] }),
+      w({ osoby: ['Jula'], godzina: '18:00' }),
+    ], PAZ)
+    expect(k.get(7)?.osoby[0]).toMatchObject({ osoba: 'Jula', twarda: false })
+  })
+
+  it('sam start bez końca zajmuje 90 minut', () => {
+    const k = kolizjeWMiesiacu([
+      w({ osoby: ['Jula'], godzina: '18:00' }),
+      w({ osoby: ['Jula'], godzina: '16:00', godzinaDo: '20:00' }),
+    ], PAZ)
+    expect(k.get(7)?.osoby[0].twarda).toBe(true)
   })
 
   it('jedno wydarzenie osoby to nie kolizja', () => {
@@ -97,13 +113,21 @@ describe('kolizje - przedziały, całe dni, wiele dni', () => {
       w({ osoby: ['Jula'], godzina: '17:00', godzinaDo: '18:00' }),
       w({ osoby: ['Jula'], godzina: '18:00', godzinaDo: '19:00' }),
     ], PAZ)
-    expect(k.get(7)?.osoby[0].twarda).toBe(false)
+    expect(k.get(7)).toBeUndefined()
   })
 
   it('osoba na wydarzeniu całodniowym jest zajęta cały dzień', () => {
     const k = kolizjeWMiesiacu([
       w({ osoby: ['Jula'], calyDzien: true }),
       w({ osoby: ['Jula'], godzina: '21:00' }),
+    ], PAZ)
+    expect(k.get(7)?.osoby[0].twarda).toBe(true)
+  })
+
+  it('wydarzenie bez godziny w dniu całodniowego wyjazdu to kolizja twarda', () => {
+    const k = kolizjeWMiesiacu([
+      w({ osoby: ['Jula'], calyDzien: true }),
+      w({ osoby: ['Jula'] }),
     ], PAZ)
     expect(k.get(7)?.osoby[0].twarda).toBe(true)
   })
@@ -155,7 +179,46 @@ describe('kolizje - przez północ', () => {
       w({ osoby: ['Jula'], godzina: '18:00', godzinaDo: '04:00' }),
       w({ osoby: ['Jula'], godzina: '09:00', godzinaDo: '10:00' }),
     ], PAZ)
-    expect(k.get(7)?.osoby[0].twarda).toBe(false)
+    expect(k.get(7)).toBeUndefined()
+  })
+
+  it('impreza 18:00-04:00 nie koliduje ze spotkaniem o 18:00 następnego dnia', () => {
+    const k = kolizjeWMiesiacu([
+      w({ osoby: ['Jula'], godzina: '18:00', godzinaDo: '04:00' }),
+      w({ osoby: ['Jula'], dzien: 8, godzina: '18:00' }),
+    ], PAZ)
+    expect(k.size).toBe(0)
+  })
+
+  it('część po północy liczy się następnego dnia', () => {
+    const k = kolizjeWMiesiacu([
+      w({ osoby: ['Jula'], godzina: '18:00', godzinaDo: '04:00' }),
+      w({ osoby: ['Jula'], dzien: 8, godzina: '02:00', godzinaDo: '03:00' }),
+    ], PAZ)
+    expect(k.get(8)?.osoby[0]).toMatchObject({ osoba: 'Jula', twarda: true })
+  })
+
+  it('wpisana jako dwa dni 18:00-04:00 nie zajmuje całego drugiego dnia', () => {
+    const impreza = w({ osoby: ['Jula'], dni: 2, godzina: '18:00', godzinaDo: '04:00' })
+    expect(kolizjeWMiesiacu([impreza, w({ osoby: ['Jula'], dzien: 8, godzina: '18:00' })], PAZ).size).toBe(0)
+    expect(kolizjeWMiesiacu([impreza, w({ osoby: ['Jula'], dzien: 8, godzina: '03:00' })], PAZ).get(8)?.osoby[0].twarda)
+      .toBe(true)
+  })
+
+  it('zebranie o 18:00 przed nocną imprezą od 20:00 tego dnia - bez kolizji', () => {
+    const k = kolizjeWMiesiacu([
+      w({ osoby: ['Jula'], godzina: '20:00', godzinaDo: '04:00' }),
+      w({ osoby: ['Jula'], godzina: '18:00' }),
+    ], PAZ)
+    expect(k.size).toBe(0)
+  })
+
+  it('noc z 31. na 1. zajmuje salę w kolejnym miesiącu', () => {
+    const k = kolizjeWMiesiacu([
+      w({ dzien: 31, budynek: 'B/L', sala: '110', godzina: '20:00', godzinaDo: '04:00' }),
+      w({ miesiac: 11, dzien: 1, budynek: 'B/L', sala: '110', godzina: '02:00' }),
+    ], { m: 11, y: 2026 })
+    expect(k.get(1)?.sale[0].sala).toBe('B/L 110')
   })
 })
 
