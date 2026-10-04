@@ -438,7 +438,7 @@ export function PlanerClient({ semestr, rola, kto, poczatkowy, naZywo }: Props) 
             >
               <ListChecks size={14} /> Eksport do CRA
             </button>
-            <PobierzMiesiac wydarzenia={wydarzenia} miesiac={miesiac} />
+            <PobierzMiesiac wydarzenia={wydarzenia} miesiac={miesiac} sklad={sklad} />
           </div>
           <button
             type="button"

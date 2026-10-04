@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
-import { budujEksport } from '@/lib/planer/eksport'
-import { POLA_DOMYSLNE, type Wydarzenie } from '@/lib/planer/typy'
+import { budujEksport, KOLORY_LISTY, KOLUMNY_LISTY } from '@/lib/planer/eksport'
+import { POLA_DOMYSLNE, type Kategoria, type Wydarzenie } from '@/lib/planer/typy'
 
 const PAZ = { m: 10, y: 2026 }
 
@@ -18,7 +18,7 @@ const zebranie = w({
 const nabor = w({ id: 'n', tytul: 'Nabór', kategoria: 'APLIKACJE', godzina: '08:00' })
 const wyjazd = w({ id: 'y', tytul: 'Wyjazd', kategoria: 'PROJEKTY', dzien: 30, dni: 4, calyDzien: true })
 
-describe('budujEksport', () => {
+describe('budujEksport - Kalendarz', () => {
   const e = budujEksport([nabor, zebranie, wyjazd], PAZ)
 
   it('nazywa plik rokiem i miesiącem', () => {
@@ -45,17 +45,94 @@ describe('budujEksport', () => {
     const ostatni = e.kalendarz.flat().find((k) => k.dzien === 31)!
     expect(ostatni.linie[0].tekst).toBe('④ cały dzień Wyjazd (2/4)')
   })
+})
 
-  it('lista ma jeden wiersz na wydarzenie, po dacie i randze', () => {
-    expect(e.lista.map((r) => r[7])).toEqual(['Zebranie', 'Nabór', 'Wyjazd'])
-    expect(e.lista[0]).toEqual([
-      '07.10.2026', 'środa', '', '18:00', '20:00', 1, 'Zebrania', 'Zebranie', 'B/L', '110L', 'Jula, Kuba',
-    ])
-    expect(e.lista[2][2]).toBe('02.11.2026')
-    expect(e.lista[2][3]).toBe('cały dzień')
+/** Komórka kategorii `k` w wierszu dnia `dzien`. */
+function komorka(e: ReturnType<typeof budujEksport>, dzien: number, k: Kategoria) {
+  return e.lista[dzien - 1].komorki[KOLUMNY_LISTY.indexOf(k)]
+}
+
+describe('budujEksport - Lista jak arkusz Sesji', () => {
+  it('kolumny w kolejności z arkusza wzorcowego', () => {
+    expect(KOLUMNY_LISTY).toEqual(['UE', 'SSUEW', 'PROJEKTY', 'ZEBRANIA', 'KOMISJE', 'INNE', 'APLIKACJE'])
+  })
+
+  it('wiersz na każdy dzień miesiąca, także pusty', () => {
+    const e = budujEksport([], PAZ)
+    expect(e.lista).toHaveLength(31)
+    expect(e.lista[0]).toMatchObject({ dzien: 1, dzienTygodnia: 'czwartek', kogo: '' })
+    expect(e.lista[0].komorki).toHaveLength(7)
+    expect(e.lista[0].komorki.every((k) => k.tekst === '' && k.tlo === null && k.wierszy === 1)).toBe(true)
+  })
+
+  it('tekst: tytuł - godzina - sala', () => {
+    const e = budujEksport([
+      w({ id: 'p', tytul: 'PROMKA', kategoria: 'KOMISJE', dzien: 6, godzina: '18:00', budynek: 'B/J', sala: '9J' }),
+      w({ id: 's', tytul: 'SKS', kategoria: 'ZEBRANIA', dzien: 13, godzina: '18:00', godzinaDo: '20:00', budynek: 'A', sala: '120 A' }),
+      w({ id: 'b', tytul: 'Targi', kategoria: 'UE', dzien: 15, budynek: 'A' }),
+      w({ id: 'o', tytul: 'Zjazd', kategoria: 'SSUEW', dzien: 17, budynek: 'MIASTO', sala: 'Warszawa' }),
+    ], PAZ)
+    expect(komorka(e, 6, 'KOMISJE').tekst).toBe('PROMKA - 18:00 - 9J')
+    expect(komorka(e, 13, 'ZEBRANIA').tekst).toBe('SKS - 18:00-20:00 - 120 A')
+    expect(komorka(e, 15, 'UE').tekst).toBe('Targi - A')
+    expect(komorka(e, 17, 'SSUEW').tekst).toBe('Zjazd - Warszawa')
+  })
+
+  it('wydarzenie wielodniowe to jedna scalona komórka w pionie', () => {
+    const rekrutacja = w({ id: 'r', tytul: 'Rekrutacja', kategoria: 'SSUEW', dzien: 1, dni: 16, calyDzien: true })
+    const e = budujEksport([rekrutacja], PAZ)
+    expect(komorka(e, 1, 'SSUEW')).toEqual({ tekst: 'Rekrutacja', tlo: KOLORY_LISTY.kolumny.SSUEW.komorka, wierszy: 16 })
+    expect(komorka(e, 2, 'SSUEW').wierszy).toBe(0)
+    expect(komorka(e, 16, 'SSUEW').wierszy).toBe(0)
+    expect(komorka(e, 17, 'SSUEW').wierszy).toBe(1)
+  })
+
+  it('wielodniowe z poprzedniego miesiąca zaczyna scalenie od 1.', () => {
+    const e = budujEksport([w({ id: 'y', tytul: 'Wyjazd', kategoria: 'PROJEKTY', miesiac: 9, dzien: 29, dni: 4 })], PAZ)
+    expect(komorka(e, 1, 'PROJEKTY')).toMatchObject({ tekst: 'Wyjazd', wierszy: 2 })
+  })
+
+  it('dwa wydarzenia tej samej kategorii w dniu - jedno pod drugim, bez scalania', () => {
+    const e = budujEksport([
+      w({ id: 'r', tytul: 'Rekrutacja', kategoria: 'SSUEW', dzien: 1, dni: 3 }),
+      w({ id: 'f', tytul: 'Zjazd', kategoria: 'SSUEW', dzien: 2 }),
+    ], PAZ)
+    expect(komorka(e, 1, 'SSUEW')).toMatchObject({ tekst: 'Rekrutacja', wierszy: 1 })
+    expect(komorka(e, 2, 'SSUEW')).toMatchObject({ tekst: 'Rekrutacja\nZjazd', wierszy: 1 })
+    expect(komorka(e, 3, 'SSUEW')).toMatchObject({ tekst: 'Rekrutacja', wierszy: 1 })
+  })
+
+  it('tło: kolor kolumny, ciemniejsze zebranie zarządu, zielony dzień wolny, UE i komisje bez tła', () => {
+    const e = budujEksport([
+      w({ id: '1', tytul: 'ZEBRANIE ZARZĄDU', kategoria: 'ZEBRANIA', dzien: 7 }),
+      w({ id: '2', tytul: 'ZEBRANIE REKRUTACJI', kategoria: 'ZEBRANIA', dzien: 8 }),
+      w({ id: '3', tytul: 'Targi Pracy', kategoria: 'UE', dzien: 15 }),
+      w({ id: '4', tytul: 'DZIEŃ REKTORSKI', kategoria: 'UE', dzien: 31, dzienWolny: true }),
+      w({ id: '5', tytul: 'HR', kategoria: 'KOMISJE', dzien: 9 }),
+      w({ id: '6', tytul: 'KG BALU', kategoria: 'APLIKACJE', dzien: 3 }),
+    ], PAZ)
+    expect(komorka(e, 7, 'ZEBRANIA').tlo).toBe(KOLORY_LISTY.zarzad)
+    expect(komorka(e, 8, 'ZEBRANIA').tlo).toBe(KOLORY_LISTY.kolumny.ZEBRANIA.komorka)
+    expect(komorka(e, 15, 'UE').tlo).toBeNull()
+    expect(komorka(e, 31, 'UE').tlo).toBe(KOLORY_LISTY.wolny)
+    expect(komorka(e, 9, 'KOMISJE').tlo).toBeNull()
+    expect(komorka(e, 3, 'APLIKACJE').tlo).toBe(KOLORY_LISTY.kolumny.APLIKACJE.komorka)
+  })
+
+  it('„Kogo dotyczy?” to osoby ze wszystkich wydarzeń dnia, w kolejności Składu', () => {
+    const e = budujEksport([
+      w({ id: 'r', tytul: 'Rekrutacja', kategoria: 'SSUEW', dzien: 1, dni: 5, osoby: ['Madzia', 'Marcel'] }),
+      w({ id: 'b', tytul: 'KG BALU', kategoria: 'APLIKACJE', dzien: 3, osoby: ['Daria', 'Marcel', 'Gość'] }),
+      w({ id: 'z', tytul: 'ZEBRANIE ZARZĄDU', kategoria: 'ZEBRANIA', dzien: 4, osoby: ['wszyscy'] }),
+    ], PAZ, ['Marcel', 'Jula', 'Madzia', 'Daria'])
+    expect(e.lista[0].kogo).toBe('Marcel, Madzia')
+    expect(e.lista[2].kogo).toBe('Marcel, Madzia, Daria, Gość')
+    expect(e.lista[3].kogo).toBe('wszyscy')
+    expect(e.lista[5].kogo).toBe('')
   })
 
   it('pomija wydarzenia spoza miesiąca', () => {
-    expect(budujEksport([w({ miesiac: 11, dzien: 15 })], PAZ).lista).toEqual([])
+    const e = budujEksport([w({ miesiac: 11, dzien: 15, tytul: 'Listopad' })], PAZ)
+    expect(e.lista.flatMap((r) => r.komorki).some((k) => k.tekst)).toBe(false)
   })
 })
