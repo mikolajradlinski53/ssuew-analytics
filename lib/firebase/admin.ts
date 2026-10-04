@@ -50,3 +50,13 @@ export function ustawieniaRef(nazwa: string) {
 export function odprawaRef() {
   return bazaAdmin().collection('asystent').doc('odprawa')
 }
+
+/** Rozmowy asystenta - tylko serwer; reguła końcowa zamyka je przed przeglądarką. */
+export function rozmowyRef() {
+  return bazaAdmin().collection('asystentRozmowy')
+}
+
+/** Notatki asystenta - tylko serwer; reguła końcowa zamyka je przed przeglądarką. */
+export function notatkiRef() {
+  return bazaAdmin().collection('asystentNotatki')
+}
