@@ -1,81 +1,60 @@
 'use client'
-import { useEffect, useRef, useState } from 'react'
-import { MessageSquare, Send, Trash2 } from 'lucide-react'
-import { LIMIT_HISTORII, type WiadomoscCzatu } from '@/lib/asystent/czat'
-import { TekstAsystenta } from './TekstAsystenta'
+import { useEffect, useState } from 'react'
+import { MessageSquare, Plus } from 'lucide-react'
+import { CzatRozmowa } from './CzatRozmowa'
+import { CzatWatki } from './CzatWatki'
+import { CzatNotatki } from './CzatNotatki'
 
-const KLUCZ = 'deck-czat'
+const KLUCZ = 'deck-rozmowa'
+type Widok = 'rozmowa' | 'watki' | 'notatki'
+const ZAKLADKI: { widok: Widok; etykieta: string }[] = [
+  { widok: 'rozmowa', etykieta: 'Rozmowa' },
+  { widok: 'watki', etykieta: 'Wątki' },
+  { widok: 'notatki', etykieta: 'Notatki' },
+]
 
-/** Rozmowa z tej karty. Uszkodzony zapis to pusta rozmowa, nie wywrócony kokpit. */
-function wczytaj(): WiadomoscCzatu[] {
-  if (typeof window === 'undefined') return []
+/** Ostatni wątek tej przeglądarki - sama treść rozmowy jest w bazie. */
+function wczytajId(): string | null {
+  if (typeof window === 'undefined') return null
   try {
-    const x = JSON.parse(sessionStorage.getItem(KLUCZ) ?? '[]')
-    return Array.isArray(x)
-      ? x.filter((w) => (w?.rola === 'ja' || w?.rola === 'deck') && typeof w?.tresc === 'string')
-      : []
+    return localStorage.getItem(KLUCZ)
   } catch {
-    return []
+    return null
   }
 }
 
 /**
- * „Zapytaj D.E.C.K.” - rozmowa z asystentem, który przy każdym pytaniu dostaje
- * świeży obraz projektu. Historia żyje w karcie przeglądarki (sessionStorage):
- * przetrwa odświeżenie, zniknie po zamknięciu karty.
+ * „Zapytaj D.E.C.K.” - rozmowy zapisane w bazie, notatki z ustaleniami.
+ * `wersja` przemontowuje rozmowę przy zmianie wątku z zewnątrz (nowa,
+ * otwarta z listy); id nadane przez serwer w trakcie rozmowy jej nie
+ * przemontowuje, żeby nie zgubić propozycji notatki.
  */
 export function CzatDeck() {
   const [otwarty, setOtwarty] = useState(false)
-  // Odczyt w inicjalizatorze, nie w efekcie: na serwerze zwraca pustą listę,
-  // a rozmowa i tak jest pokazywana dopiero po rozwinięciu.
-  const [wiadomosci, setWiadomosci] = useState<WiadomoscCzatu[]>(wczytaj)
-  const [pytanie, setPytanie] = useState('')
-  const [czeka, setCzeka] = useState(false)
-  const [blad, setBlad] = useState<string | null>(null)
-  const dol = useRef<HTMLDivElement>(null)
+  const [widok, setWidok] = useState<Widok>('rozmowa')
+  const [rozmowaId, setRozmowaId] = useState<string | null>(wczytajId)
+  const [wersja, setWersja] = useState(0)
 
   useEffect(() => {
     try {
-      sessionStorage.setItem(KLUCZ, JSON.stringify(wiadomosci))
+      if (rozmowaId) localStorage.setItem(KLUCZ, rozmowaId)
+      else localStorage.removeItem(KLUCZ)
     } catch {
-      // Tryb prywatny bez miejsca - rozmowa zostaje tylko w pamięci.
+      // Tryb prywatny bez miejsca - po odświeżeniu zacznie się nowa rozmowa.
     }
-  }, [wiadomosci])
+  }, [rozmowaId])
 
-  useEffect(() => {
-    dol.current?.scrollIntoView?.({ block: 'nearest' })
-  }, [wiadomosci, czeka])
+  function przelacz(id: string | null) {
+    setRozmowaId(id)
+    setWersja((w) => w + 1)
+    setWidok('rozmowa')
+  }
 
-  async function wyslij(e?: React.FormEvent) {
-    e?.preventDefault()
-    const tresc = pytanie.trim()
-    if (!tresc || czeka) return
-    const poprzednie = wiadomosci
-    const rozmowa: WiadomoscCzatu[] = [...poprzednie, { rola: 'ja', tresc }]
-    setWiadomosci(rozmowa)
-    setPytanie('')
-    setBlad(null)
-    setCzeka(true)
-    try {
-      const res = await fetch('/api/asystent/czat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ wiadomosci: rozmowa.slice(-LIMIT_HISTORII) }),
-      })
-      const dane = await res.json().catch(() => ({}))
-      if (res.ok && typeof dane.odpowiedz === 'string') {
-        setWiadomosci([...rozmowa, { rola: 'deck', tresc: dane.odpowiedz }])
-        return
-      }
-      throw new Error(dane.error ?? 'D.E.C.K. nie odpowiedział - spróbuj ponownie.')
-    } catch (err) {
-      // Pytanie bez odpowiedzi wraca do pola - jedno kliknięcie, żeby ponowić.
-      setWiadomosci(poprzednie)
-      setPytanie(tresc)
-      setBlad(err instanceof Error && err.message !== 'Failed to fetch' ? err.message : 'Brak połączenia - spróbuj ponownie.')
-    } finally {
-      setCzeka(false)
-    }
+  /** Usunięty bieżący wątek (albo wszystkie): zapominamy go, ale zostajemy na liście. */
+  function zapomnij(id: string | null) {
+    if (id !== null && id !== rozmowaId) return
+    setRozmowaId(null)
+    setWersja((w) => w + 1)
   }
 
   return (
@@ -93,67 +72,38 @@ export function CzatDeck() {
 
       {otwarty && (
         <div className="border-t border-white/8 px-[18px] pb-[18px]">
-          <div className="max-h-[420px] space-y-3 overflow-y-auto py-3 text-[12.5px] leading-relaxed">
-            {wiadomosci.length === 0 && (
-              <p className="text-deck-muted">
-                Pytaj o wskaźniki, ryzyka, kalendarz albo poproś o tekst. D.E.C.K. widzi te same dane co kokpit.
-              </p>
-            )}
-            {wiadomosci.map((w, i) =>
-              w.rola === 'ja' ? (
-                <div key={i} className="ml-auto max-w-[85%] rounded-lg bg-deck-accent/10 px-3 py-2 text-deck-text">
-                  {w.tresc}
-                </div>
-              ) : (
-                <div key={i} className="max-w-[92%] rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2 text-deck-text">
-                  <TekstAsystenta tekst={w.tresc} />
-                </div>
-              ),
-            )}
-            {czeka && <p className="deck-caret font-mono text-[11px] text-deck-accent">D.E.C.K. analizuje dane…</p>}
-            <div ref={dol} />
-          </div>
-
-          {blad && (
-            <p role="alert" className="mb-2 rounded-md border border-deck-danger-border bg-deck-danger-bg/70 px-3 py-2 text-[11.5px] text-deck-danger">
-              {blad}
-            </p>
-          )}
-
-          <form onSubmit={wyslij} className="flex items-end gap-2">
-            <textarea
-              value={pytanie}
-              onChange={(e) => setPytanie(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                  e.preventDefault()
-                  void wyslij()
-                }
-              }}
-              rows={2}
-              aria-label="Pytanie do D.E.C.K."
-              placeholder="Np. które KPI spadają najmocniej i co z tym zrobić?"
-              className="deck-input min-h-[44px] flex-1 resize-y rounded-lg px-3 py-2 text-[12.5px]"
-            />
-            <button
-              type="submit"
-              disabled={czeka || !pytanie.trim()}
-              className="deck-button grid h-[44px] w-[44px] place-items-center rounded-lg disabled:opacity-50"
-            >
-              <Send size={15} aria-hidden="true" />
-              <span className="sr-only">Wyślij</span>
-            </button>
-          </form>
-          {wiadomosci.length > 0 && (
+          <div className="flex flex-wrap items-center gap-2 py-3">
+            <div role="tablist" aria-label="Asystent" className="flex gap-1 rounded-lg border border-white/10 bg-white/[0.03] p-1">
+              {ZAKLADKI.map((z) => (
+                <button
+                  key={z.widok}
+                  type="button"
+                  role="tab"
+                  aria-selected={widok === z.widok}
+                  onClick={() => setWidok(z.widok)}
+                  className={`rounded-md px-2.5 py-1 font-mono text-[10.5px] transition ${
+                    widok === z.widok ? 'bg-deck-accent/15 text-deck-accent' : 'text-deck-muted hover:text-deck-text'
+                  }`}
+                >
+                  {z.etykieta}
+                </button>
+              ))}
+            </div>
             <button
               type="button"
-              onClick={() => setWiadomosci([])}
-              className="mt-2 flex items-center gap-1.5 font-mono text-[10.5px] text-deck-muted hover:text-deck-danger"
+              onClick={() => przelacz(null)}
+              className="ml-auto flex items-center gap-1.5 rounded-md border border-white/10 px-2.5 py-1 font-mono text-[10.5px] text-deck-muted transition hover:border-deck-accent/40 hover:text-deck-accent"
             >
-              <Trash2 size={11} aria-hidden="true" />
-              Wyczyść rozmowę
+              <Plus size={11} aria-hidden="true" />
+              Nowa rozmowa
             </button>
+          </div>
+
+          {widok === 'rozmowa' && <CzatRozmowa key={wersja} poczatkowaId={rozmowaId} onRozmowa={setRozmowaId} />}
+          {widok === 'watki' && (
+            <CzatWatki aktywna={rozmowaId} onOtworz={przelacz} onUsunieto={zapomnij} />
           )}
+          {widok === 'notatki' && <CzatNotatki />}
         </div>
       )}
     </section>
